@@ -12,11 +12,24 @@
 - [ ] Dependency Verification auf PGP-Signaturen erweitern
       (`verify-signatures=true` + trusted-keys); PW-0.2 pinnt bislang
       nur SHA-256-Checksummen
+- [ ] Merkregel aus PW-0.3: verification-metadata.xml IMMER mit
+      `--refresh-dependencies --write-verification-metadata sha256 <Gate-Tasks>`
+      regenerieren — mit warmem lokalem Cache fehlen sonst
+      .pom-/.module-Varianten, die nur ein kalter CI-Cache auflöst.
+      Kandidat für docs/architektur.md (Verbindliche Kommandos)
 - [ ] targetSdk 36 wurde in PW-0.1 gesetzt, weil AGP 8.13.2 sonst den
       Lint-Error OldTargetApi wirft und C7 Baselines verbietet.
       Konsequenzen für Phase 3 einplanen: Edge-to-Edge ist ab
       targetSdk 35+ erzwungen (Insets sauber behandeln), Predictive
       Back muss unterstützt und getestet werden
+- [ ] Jährlicher targetSdk-Bump als fester Prozess (PW-0.5): Lint-Check
+      OldTargetApi ist in app/build.gradle.kts deaktiviert, weil er
+      umgebungsabhängig ist (Lint liest die "neueste" API aus den im
+      Runner-SDK installierten Platforms; ubuntu-latest rot, lokal grün
+      bei identischem Commit — CI-Run 29031584439). Ersatzmechanismus:
+      compileSdk/targetSdk gemeinsam mit AGP-Update pro Android-Release
+      per ADR anheben (Trigger: Play-Policy-Deadline, üblicherweise
+      31. August); ExpiredTargetSdkVersion bleibt als harter Gate aktiv
 - [ ] Architekt: `gradlePluginPortal()` in settings.gradle.kts
       (pluginManagement) kollidiert mit dem S6-Wortlaut („nur google() +
       mavenCentral()") — per ADR klären: Portal entfernen oder S6

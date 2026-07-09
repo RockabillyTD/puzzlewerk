@@ -50,3 +50,4 @@ jobs:
             **/build/reports/tests/
             **/build/reports/detekt/
             **/build/reports/ktlint/
+            **/build/reports/lint-results-*
