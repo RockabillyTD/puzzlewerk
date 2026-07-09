@@ -56,8 +56,13 @@ Vier Gradle-Module, Abhängigkeiten zeigen ausschließlich nach unten:
   Fehler, nie Crash.
 - **S5 Komponenten nicht exportieren:** `android:exported="false"` für
   alles außer der Launcher-Activity.
-- **S6 Lieferketten-Sicherheit:** Gradle Dependency Verification, nur
-  `google()` + `mavenCentral()`, CVE-Scan im CI, Version-Pinning.
+- **S6 Lieferketten-Sicherheit:** Gradle Dependency Verification
+  (SHA-256-Pinning, deckt auch den Plugin-Classpath ab), CVE-Scan im
+  CI, Version-Pinning. Quellen: `google()` + `mavenCentral()` für alle
+  Dependencies und Plugins; `gradlePluginPortal()` ausschließlich in
+  `pluginManagement` und nur für per Content-Filter freigegebene
+  Plugins ohne Publikation auf den Hauptquellen (derzeit einzig
+  Ktlint-Gradle). Details, Rückbau-Trigger und PGP-Roadmap: ADR-002.
 - **S7 Keine Secrets im Repository:** Keys/Passwörter nur lokal
   (git-ignoriert) oder als CI-Secrets; gitleaks-Scan je PR.
 - **S8 Release-Härtung:** R8 aktiv, `debuggable=false`, Release-Logging
