@@ -3,46 +3,47 @@
 > Wird vom Orchestrator nach jedem Arbeitszyklus gepflegt.
 
 ## Aktuelle Phase
-Phase 0 — Fundament (Arbeit abgeschlossen, Meilenstein-Abnahme durch den Menschen ausstehend)
+Phase 1 — Game-Design (in Arbeit); Phase 0 technisch komplett, formale
+Meilenstein-Abnahme durch Branko ausstehend
 
-## Erledigt
-- [x] Verzeichnis- und Modulstruktur (:app/:game/:data/:core)
-- [x] CLAUDE.md, 8 Agent-Definitionen, Orchestrator-Briefing
-- [x] Gradle-Konfiguration (Version Catalog, Detekt, Ktlint, Kover)
-- [x] Platzhalter-Spiellogik mit Unit- und Property-Tests
-- [x] CI-Workflow (.github/workflows/ci.yml)
-- [x] ADR-001 (Technologie-Stack)
-- [x] Erster vollständiger Gate-Lauf grün: `./gradlew ktlintCheck detekt test koverVerify :app:lintDebug :app:assembleDebug`
-      (Ticket PW-0.1: .editorconfig-Fix, Ktlint-Formatierung, AGP 8.13.2,
-      compileSdk/targetSdk 36, 7 Android-Lint-Fixes ohne Suppressions)
-- [x] Gradle Dependency Verification aktiv (SHA-256, 544 Komponenten,
-      inkl. Linux-aapt2 für den CI-Runner) — Regel S6 (Ticket PW-0.2)
-- [x] Wrapper-Checksumme gepinnt (distributionSha256Sum, Gradle 8.14.3)
-- [x] GitHub-Actions auf dereferenzierte Commit-SHAs gepinnt
-- [x] Backup-/Device-Transfer-Härtung: alle fünf Domains ausgeschlossen (Regel S2)
+## Erledigt (Zyklus 2, 2026-07-09 nachmittags)
+- [x] **CI erstmals grün auf ubuntu-latest** (Phase-0-Gate-Kriterium):
+      PR #1 gemergt nach zwei diagnostizierten CI-Fehlschlägen
+      (PW-0.3: Kalt-Cache-Metadaten; PW-0.5: umgebungsabhängiger
+      Lint-Check OldTargetApi, begründet deaktiviert + Backlog-Prozess)
+- [x] Repo öffentlich geschaltet (Entscheidung Branko, Secret-Check vorab)
+- [x] Branch-Schutz für main aktiv: PR-Pflicht + Pflicht-Check
+      quality-gates (strict), keine Force-Pushes/Deletes
+- [x] ADR-002 Dependency-Quellen (PR #2): gradlePluginPortal bleibt,
+      per Content-Filter auf Ktlint-Gradle beschränkt; S6 präzisiert;
+      PGP-Roadmap mit Trigger-Kriterien
+- [x] PW-0.4-impl (PR #3): Content-Filter in settings.gradle.kts —
+      Security-Finding L2 endgültig geschlossen
+- [x] Lint-Reports als CI-Failure-Artefakt (Diagnose-Lücke geschlossen)
 
-## Delegationsprotokoll (Zyklus 2026-07-09)
+## Delegationsprotokoll (Zyklus 2)
 | Ticket | Agent | Ergebnis | Gates |
 |---|---|---|---|
-| PW-0.1 Quality-Gate-Erstlauf | release-engineer | Branch fix/pw-0.1-erstlauf, 4 Commits | Gate-Kette grün (vom Orchestrator verifiziert) |
-| PW-0.2 Supply-Chain-Härtung | release-engineer | Branch fix/pw-0.2-supply-chain, 10 Commits (inkl. Zyklus 2) | Gate-Kette grün |
-| Review PW-0.1+0.2 | code-reviewer | Zyklus 1: CHANGES_REQUESTED (1 MAJOR); Zyklus 2: **APPROVE** | eigene Verifikation der Gate-Kette + aller Pins |
-| Security-Audit PW-0.1+0.2 | security-auditor | **APPROVE** (M1-Auflage erfüllt, L1 behoben, L2 → Backlog) | Checksummen unabhängig gegen Originalquellen verifiziert |
+| PW-0.3 Kalt-Cache-Metadata | release-engineer | PR #1 (Teil 1) | Reviewer-APPROVE, Checksummen 3-fach verifiziert |
+| PW-0.5 Lint-Fix | release-engineer | PR #1 (Teil 2) | Reviewer- + Security-APPROVE |
+| PW-0.4 ADR-002 | architekt | PR #2 | Reviewer- + Security-APPROVE (Faktenbasis unabhängig geprüft) |
+| PW-0.4-impl Portal-Filter | release-engineer | PR #3 | Reviewer- + Security-APPROVE, CI grün |
+| PW-1.1 Prisma-Design | game-designer | in Arbeit (1 Neustart nach API-Timeout) | — |
 
-Merge nach main: `b87c747` (CI grün lokal + Reviewer-APPROVE + Security-APPROVE).
+Alle drei PRs: Merge nur bei CI grün + Reviewer-APPROVE + Security-APPROVE.
+
+## In Arbeit
+- [ ] PW-1.1: docs/game-design.md für Konzept C „Prisma" (game-designer);
+      Konzeptwahl durch Branko am 2026-07-09 (phase1-spielkonzepte.md)
 
 ## Blockiert / wartet auf den Menschen
-- [ ] **Meilenstein-Gate Phase 0:** Abnahme des Fundaments durch Branko
-      (Regeln gelesen und abgesegnet, `./gradlew check` grün bestätigt)
-- [ ] **CI-Erstlauf auf GitHub:** Remote origin (github.com/RockabillyTD/puzzlewerk)
-      wurde während des Zyklus angelegt; main muss gepusht werden, damit die
-      CI erstmals läuft
-- [ ] **Branch-Schutz für main** (PR-Pflicht + CI-Pflicht) in den
-      GitHub-Repo-Einstellungen — nur mit Repo-Admin-Rechten möglich
+- [ ] Formale Phase-0-Abnahme (alle technischen Kriterien erfüllt:
+      lokale Gates grün, CI grün, Regeln dokumentiert)
+- [ ] Phase-1-Gate: Abnahme des Prisma-Design-Dokuments (sobald PW-1.1
+      vorliegt; Iterationen erwünscht)
 
 ## Nächste Schritte
-1. Mensch: Phase-0-Gate abnehmen, Branch-Schutz einrichten, CI-Erstlauf bestätigen
-2. Phase 1 starten: game-designer erstellt docs/game-design.md
-   (Kernmechanik, 30–50 Level-Progression, Scoring, UX-Flows, Randfall-Katalog)
-3. Backlog-Punkte für Architekt: gradlePluginPortal vs. S6 (ADR),
-   PGP-Signatur-Verifikation als S6-Ausbaustufe
+1. PW-1.1 abschließen → Design-Review → Abnahme durch Branko
+2. Nach Design-Abnahme: Phase 2 planen (Architekt definiert :game-APIs)
+3. Backlog: gitleaks-CI-Schritt, CVE-Scan, Renovate (inkl. SDK-Bumps),
+   jährlicher targetSdk-Bump-Prozess, PGP-Trigger beobachten
