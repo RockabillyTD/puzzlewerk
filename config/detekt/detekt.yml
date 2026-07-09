@@ -13,6 +13,12 @@ complexity:
     thresholdInFiles: 20
     thresholdInClasses: 15
 
+naming:
+  # Compose-Konvention: Composables sind PascalCase — von der
+  # camelCase-Funktionsnamen-Regel ausnehmen (Fix für Phase-0-Erstlauf).
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+
 style:
   UnusedPrivateMember:
     ignoreAnnotated: ['Preview']
