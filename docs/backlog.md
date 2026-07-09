@@ -12,6 +12,11 @@
 - [ ] Dependency Verification auf PGP-Signaturen erweitern
       (`verify-signatures=true` + trusted-keys); PW-0.2 pinnt bislang
       nur SHA-256-Checksummen
+- [ ] Merkregel aus PW-0.3: verification-metadata.xml IMMER mit
+      `--refresh-dependencies --write-verification-metadata sha256 <Gate-Tasks>`
+      regenerieren — mit warmem lokalem Cache fehlen sonst
+      .pom-/.module-Varianten, die nur ein kalter CI-Cache auflöst.
+      Kandidat für docs/architektur.md (Verbindliche Kommandos)
 - [ ] targetSdk 36 wurde in PW-0.1 gesetzt, weil AGP 8.13.2 sonst den
       Lint-Error OldTargetApi wirft und C7 Baselines verbietet.
       Konsequenzen für Phase 3 einplanen: Edge-to-Edge ist ab
