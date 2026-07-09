@@ -577,6 +577,15 @@ fun nextLong(): Long {
 fun nextInt(bound: Int): Int = floorMod(nextLong(), bound.toLong()).toInt()
 ```
 
+- **Implementierungshinweis (Kotlin):** Die drei Hex-Konstanten
+  überschreiten `Long.MAX_VALUE` und sind als Long-Literale nicht
+  direkt schreibbar. In Kotlin z. B. als unsigned Literal mit
+  Konvertierung (`0x9E3779B97F4A7C15uL.toLong()`) oder als
+  äquivalentes negatives Literal notieren:
+  `0x9E3779B97F4A7C15 = -0x61C8864680B583EBL`,
+  `0xBF58476D1CE4E5B9 = -0x40A7B892E31B1A47L`,
+  `0x94D049BB133111EB = -0x6B2FB644ECCEEE15L`.
+  Die Bitmuster (und damit alle Ergebnisse) sind identisch.
 - `mix64(x)` bezeichnet die drei Finalizer-Zeilen (ohne Inkrement) —
   benutzt zur Seed-Ableitung (10.1, 11.1).
 - `nextInt(bound)` per `floorMod` ist minimal modulo-verzerrt; bei den
@@ -696,10 +705,16 @@ für kosten c = 1, 2, 3, …, 14:
 7. **Terminierung:** Nach 1000 verworfenen Versuchen (Schritt 1)
    relaxiert der Generator deterministisch: erst Par-Zielbereich um ±2
    erweitern, dann Elementbudget schrittweise um 1 senken. Als letzte
-   Stufe wird das parametrische Fallback-Level „Spiegelweg" erzeugt
-   (1 Quelle Weiß am Westrand Richtung O, 1 Spiegel im Zentrum,
-   1 Kristall Weiß, Scramble-Offset aus dem PRNG, Par ∈ 1..5) — auf
-   jedem Radius konstruierbar; damit ist Terminierung garantiert.
+   Stufe wird das parametrische Fallback-Level „Spiegelweg" erzeugt —
+   exakt definiert für Brettradius R: Quelle Weiß auf `(−R, 0)` mit
+   Richtung 0 (O), Spiegel auf `(0, 0)` mit Lösungsorientierung
+   `m = 0` (Parallelfall: Strahl läuft geradeaus durch), Kristall Weiß
+   auf `(R, 0)`; keine weiteren Elemente. Scramble-Offset
+   `o = nextInt(5) + 1 ∈ 1..5` aus dem PRNG ⇒ Startorientierung
+   `(0 − o) mod 6`; da m = 0 die einzige lösende Orientierung ist,
+   gilt exakt `Par = o`. Das Fallback ist auf jedem Radius
+   konstruierbar — damit ist Terminierung garantiert und das Ergebnis
+   über Implementierungen hinweg golden-testbar.
 
 ---
 
@@ -789,7 +804,7 @@ Progression zu entwerten. Sterne/Score schalten nichts frei (7.2).
 |---|---|---|---|---|---|---|
 | 1–3 | Spiegel | D1 | 2 | 1 | 1 | Tutorial: Tap = Drehung, Reflexionsgefühl |
 | 4–8 | farbige Quellen | D1–D2 | 2 | 1 | 1–2 | mehrere Spiegel, erste Farb-Sollwerte |
-| 9–12 | **Splitter** | D2 | 2–3 | 1 | 2 | ein Strahl, zwei Ziele |
+| 9–12 | **Splitter** | D2 | 2 | 1 | 2 | ein Strahl, zwei Ziele |
 | 13–16 | 2. Quelle | D3 | 3 | 2 | 2–3 | **Mischung am Kristall** (R+G→Gelb) |
 | 17–21 | **Prisma** | D3 | 3 | 1–2 | 3 | Weiß zerlegen, drei Ziele aus einem Strahl |
 | 22–26 | Kombination | D4 | 3 | 2 | 3–4 | Prisma + Splitter, Sekundär-Kristalle |
@@ -919,7 +934,8 @@ erheblichen Teil der Spielerschaft (Farbfehlsichtigkeit betrifft ca.
 - **I4** Jedes generierte Level ist in genau `Par` Zügen lösbar und in
   keiner geringeren Anzahl; `1 ≤ Par ≤ 14`.
 - **I5** `Score ∈ [1000, 1500]` bei jeder Lösung; Score monoton
-  fallend in der Zugzahl.
+  **nicht-steigend** in der Zugzahl (Plateaus: 1500 für alle
+  Züge ≤ Par, 1000 für alle Züge ≥ Par + 10 — kein strikter Abfall).
 - **I6** Zugzähler == Länge des Undo-Verlaufs; nie negativ.
 - **I7** `applyMove` auf einem gültigen Zustand liefert einen gültigen
   Zustand (alle Schema-Regeln aus 16.2 bleiben erfüllt); `Invalid`
