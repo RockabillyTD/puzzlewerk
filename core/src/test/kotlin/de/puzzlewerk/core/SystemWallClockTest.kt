@@ -4,7 +4,6 @@ import io.kotest.matchers.longs.shouldBeGreaterThan
 import org.junit.jupiter.api.Test
 
 class SystemWallClockTest {
-
     @Test
     fun `liefert plausible Epoch-Zeit`() {
         val clock = SystemWallClock()

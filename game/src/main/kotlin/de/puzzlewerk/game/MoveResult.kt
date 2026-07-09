@@ -4,7 +4,6 @@ package de.puzzlewerk.game
  * Ergebnis eines Zugversuchs — erwartbare Fehler sind Werte, keine Exceptions (Regel C3).
  */
 public sealed interface MoveResult {
-
     /** Der Zug war gültig; [state] ist der neue Spielzustand. */
     public data class Applied(val state: GameState) : MoveResult
 

@@ -2,5 +2,5 @@
 <!-- Basissprache: Deutsch. Englisch unter values-en/. Keine Hardcoded Strings im Code! -->
 <resources>
   <string name="app_name">Puzzlewerk</string>
-  <string name="phase0_status">Fundament steht — Level %1$d bereit (Phase 0)</string>
+  <string name="phase0_status">Fundament steht (Phase 0) — bereit: Level %1$d</string>
 </resources>

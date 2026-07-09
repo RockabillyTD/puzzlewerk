@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test
  * siehe Agent-Grundregeln des test-engineers).
  */
 class GameEnginePropertyTest {
-
     @Test
     fun `Invariante - Punktestand ist nie negativ`() {
         runBlocking {

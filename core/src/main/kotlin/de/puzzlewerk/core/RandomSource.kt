@@ -9,7 +9,6 @@ import kotlin.random.Random
  * denselben Seed wiederverwenden oder eine eigene Implementierung stellen.
  */
 public interface RandomSource {
-
     /** Liefert eine Zufallszahl im Bereich `[0, untilExclusive)`. */
     public fun nextInt(untilExclusive: Int): Int
 }
@@ -18,7 +17,6 @@ public interface RandomSource {
  * Deterministische [RandomSource]: Gleicher [seed] erzeugt immer dieselbe Sequenz.
  */
 public class SeededRandom(seed: Long) : RandomSource {
-
     private val random = Random(seed)
 
     override fun nextInt(untilExclusive: Int): Int = random.nextInt(untilExclusive)

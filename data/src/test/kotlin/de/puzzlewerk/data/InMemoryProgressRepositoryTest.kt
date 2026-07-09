@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class InMemoryProgressRepositoryTest {
-
     @Test
     fun `ungespieltes Level hat keinen Bestwert`() {
         val repository = InMemoryProgressRepository()

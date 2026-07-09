@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Regel S2: Backup-Konfiguration fuer Android < 12 (dort gilt
+     full-backup-content statt data-extraction-rules). Die Domains
+     root/file/database/sharedpref/external sind eigenstaendig und
+     muessen einzeln ausgeschlossen werden. Alles ausgeschlossen,
+     bis ein ADR etwas anderes festlegt. -->
+<full-backup-content>
+  <exclude domain="root" path="." />
+  <exclude domain="file" path="." />
+  <exclude domain="database" path="." />
+  <exclude domain="sharedpref" path="." />
+  <exclude domain="external" path="." />
+</full-backup-content>

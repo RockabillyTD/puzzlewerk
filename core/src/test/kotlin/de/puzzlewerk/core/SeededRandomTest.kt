@@ -6,7 +6,6 @@ import io.kotest.matchers.ints.shouldBeLessThan
 import org.junit.jupiter.api.Test
 
 class SeededRandomTest {
-
     @Test
     fun `gleicher Seed erzeugt identische Sequenz`() {
         val first = SeededRandom(seed = 42L)

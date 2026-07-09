@@ -6,7 +6,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Test
 
 class GameEngineTest {
-
     @Test
     fun `newGame startet mit Punktestand 0 und Status RUNNING`() {
         val state = GameEngine.newGame(levelId = 1, seed = 42L)
