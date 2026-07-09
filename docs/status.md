@@ -3,8 +3,9 @@
 > Wird vom Orchestrator nach jedem Arbeitszyklus gepflegt.
 
 ## Aktuelle Phase
-Phase 1 — Game-Design (in Arbeit); Phase 0 technisch komplett, formale
-Meilenstein-Abnahme durch Branko ausstehend
+Phase 2 — Spiellogik-Kern (gestartet 2026-07-09).
+Phase 0 und Phase 1 sind durch Branko abgenommen (2026-07-09);
+das Prisma-Design (docs/game-design.md, PR #4) ist normativ.
 
 ## Erledigt (Zyklus 2, 2026-07-09 nachmittags)
 - [x] **CI erstmals grün auf ubuntu-latest** (Phase-0-Gate-Kriterium):
@@ -32,18 +33,25 @@ Meilenstein-Abnahme durch Branko ausstehend
 
 Alle drei PRs: Merge nur bei CI grün + Reviewer-APPROVE + Security-APPROVE.
 
-## In Arbeit
-- [ ] PW-1.1: docs/game-design.md für Konzept C „Prisma" (game-designer);
-      Konzeptwahl durch Branko am 2026-07-09 (phase1-spielkonzepte.md)
+## Erledigt (Zyklus 3, 2026-07-09 abends)
+- [x] PW-1.1: Prisma-Design-Dokument (PR #4, 1122+ Zeilen, 43 Randfälle,
+      10 Invarianten) — Reviewer-APPROVE (Beispiel-Level von Hand
+      nachgerechnet), 4 Review-Befunde eingearbeitet, drei
+      Design-Entscheidungen durch Branko (lokale Zeitzone, Prisma fix,
+      Sterne-Zahlen), Abnahme durch Branko, gemergt (b926364)
+- [x] Meilenstein-Gates Phase 0 und Phase 1 abgenommen
 
-## Blockiert / wartet auf den Menschen
-- [ ] Formale Phase-0-Abnahme (alle technischen Kriterien erfüllt:
-      lokale Gates grün, CI grün, Regeln dokumentiert)
-- [ ] Phase-1-Gate: Abnahme des Prisma-Design-Dokuments (sobald PW-1.1
-      vorliegt; Iterationen erwünscht)
+## In Arbeit
+- [ ] PW-2.1: Architekt definiert öffentliche :game-APIs aus dem Design
+      + ADR-003 (SplitMix64 als normatives PRNG hinter RandomSource);
+      liefert zugleich die Ticket-Schnitte für die Entwickler (PW-2.2 ff.)
 
 ## Nächste Schritte
-1. PW-1.1 abschließen → Design-Review → Abnahme durch Branko
-2. Nach Design-Abnahme: Phase 2 planen (Architekt definiert :game-APIs)
-3. Backlog: gitleaks-CI-Schritt, CVE-Scan, Renovate (inkl. SDK-Bumps),
-   jährlicher targetSdk-Bump-Prozess, PGP-Trigger beobachten
+1. PW-2.1 abschließen → Review → Merge
+2. Entwickler-Tickets PW-2.2 ff. nach Architekt-Schnitt delegieren
+   (zunächst EIN Entwickler parallel, Steigerung erst wenn rund läuft)
+3. Test-Engineer: Property-Test-Fundament gegen Invarianten I1–I10
+4. Phase-2-Gate: Logik komplett bewiesen, ≥ 90 % Branch Coverage,
+   CLI-Demo-Runner löst ein Level
+5. Backlog: gitleaks-CI-Schritt, CVE-Scan, Renovate (inkl. SDK-Bumps),
+   PGP-Trigger beobachten
