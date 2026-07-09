@@ -64,6 +64,10 @@
       :game-Typen (LevelDefinition, LevelValidator), vermutlich ist
       also das Schaubild zu korrigieren (app → data → game → core),
       nicht der Build
+- [ ] Architekt (aus PW-2.2): KDoc von trace/Tracer.kt nennt als
+      Implementierungs-Ticket „PW-2.3", implementiert wurde der Tracer
+      in PW-2.2 (DefaultTracer). Veraltete Referenz beim nächsten
+      API-Touch korrigieren (KDoc-Änderung war in PW-2.2 out of scope)
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
