@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Regel S2: Ab Android 12 ersetzt dataExtractionRules das Attribut
-     allowBackup. Backups und Geraete-Transfers bleiben vollstaendig
-     deaktiviert, bis ein ADR etwas anderes festlegt. -->
+     allowBackup; bei targetSdk >= 31 ist diese Datei auf manchen
+     Hersteller-Geraeten die einzig wirksame Kontrolle fuer
+     Device-to-Device-Transfer. Die Domains root/file/database/
+     sharedpref/external sind eigenstaendig und muessen einzeln
+     ausgeschlossen werden. Backups und Geraete-Transfers bleiben
+     vollstaendig deaktiviert, bis ein ADR etwas anderes festlegt. -->
 <data-extraction-rules>
   <cloud-backup>
     <exclude domain="root" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
   </cloud-backup>
   <device-transfer>
     <exclude domain="root" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
   </device-transfer>
 </data-extraction-rules>
