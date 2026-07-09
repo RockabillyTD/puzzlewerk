@@ -22,6 +22,14 @@
       Konsequenzen für Phase 3 einplanen: Edge-to-Edge ist ab
       targetSdk 35+ erzwungen (Insets sauber behandeln), Predictive
       Back muss unterstützt und getestet werden
+- [ ] Jährlicher targetSdk-Bump als fester Prozess (PW-0.5): Lint-Check
+      OldTargetApi ist in app/build.gradle.kts deaktiviert, weil er
+      umgebungsabhängig ist (Lint liest die "neueste" API aus den im
+      Runner-SDK installierten Platforms; ubuntu-latest rot, lokal grün
+      bei identischem Commit — CI-Run 29031584439). Ersatzmechanismus:
+      compileSdk/targetSdk gemeinsam mit AGP-Update pro Android-Release
+      per ADR anheben (Trigger: Play-Policy-Deadline, üblicherweise
+      31. August); ExpiredTargetSdkVersion bleibt als harter Gate aktiv
 - [ ] Architekt: `gradlePluginPortal()` in settings.gradle.kts
       (pluginManagement) kollidiert mit dem S6-Wortlaut („nur google() +
       mavenCentral()") — per ADR klären: Portal entfernen oder S6

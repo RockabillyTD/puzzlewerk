@@ -45,6 +45,14 @@ android {
         // "Neuere Version verfügbar" ist kein Codefehler und würde Builds
         // zeitabhängig brechen — Updates laufen kontrolliert über Renovate/ADR.
         disable += listOf("GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable")
+        // OldTargetApi ist umgebungsabhängig: Lint leitet die "neueste" API aus den
+        // im SDK installierten Platforms ab. Auf ubuntu-latest (vorinstalliertes SDK
+        // mit neueren Platforms) schlug targetSdk 36 als Error auf, lokal nicht —
+        // gleicher Commit, unterschiedliches Ergebnis (Reproduzierbarkeitsbruch,
+        // CI-Run 29031584439). targetSdk-Anhebungen laufen kontrolliert pro
+        // Android-Release; der harte Play-Store-Gate ExpiredTargetSdkVersion bleibt
+        // aktiv. Issue: docs/backlog.md ("Jährlicher targetSdk-Bump", PW-0.5).
+        disable += "OldTargetApi"
     }
 }
 
