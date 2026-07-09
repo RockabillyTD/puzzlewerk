@@ -12,6 +12,10 @@
 - [ ] Konsist- oder ArchUnit-Tests, die die Schichtenregel maschinell
       erzwingen (statt nur per Review)
 - [ ] Robolectric + Compose-UI-Test-Setup für :app (ab Phase 3 nötig)
+- [ ] gradlew hat mit PW-0.1 das Executable-Bit verloren (Windows-Checkout,
+      Mode 100755 → 100644). Vor dem Linux-CI-Lauf (PW-0.2) per
+      `git update-index --chmod=+x gradlew` wiederherstellen, sonst
+      schlägt `./gradlew` im CI fehl
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
