@@ -1,5 +1,5 @@
 # CI-Pipeline — Quality Gates aus docs/architektur.md.
-# Actions sind auf Commit-SHAs gepinnt (Regel S6 / Release-Engineer-Regel 4).
+# Actions sind auf Commit-SHAs gepinnt (Regel S6).
 name: CI
 
 on:
