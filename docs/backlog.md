@@ -50,6 +50,34 @@
       Mode 100755 → 100644). Vor dem Linux-CI-Lauf (PW-0.2) per
       `git update-index --chmod=+x gradlew` wiederherstellen, sonst
       schlägt `./gradlew` im CI fehl — erledigt in PW-0.2
+- [ ] Architekt (aus PW-1.1): SplitMix64 als normative
+      `RandomSource`-Implementierung in :core per ADR bestätigen —
+      docs/game-design.md §8 legt den Algorithmus fest, damit
+      „gleicher Seed ⇒ identisches Level" geräteübergreifend gilt
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
+
+## Game-Design-Ideen
+(aus PW-1.1 — bewusst NICHT in Version 1, siehe docs/game-design.md §17)
+- [ ] Bewegliche/verschiebbare Elemente als zweiter Zugtyp
+      (Kampagne 2 / Level-Pack; braucht Solver- und Generator-Ausbau)
+- [ ] Drehbare Lichtquellen als zusätzliches Zugziel (erweitert den
+      Zugraum; Par-Solver-Kosten prüfen)
+- [ ] Sekundärfarben-Filter (Gelb/Magenta/Cyan) und/oder
+      Kombinierer-Element (mischt Strahlen im Feld statt nur am
+      Kristall) — Farblogik-Erweiterung
+- [ ] Daily-Archiv: vergangene Tagesrätsel nachspielen (ohne
+      Serienwertung, rein zum Spaß — kein Nachhol-Druck)
+- [ ] Teilen-Feature fürs Tägliche Prisma (Wordle-Stil: Emoji-Raster
+      aus Zügen/Par, via Android-Share-Intent, keine Permission nötig)
+- [ ] Sanftes Hint-System (z. B. „markiere ein falsch orientiertes
+      Element"), strikt ohne Monetarisierung
+- [ ] Hybrid-Idee aus der Entscheidungsvorlage: Prisma mit der
+      Atmosphäre von Konzept A (Nacht, Glühen, ruhige Musik) —
+      Art-Direction-Entscheidung für Phase 3/4
+- [ ] Level-Editor + Level-Teilen als Code/QR (offline-tauglich)
+- [ ] Statistik-Ausbau: Verteilungsgrafik „Züge über Par" je Wochentag
+- [ ] Monetarisierungsmodell nach Release-Erfahrung entscheiden:
+      Kampagne teilweise gratis + Einmalkauf, Daily für immer frei
+      (Vorlage Konzept C); niemals Hints oder Serien verkaufen
