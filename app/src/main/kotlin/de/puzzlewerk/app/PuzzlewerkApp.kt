@@ -13,17 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.puzzlewerk.game.GameEngine
+import de.puzzlewerk.game.board.Board
 
 /**
  * Wurzel-Composable der App.
  *
- * Phase 0: zeigt nur, dass die Modul-Verkabelung steht (:app ruft :game auf).
+ * Phase 2: zeigt nur, dass die Modul-Verkabelung steht (:app ruft :game auf).
  * Der echte Spielfeld-Screen entsteht in Phase 3 nach docs/game-design.md.
  */
 @Composable
 fun PuzzlewerkApp() {
-    val demoState = GameEngine.newGame(levelId = 1, seed = DEMO_SEED)
+    val demoCellCount = Board.cellCount(Board.MIN_RADIUS)
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -40,7 +40,7 @@ fun PuzzlewerkApp() {
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
-                    text = stringResource(R.string.phase0_status, demoState.levelId),
+                    text = stringResource(R.string.phase2_status, demoCellCount),
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -53,5 +53,3 @@ fun PuzzlewerkApp() {
 private fun PuzzlewerkAppPreview() {
     PuzzlewerkApp()
 }
-
-private const val DEMO_SEED = 42L
