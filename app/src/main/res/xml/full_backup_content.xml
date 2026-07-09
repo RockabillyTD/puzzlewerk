@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Regel S2: Backup-Konfiguration fuer Android < 12 (dort gilt
+     full-backup-content statt data-extraction-rules). Alles ausgeschlossen,
+     bis ein ADR etwas anderes festlegt. -->
+<full-backup-content>
+  <exclude domain="root" path="." />
+</full-backup-content>

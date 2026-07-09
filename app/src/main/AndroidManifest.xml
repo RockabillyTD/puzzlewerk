@@ -4,8 +4,12 @@
     <!-- Regel S1: KEINE Permissions in Version 1. Jede neue Permission braucht
          ein ADR und menschliche Freigabe. -->
 
+    <!-- Regel S2: Backups bewusst deaktiviert — allowBackup gilt bis Android 11,
+         dataExtractionRules ab Android 12 (Cloud-Backup + Device-Transfer). -->
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/full_backup_content"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
