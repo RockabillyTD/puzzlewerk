@@ -1,0 +1,83 @@
+# Architektur — Projekt Puzzlewerk
+
+Verbindliche Architektur-Referenz für alle Agents. Änderungen nur durch
+den Architekt-Agent per ADR (docs/decisions/).
+
+## Schichtenmodell
+
+Vier Gradle-Module, Abhängigkeiten zeigen ausschließlich nach unten:
+
+```
+:app   (UI: Compose-Screens, ViewModels, Navigation, Theme)
+  │ nutzt
+:game  (Domain: Spiellogik — REINES Kotlin/JVM-Modul, KEIN Android-Import)
+:data  (Daten: Repositories, später Room/DataStore)
+  │ nutzen
+:core  (Basis: RandomSource, WallClock, gemeinsame Utilities)
+```
+
+- `:game` ist das Herzstück: alle Spielregeln als pure Functions,
+  vollständig JVM-testbar, deterministisch über injizierte Seeds.
+- `:app` kennt `:game`/`:data`; `:game` und `:data` kennen nur `:core`.
+- Muster: MVI mit unidirektionalem Datenfluss. Composables lesen einen
+  immutablen `UiState` (StateFlow im ViewModel) und senden Intents;
+  Seiteneffekte laufen als explizite Effects.
+
+## Clean-Code-Regeln (C1–C8)
+
+- **C1 Immutability zuerst:** `val` statt `var`, `data class` + `copy()`,
+  `List` statt `MutableList` in öffentlichen APIs.
+- **C2 Pure Spiellogik:** Funktionen in `:game` ohne Seiteneffekte; Zeit
+  und Zufall nur über injizierte `WallClock`/`RandomSource`.
+- **C3 Fehler als Werte:** erwartbare Fehler als sealed Ergebnistypen;
+  Exceptions sind Programmierfehler, keine Kontrollflüsse.
+- **C4 Kleine Einheiten:** Funktionen ≤ 30 Zeilen, Dateien ≤ 300 Zeilen,
+  Composables ≤ 100 Zeilen, zyklomatische Komplexität ≤ 10 (Detekt).
+- **C5 Selbsterklärende Namen:** Kommentare erklären *warum*, nie *was*.
+  Kein toter Code, kein TODO ohne Issue-Referenz.
+- **C6 Öffentliche API dokumentiert:** KDoc auf allen public-Deklarationen
+  in `:game`/`:core` (Explicit-API-Mode aktiv); sonst `internal`/`private`.
+- **C7 Keine Warnungen:** `allWarningsAsErrors = true`; keine
+  Detekt-/Lint-Baselines.
+- **C8 Abhängigkeits-Hygiene:** neue Dependencies nur über das Version
+  Catalog, nur mit ADR und Security-Prüfung.
+
+## Sicherheitsregeln (S1–S8)
+
+- **S1 Datensparsamkeit:** keine personenbezogenen Daten, KEINE
+  Permissions in Version 1. Neue Permission ⇒ ADR + menschliche Freigabe.
+- **S2 Sichere Speicherung:** nur App-Sandbox (Room/DataStore),
+  `allowBackup` bewusst konfiguriert, nichts auf External Storage.
+- **S3 Keine dynamische Code-Ausführung:** kein DexClassLoader, kein
+  WebView, keine ausführbaren Assets. Level-Definitionen sind reine Daten.
+- **S4 Eingabe-Validierung an Vertrauensgrenzen:** alles von außerhalb
+  des Prozesses (Dateien, Intents, Spielstände) strikt validieren
+  (Schema, Wertebereiche, Größenlimits). Korrupte Eingabe ⇒ definierter
+  Fehler, nie Crash.
+- **S5 Komponenten nicht exportieren:** `android:exported="false"` für
+  alles außer der Launcher-Activity.
+- **S6 Lieferketten-Sicherheit:** Gradle Dependency Verification, nur
+  `google()` + `mavenCentral()`, CVE-Scan im CI, Version-Pinning.
+- **S7 Keine Secrets im Repository:** Keys/Passwörter nur lokal
+  (git-ignoriert) oder als CI-Secrets; gitleaks-Scan je PR.
+- **S8 Release-Härtung:** R8 aktiv, `debuggable=false`, Release-Logging
+  nur ≥ WARN und niemals Nutzerdaten.
+
+## Quality Gates (Merge-Voraussetzungen)
+
+| Gate | Werkzeug | Schwelle |
+|---|---|---|
+| Build ohne Warnungen | Gradle | `allWarningsAsErrors` |
+| Formatierung | Ktlint | 0 Verstöße |
+| Statische Analyse | Detekt | 0 Verstöße, keine Baseline |
+| Unit-Tests | JUnit/Kotest | 100 % bestanden |
+| Coverage `:game` | Kover | ≥ 90 % |
+| Coverage `:core` | Kover | ≥ 85 % |
+| Android Lint | AGP | `warningsAsErrors` |
+| Review | code-reviewer | APPROVE |
+| Security (falls einschlägig) | security-auditor | APPROVE |
+
+## Verbindliche Kommandos
+
+- Vollständige lokale Prüfung: `./gradlew ktlintCheck detekt test koverVerify`
+- Vor jedem PR zusätzlich: `./gradlew :app:lintDebug :app:assembleDebug`

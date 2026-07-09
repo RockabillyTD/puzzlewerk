@@ -1,0 +1,52 @@
+# CI-Pipeline — Quality Gates aus docs/architektur.md.
+# TODO(security, Phase 0): Actions auf Commit-SHAs pinnen (siehe docs/backlog.md).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle einrichten (mit Cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Formatierung (Ktlint)
+        run: ./gradlew ktlintCheck
+
+      - name: Statische Analyse (Detekt)
+        run: ./gradlew detekt
+
+      - name: Unit-Tests
+        run: ./gradlew test
+
+      - name: Coverage-Gates (Kover)
+        run: ./gradlew koverVerify
+
+      - name: Android Lint + Debug-Build
+        run: ./gradlew :app:lintDebug :app:assembleDebug
+
+      - name: Testberichte archivieren
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/detekt/
+            **/build/reports/ktlint/

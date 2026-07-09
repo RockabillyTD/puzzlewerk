@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android / IDE
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing — Keys gehören NIEMALS ins Repository (Regel S7)
+*.keystore
+*.jks
+keystore.properties
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Logs & Temporäres
+*.log
+*.hprof

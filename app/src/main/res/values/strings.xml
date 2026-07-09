@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Basissprache: Deutsch. Englisch unter values-en/. Keine Hardcoded Strings im Code! -->
+<resources>
+  <string name="app_name">Puzzlewerk</string>
+  <string name="phase0_status">Fundament steht — Level %1$d bereit (Phase 0)</string>
+</resources>

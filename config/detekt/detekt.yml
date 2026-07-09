@@ -1,0 +1,28 @@
+# Projekt-Overrides über der Detekt-Default-Konfiguration
+# (buildUponDefaultConfig = true). Regeln C4/C5 aus docs/architektur.md.
+
+complexity:
+  CyclomaticComplexMethod:
+    threshold: 10
+  LongMethod:
+    threshold: 30
+  LongParameterList:
+    functionThreshold: 6
+    constructorThreshold: 7
+  TooManyFunctions:
+    thresholdInFiles: 20
+    thresholdInClasses: 15
+
+style:
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+  MagicNumber:
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreEnums: true
+  ReturnCount:
+    max: 3
+  ForbiddenComment:
+    comments:
+      - reason: 'TODO nur mit Issue-Referenz erlaubt, z. B. TODO(#42)'
+        value: 'TODO:'
