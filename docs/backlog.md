@@ -10,13 +10,20 @@
       in CI aufnehmen (Regel S6) — braucht ADR
 - [ ] Renovate/Dependabot für Dependency-Updates konfigurieren
 - [ ] Dependency Verification auf PGP-Signaturen erweitern
-      (`verify-signatures=true` + trusted-keys); PW-0.2 pinnt bislang
-      nur SHA-256-Checksummen
+      (`verify-signatures=true` + trusted-keys) — Zeitpunkt und
+      Trigger-Kriterien in ADR-002 entschieden (bewusst verschoben;
+      spätestens vor dem ersten an Endnutzer verteilten Release-Build)
 - [ ] Merkregel aus PW-0.3: verification-metadata.xml IMMER mit
       `--refresh-dependencies --write-verification-metadata sha256 <Gate-Tasks>`
       regenerieren — mit warmem lokalem Cache fehlen sonst
       .pom-/.module-Varianten, die nur ein kalter CI-Cache auflöst.
       Kandidat für docs/architektur.md (Verbindliche Kommandos)
+- [ ] Release-Engineer: Umsetzungsticket PW-0.4-impl aus ADR-002 —
+      `gradlePluginPortal()` in settings.gradle.kts per Content-Filter
+      auf `org.jlleitschuh.gradle(.ktlint)` beschränken; exakter
+      Code-Block steht im ADR. Bei jedem Ktlint-Gradle-Update prüfen,
+      ob das Plugin inzwischen auf Maven Central liegt
+      (Rückbau-Trigger: Portal dann ganz entfernen, neues ADR)
 - [ ] targetSdk 36 wurde in PW-0.1 gesetzt, weil AGP 8.13.2 sonst den
       Lint-Error OldTargetApi wirft und C7 Baselines verbietet.
       Konsequenzen für Phase 3 einplanen: Edge-to-Edge ist ab
@@ -30,10 +37,12 @@
       compileSdk/targetSdk gemeinsam mit AGP-Update pro Android-Release
       per ADR anheben (Trigger: Play-Policy-Deadline, üblicherweise
       31. August); ExpiredTargetSdkVersion bleibt als harter Gate aktiv
-- [ ] Architekt: `gradlePluginPortal()` in settings.gradle.kts
+- [x] Architekt: `gradlePluginPortal()` in settings.gradle.kts
       (pluginManagement) kollidiert mit dem S6-Wortlaut („nur google() +
-      mavenCentral()") — per ADR klären: Portal entfernen oder S6
-      präzisieren (Security-Befund L2, PW-0.2)
+      mavenCentral()") — entschieden in ADR-002 (PW-0.4): Portal bleibt,
+      per Content-Filter auf Ktlint-Gradle beschränkt, S6 präzisiert;
+      Umsetzung siehe Ticket PW-0.4-impl oben (Security-Befund L2
+      geschlossen)
 - [ ] Konsist- oder ArchUnit-Tests, die die Schichtenregel maschinell
       erzwingen (statt nur per Review)
 - [ ] Robolectric + Compose-UI-Test-Setup für :app (ab Phase 3 nötig)
