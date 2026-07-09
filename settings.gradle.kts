@@ -8,7 +8,13 @@ pluginManagement {
             }
         }
         mavenCentral()
-        gradlePluginPortal()
+        gradlePluginPortal {
+            content {
+                // ADR-002: Portal nur für Ktlint-Gradle (Marker + Implementierung),
+                // nicht auf Maven Central publiziert (Stand 12.1.2).
+                includeGroupByRegex("org\\.jlleitschuh\\.gradle(\\.ktlint)?")
+            }
+        }
     }
 }
 
