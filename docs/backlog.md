@@ -50,10 +50,20 @@
       Mode 100755 → 100644). Vor dem Linux-CI-Lauf (PW-0.2) per
       `git update-index --chmod=+x gradlew` wiederherstellen, sonst
       schlägt `./gradlew` im CI fehl — erledigt in PW-0.2
-- [ ] Architekt (aus PW-1.1): SplitMix64 als normative
+- [x] Architekt (aus PW-1.1): SplitMix64 als normative
       `RandomSource`-Implementierung in :core per ADR bestätigen —
       docs/game-design.md §8 legt den Algorithmus fest, damit
-      „gleicher Seed ⇒ identisches Level" geräteübergreifend gilt
+      „gleicher Seed ⇒ identisches Level" geräteübergreifend gilt —
+      entschieden in ADR-003 (PW-2.1): eigene ~20-Zeilen-Implementierung
+      `SplitMix64Random` + `mix64` in :core, `SeededRandom` entfernt
+- [ ] Architekt/Orchestrator (aus PW-2.1): Widerspruch zwischen
+      docs/architektur.md („:game und :data kennen nur :core") und
+      data/build.gradle.kts (`implementation(project(":game"))`, seit
+      Phase 0). Spätestens vor der Phase-3-Persistenz per ADR klären —
+      die Level-/Spielstand-Serialisierung in :data braucht die
+      :game-Typen (LevelDefinition, LevelValidator), vermutlich ist
+      also das Schaubild zu korrigieren (app → data → game → core),
+      nicht der Build
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
