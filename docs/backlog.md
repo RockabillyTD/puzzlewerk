@@ -84,6 +84,18 @@
       Implementierungs-Ticket „PW-2.3", implementiert wurde der Tracer
       in PW-2.2 (DefaultTracer). Veraltete Referenz beim nächsten
       API-Touch korrigieren (KDoc-Änderung war in PW-2.2 out of scope)
+- [ ] Architekt (aus PW-2.3): gleiche veraltete Ticket-Referenz auch in
+      engine/GameEngine.kt und score/Score.kt — beide KDocs nennen
+      „Implementierung: Ticket PW-2.4", implementiert wurden Engine und
+      ScoreCalculator in PW-2.3 (DefaultGameEngine, DefaultScoreCalculator).
+      Beim nächsten API-Touch zusammen mit dem Tracer-Eintrag korrigieren
+      (KDoc-Änderung war in PW-2.3 out of scope)
+- [ ] Architekt/Entwickler (aus PW-2.3, NIT-3-Restidee): GameState könnte
+      das effektive Brett je Zustand strukturell teilen (nur die gedrehte
+      Zelle ersetzen statt mapValues über alle Elemente in currentBoard).
+      Aktuell unkritisch (max. 91 Zellen, eine Auswertung je Zug in der
+      Engine); nur relevant, falls der Par-Solver (PW-Generator-Ticket)
+      currentBoard heiß nutzt — dann eigenes Ticket
 - [x] Entwickler (Befund aus PW-2.2-QS, Prio hoch): In
       game/src/test/.../DefaultTracerPropertyTest.kt werden die beiden
       Tests „I1 und I8 …" und „Trace ist referenziell transparent …"
@@ -101,6 +113,23 @@
       :game/:core/:data/:app projektweit auf das Muster geprüft (kein
       weiterer Treffer, einziges verbliebenes `fun x() =` ist ein
       privater Helfer ohne @Test)
+- [x] Entwickler (BUG PW-2.3-QS-B1, Prio niedrig — theoretischer
+      Grenzwert): DefaultScoreCalculator verletzt Invariante I5 bei
+      extremer Zugzahl: `50 * extraMoves` ueberlaeuft Int, dadurch
+      liefert `scoreFor(Int.MAX_VALUE, 14)` 2250 Punkte statt hoechstens
+      1500 (der negative Ueberlauf hebelt beide coerceAtLeast(0) aus;
+      Ueberlaufbereich beginnt ab moves ≥ par + 42 949 673). Verstoss
+      gegen KDoc-Vertrag (Vorbedingung nur `moves >= 0`) und I5/
+      Monotonie. Fix: Bonus in Long rechnen oder extraMoves auf 10
+      kappen. Regressionstest liegt @Disabled bereit:
+      ScoreValueTableTest.`I5-Regression - Score bleibt auch bei
+      extremer Zugzahl in 1000 bis 1500` — beim Fix Annotation entfernen
+      BEHOBEN im PW-2.3-Korrekturzyklus: extraMoves wird vor der
+      Multiplikation per `coerceIn(0, 10)` gekappt (exakt, da der Bonus
+      ab Par+10 ohnehin 0 ist — allokationsfrei, kein Long noetig);
+      Regressionstest aktiviert und gruen. DefaultGameEngine auf
+      denselben Fehlertyp geprueft: keine Multiplikation/Addition auf
+      unbeschraenkten Zaehlern (moveCount ist history.size)
 - [ ] Test-Engineer/Architekt (aus PW-2.2-Korrektur): dauerhafte
       Absicherung gegen still ignorierte Tests evaluieren — Detekt
       bringt keine passende Regel mit; Kandidaten: (a) eigene
