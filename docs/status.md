@@ -41,17 +41,31 @@ Alle drei PRs: Merge nur bei CI grün + Reviewer-APPROVE + Security-APPROVE.
       Sterne-Zahlen), Abnahme durch Branko, gemergt (b926364)
 - [x] Meilenstein-Gates Phase 0 und Phase 1 abgenommen
 
-## In Arbeit
-- [ ] PW-2.1: Architekt definiert öffentliche :game-APIs aus dem Design
-      + ADR-003 (SplitMix64 als normatives PRNG hinter RandomSource);
-      liefert zugleich die Ticket-Schnitte für die Entwickler (PW-2.2 ff.)
+## Erledigt (Zyklen 4–6, 2026-07-09 bis 2026-07-11)
+- [x] PW-2.1 (PR #5): öffentliche :game-APIs + ADR-003 SplitMix64;
+      Golden-Werte vom Reviewer unabhängig nachgerechnet
+- [x] PW-2.2 (PR #6): DefaultTracer (96,6 % Branch) — QS-Pass fand
+      BUG-1 (still ignorierte runBlocking-Tests), behoben
+- [x] PW-2.6 (PR #7): ADR-004 Schichtenmodell app→data→game→core,
+      CLAUDE.md-Korrektur, checkModuleGraph-Spezifikation (inkl.
+      Review-Auflage Regel 5: androidx-Sperre für :game/:core)
+- [x] PW-2.3 (PR #8): DefaultGameEngine + DefaultScoreCalculator —
+      QS-Pass fand B1 (Int-Überlauf in Score-Formel), behoben;
+      I9-Sperrkanten-Semantik vom Reviewer als design-konform bewiesen
+
+Jeder Code-PR durchlief: Entwickler (Test-First) → unabhängiger
+Test-Engineer-Angriff → Code-Review mit eigener Verifikation → CI grün.
+
+## In Arbeit (Auftrag Branko 2026-07-11: „weiter bis Phase 2 komplett")
+- [ ] PW-2.4: LevelValidator (entwickler) — schließt Tracer-Restrisiken
+      (Portal ohne Zwilling, kristallloses Brett)
+- [ ] PW-2.6-impl: checkModuleGraph-Gradle-Task (release-engineer,
+      isolierter Worktree) — braucht Security-Review (Build-Code)
 
 ## Nächste Schritte
-1. PW-2.1 abschließen → Review → Merge
-2. Entwickler-Tickets PW-2.2 ff. nach Architekt-Schnitt delegieren
-   (zunächst EIN Entwickler parallel, Steigerung erst wenn rund läuft)
-3. Test-Engineer: Property-Test-Fundament gegen Invarianten I1–I10
-4. Phase-2-Gate: Logik komplett bewiesen, ≥ 90 % Branch Coverage,
-   CLI-Demo-Runner löst ein Level
-5. Backlog: gitleaks-CI-Schritt, CVE-Scan, Renovate (inkl. SDK-Bumps),
-   PGP-Trigger beobachten
+1. PW-2.5: Generator + Par-Solver (nach PW-2.4)
+2. PW-2.7: CLI-Demo-Runner (Gate-Kriterium)
+3. Phase-2-Gate an Branko: Logik komplett bewiesen, ≥ 90 % Branch
+   Coverage, CLI-Demo löst ein Level
+4. Backlog: gitleaks-CI-Schritt, CVE-Scan, Renovate (inkl. SDK-Bumps),
+   PGP-Trigger, Custom-Detekt-Regel gegen stille @Test-Nichtausführung
