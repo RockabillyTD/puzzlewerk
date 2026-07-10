@@ -46,7 +46,8 @@
 - [ ] Entwickler/Release-Engineer: Umsetzungsticket PW-2.6-impl aus
       ADR-004 — Gradle-Task `checkModuleGraph` im Root-Build prüft alle
       Konfigurationen jedes Subprojekts gegen die Modul-Whitelist
-      (app → data → game → core) und verbietet Android-Plugins auf
+      (app → data → game → core) und verbietet Android-Plugins sowie
+      androidx.*-/com.android*-Koordinaten auf
       :game/:core; Task hängt am Root-`check` und wandert in die
       „Verbindlichen Kommandos" + CI. Vollständige Spezifikation und
       Abnahmekriterien in ADR-004. Werkzeugentscheidung ist gefallen

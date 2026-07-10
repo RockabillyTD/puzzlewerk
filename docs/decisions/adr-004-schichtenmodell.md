@@ -3,7 +3,8 @@
 - Status: AKZEPTIERT
 - Datum: 2026-07-10
 - Autor: architect (Ticket PW-2.6; Anlass: Eskalation aus PW-2.1,
-  Review-Auflagen des code-reviewers aus dem PW-2.1-Review)
+  Review-Auflagen des code-reviewers aus dem PW-2.1-Review; ergänzt um
+  MINOR-1/NIT-1 aus dem PW-2.6-Review vor Merge)
 - Bezug: ADR-001 (Modulschnitt); ersetzt das Schaubild in
   docs/architektur.md „Schichtenmodell" und die Kurzfassung in CLAUDE.md
   („app → game/data → core")
@@ -89,9 +90,9 @@ Zentrale Beobachtung: Quellcode kann die Modul-Whitelist nicht
 verletzen, weil verbotene Module gar nicht auf dem Compile-Classpath
 liegen — ein `import de.puzzlewerk.data.*` in `:game` ist heute schon
 ein Compile-Fehler. Der einzige Mutationsvektor ist eine Änderung an
-einer `build.gradle.kts` (neue `project(...)`-Kante oder
-Android-Plugin auf `:game`/`:core`). Genau dagegen richtet sich die
-Prüfung.
+einer `build.gradle.kts` (neue `project(...)`-Kante, Android-Plugin
+oder Android-Koordinate auf `:game`/`:core`). Genau dagegen richtet
+sich die Prüfung.
 
 - **Konsist** (`com.lemonappdev:konsist`): quellcodebasiert, zieht
   transitiv `kotlin-compiler-embeddable` (zweistellige MB, große
@@ -103,7 +104,7 @@ Prüfung.
   Test-Standort, der ALLE Module auf dem Classpath hat — das schüfe
   ironischerweise selbst neue Kanten oder ein Extra-Modul. Prüft
   ebenfalls primär, was Gradle strukturell schon garantiert.
-- **Eigenlösung**: ein Gradle-Task im Root-Build (~40 Zeilen), der den
+- **Eigenlösung**: ein Gradle-Task im Root-Build (~50 Zeilen), der den
   Projektgraphen gegen die Whitelist-Tabelle oben prüft. Null neue
   Dependencies, prüft exakt den realen Mutationsvektor
   (build.gradle.kts), schlägt auch bei UNBEKANNTEN Modulen fehl (neues
@@ -111,7 +112,7 @@ Prüfung.
 
 **Empfehlung/Entscheidung: Eigenlösung.** Konsist/ArchUnit werden NICHT
 aufgenommen (C8: große transitive Abhängigkeitsmenge gegen ein Problem,
-das 40 Zeilen lösen). Sollten später Intra-Modul-Regeln nötig werden
+das ~50 Zeilen lösen). Sollten später Intra-Modul-Regeln nötig werden
 (z. B. Paket-Layering in `:app` ab Phase 3), ist das ein neues ADR mit
 neuer Abwägung.
 
@@ -129,19 +130,48 @@ neuer Abwägung.
   2. Subprojekt ohne Whitelist-Eintrag ⇒ Fehler („neues Modul braucht
      ADR + Whitelist-Erweiterung").
   3. `:game` und `:core` dürfen weder `com.android.application` noch
-     `com.android.library` anwenden (I-M4).
-  4. Fehlermeldung nennt die verbotene Kante als
-     `«modul» → «ziel» (Konfiguration «name»)` und verweist auf
+     `com.android.library` anwenden (I-M4, Plugin-Hälfte).
+  4. Fehlermeldung nennt den Verstoß als
+     `«modul» → «ziel» (Konfiguration «name»)` bzw.
+     `«modul»: verbotene(s) Plugin/Koordinate «id»` und verweist auf
      ADR-004.
+  5. Externe Dependencies (Maven-Koordinaten) mit Gruppe `androidx.*`
+     oder `com.android*` in `:game`/`:core` ⇒ Fehler, in ALLEN
+     Konfigurationen inklusive Testquellen (I-M4, Koordinaten-Hälfte:
+     viele androidx-Artefakte wie `androidx.collection:collection`
+     sind JVM-kompatibel und würden Regel 3 passieren; ~5 Zeilen im
+     selben Task). KEINE Ausnahme-Liste — restriktiv entschieden:
+     `:game`/`:core` haben keinen legitimen Bedarf, auch nicht an
+     `androidx.annotation` (Explicit-API-Mode, KDoc und Kotlin-eigene
+     Annotationen decken alles ab; über die `api`-Kante `:game → :core`
+     würde eine solche Koordinate zudem in die gesamte Domäne sickern).
+     Jede künftige Ausnahme erfordert ein neues ADR, das dieses
+     referenziert.
 - **Verankerung:** Task hängt am Root-`check`
   (`tasks.named("check") { dependsOn(...) }`) und wird zusätzlich in
   die „Verbindlichen Kommandos" in docs/architektur.md sowie den
   CI-Workflow aufgenommen.
-- **Abnahme:** (1) Task grün auf aktuellem Graph; (2) Negativprobe:
-  temporär eingefügtes `implementation(project(":data"))` in
-  `game/build.gradle.kts` lässt den Task mit der spezifizierten
-  Meldung fehlschlagen (Probe dokumentieren, Kante wieder entfernen);
-  (3) `./gradlew check` gesamt grün.
+- **Abnahme:** (1) Task grün auf aktuellem Graph; (2) Negativproben in
+  `game/build.gradle.kts`, jeweils temporär eingefügt und mit der
+  spezifizierten Meldung fehlschlagend (Proben dokumentieren, danach
+  entfernen): (2a) `implementation(project(":data"))` — Regel 1,
+  (2b) `implementation("androidx.collection:collection:<version>")` —
+  Regel 5; (3) `./gradlew check` gesamt grün.
+
+### Bewusst nicht maschinell abgedeckt (Review-Sache)
+
+Zwei theoretische Umgehungen prüft `checkModuleGraph` NICHT:
+sourceSets-Cross-Linking (`kotlin.srcDir(...)` auf Quellverzeichnisse
+eines fremden Moduls) und `files(...)`-/`fileTree(...)`-Dependencies
+auf fremde Build-Outputs (z. B. `files("../data/build/libs/…")`).
+Beides bleibt akzeptabel unabgedeckt: Solche Konstrukte sind praktisch
+selbstsabotierend (sie brechen Inkrementalität, Configuration Cache
+und Kover-Zuordnung und erzeugen fragile Task-Reihenfolgen ohne
+Gradle-Abhängigkeitsmodell) und als build.gradle.kts-Änderung mit
+Pfad in ein fremdes Modul im PR-Review unübersehbar — der
+code-reviewer lehnt sie als Whitelist-Verstoß gegen dieses ADR ab.
+Maschinelle Abdeckung stünde außer Verhältnis: Sie hieße, beliebige
+Gradle-DSL zu parsen, statt das Dependency-Modell abzufragen.
 
 ## Konsequenzen
 
@@ -151,7 +181,8 @@ neuer Abwägung.
   ohne Modell-Duplikation.
 - (+) Das Schutzgut bleibt unangetastet: `:game` ist weiterhin pur,
   Android-frei und von `:data`/`:app` unabhängig — jetzt als explizite
-  Invariante I-M1/I-M4 statt nur implizit.
+  Invariante I-M1/I-M4 statt nur implizit, inklusive Sperre für
+  JVM-kompatible androidx-/com.android-Koordinaten (Regel 5).
 - (+) Keine neue Dependency (C8); die Erzwingung ist als konkretes
   Ticket PW-2.6-impl spezifiziert und ohne Architektur-Rückfragen
   umsetzbar.
@@ -167,5 +198,7 @@ neuer Abwägung.
   abgenommenes Planungsdokument und wird nicht angefasst; normativ ist
   docs/architektur.md. Die Anpassung der Agent-Definition liegt beim
   Orchestrator (Backlog-Notiz).
+- (−) Zwei exotische Umgehungswege (sourceSets-Cross-Linking,
+  `files(...)`-Outputs) bleiben bewusst Review-Sache (siehe oben).
 - Folgearbeit: PW-2.6-impl (siehe Spezifikation oben; ersetzt den
   Backlog-Punkt „Konsist- oder ArchUnit-Tests").
