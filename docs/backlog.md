@@ -43,7 +43,7 @@
       per Content-Filter auf Ktlint-Gradle beschränkt, S6 präzisiert;
       Umsetzung siehe Ticket PW-0.4-impl oben (Security-Befund L2
       geschlossen)
-- [ ] Entwickler/Release-Engineer: Umsetzungsticket PW-2.6-impl aus
+- [x] Entwickler/Release-Engineer: Umsetzungsticket PW-2.6-impl aus
       ADR-004 — Gradle-Task `checkModuleGraph` im Root-Build prüft alle
       Konfigurationen jedes Subprojekts gegen die Modul-Whitelist
       (app → data → game → core) und verbietet Android-Plugins sowie
@@ -52,7 +52,13 @@
       „Verbindlichen Kommandos" + CI. Vollständige Spezifikation und
       Abnahmekriterien in ADR-004. Werkzeugentscheidung ist gefallen
       (C8): schlanke Eigenlösung ohne Dependency statt Konsist/ArchUnit
-      — ersetzt den früheren Punkt „Konsist- oder ArchUnit-Tests"
+      — ersetzt den früheren Punkt „Konsist- oder ArchUnit-Tests" —
+      UMGESETZT in PW-2.6-impl: Task im Root-build.gradle.kts, hängt am
+      Root-`check` (base-Plugin als Anker), eigener CI-Schritt (nötig,
+      weil die CI Einzeltasks statt `check` aufruft — braucht noch
+      Security-APPROVE); Negativproben 2a/2b nach ADR durchgeführt.
+      Selbstkanten (:x → :x aus AGP-Testvarianten/Kover) sind bewusst
+      erlaubt, da sie das Schichtenmodell nicht verletzen können
 - [ ] Robolectric + Compose-UI-Test-Setup für :app (ab Phase 3 nötig)
 - [x] gradlew hat mit PW-0.1 das Executable-Bit verloren (Windows-Checkout,
       Mode 100755 → 100644). Vor dem Linux-CI-Lauf (PW-0.2) per
