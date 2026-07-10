@@ -43,8 +43,15 @@
       per Content-Filter auf Ktlint-Gradle beschränkt, S6 präzisiert;
       Umsetzung siehe Ticket PW-0.4-impl oben (Security-Befund L2
       geschlossen)
-- [ ] Konsist- oder ArchUnit-Tests, die die Schichtenregel maschinell
-      erzwingen (statt nur per Review)
+- [ ] Entwickler/Release-Engineer: Umsetzungsticket PW-2.6-impl aus
+      ADR-004 — Gradle-Task `checkModuleGraph` im Root-Build prüft alle
+      Konfigurationen jedes Subprojekts gegen die Modul-Whitelist
+      (app → data → game → core) und verbietet Android-Plugins auf
+      :game/:core; Task hängt am Root-`check` und wandert in die
+      „Verbindlichen Kommandos" + CI. Vollständige Spezifikation und
+      Abnahmekriterien in ADR-004. Werkzeugentscheidung ist gefallen
+      (C8): schlanke Eigenlösung ohne Dependency statt Konsist/ArchUnit
+      — ersetzt den früheren Punkt „Konsist- oder ArchUnit-Tests"
 - [ ] Robolectric + Compose-UI-Test-Setup für :app (ab Phase 3 nötig)
 - [x] gradlew hat mit PW-0.1 das Executable-Bit verloren (Windows-Checkout,
       Mode 100755 → 100644). Vor dem Linux-CI-Lauf (PW-0.2) per
@@ -56,14 +63,22 @@
       „gleicher Seed ⇒ identisches Level" geräteübergreifend gilt —
       entschieden in ADR-003 (PW-2.1): eigene ~20-Zeilen-Implementierung
       `SplitMix64Random` + `mix64` in :core, `SeededRandom` entfernt
-- [ ] Architekt/Orchestrator (aus PW-2.1): Widerspruch zwischen
+- [x] Architekt/Orchestrator (aus PW-2.1): Widerspruch zwischen
       docs/architektur.md („:game und :data kennen nur :core") und
       data/build.gradle.kts (`implementation(project(":game"))`, seit
       Phase 0). Spätestens vor der Phase-3-Persistenz per ADR klären —
-      die Level-/Spielstand-Serialisierung in :data braucht die
-      :game-Typen (LevelDefinition, LevelValidator), vermutlich ist
-      also das Schaubild zu korrigieren (app → data → game → core),
-      nicht der Build
+      ENTSCHIEDEN in ADR-004 (PW-2.6): Schaubild korrigiert auf
+      app → data → game → core, der Build bleibt unverändert;
+      Gegenrichtung als Invarianten I-M1–I-M4 festgeschrieben,
+      CLAUDE.md-Kurzfassung angepasst, maschinelle Erzwingung als
+      Ticket PW-2.6-impl spezifiziert (siehe oben)
+- [ ] Orchestrator (aus PW-2.6): `.claude/agents/architekt.md` (Regel 1)
+      und docs/plan.md §3.1/§6 tragen noch den alten Wortlaut
+      „app → game/data → core". plan.md ist historisch und bleibt;
+      die Agent-Definition bindet aber künftige Architekt-Läufe und
+      sollte auf „app → data → game → core (ADR-004)" aktualisiert
+      werden — Änderung von Agent-Definitionen liegt außerhalb des
+      Architekt-Mandats
 - [ ] Architekt (aus PW-2.2): KDoc von trace/Tracer.kt nennt als
       Implementierungs-Ticket „PW-2.3", implementiert wurde der Tracer
       in PW-2.2 (DefaultTracer). Veraltete Referenz beim nächsten
