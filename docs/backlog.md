@@ -68,6 +68,18 @@
       Implementierungs-Ticket „PW-2.3", implementiert wurde der Tracer
       in PW-2.2 (DefaultTracer). Veraltete Referenz beim nächsten
       API-Touch korrigieren (KDoc-Änderung war in PW-2.2 out of scope)
+- [ ] Entwickler (Befund aus PW-2.2-QS, Prio hoch): In
+      game/src/test/.../DefaultTracerPropertyTest.kt werden die beiden
+      Tests „I1 und I8 …" und „Trace ist referenziell transparent …"
+      von JUnit Jupiter STILL NICHT AUSGEFÜHRT: `fun x() = runBlocking {
+      checkAll(...) }` hat Rückgabetyp PropertyContext, und Jupiter
+      schließt @Test-Methoden mit Rückgabewert von der Discovery aus
+      (Test-Report zeigt nur 4 von 6 Methoden). Fix: Block-Body
+      verwenden (`fun x() { runBlocking { … } }`). Inhaltlich sind die
+      Invarianten seit PW-2.2-QS durch TracerIndependentPropertyTest
+      abgedeckt; Fix war hier out of scope (fremde Datei). Idee für die
+      CI: Detekt-Regel oder Review-Checkliste „@Test-Methoden geben
+      Unit zurück", damit so etwas nicht wieder still verschwindet
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
