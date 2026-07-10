@@ -95,5 +95,5 @@ Vier Gradle-Module, Abhängigkeiten zeigen ausschließlich nach unten
 
 ## Verbindliche Kommandos
 
-- Vollständige lokale Prüfung: `./gradlew ktlintCheck detekt test koverVerify`
+- Vollständige lokale Prüfung: `./gradlew checkModuleGraph ktlintCheck detekt test koverVerify`
 - Vor jedem PR zusätzlich: `./gradlew :app:lintDebug :app:assembleDebug`
