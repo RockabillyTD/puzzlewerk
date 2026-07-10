@@ -22,7 +22,7 @@
 
 ## Code-Regeln (Kurzfassung, Details in docs/architektur.md)
 - :game bleibt frei von Android-Imports. Ohne Ausnahme.
-- Abhängigkeitsrichtung: app → game/data → core. Nie andersherum.
+- Abhängigkeitsrichtung: app → data → game → core (ADR-004). Nie andersherum.
 - val > var, immutable > mutable, sealed Results > Exceptions.
 - Zufall/Zeit nur über injizierte Abstraktionen (RandomSource, WallClock).
 - Jede neue public-Funktion in :game bekommt im selben PR Unit-Tests.

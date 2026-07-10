@@ -5,20 +5,31 @@ den Architekt-Agent per ADR (docs/decisions/).
 
 ## Schichtenmodell
 
-Vier Gradle-Module, Abhängigkeiten zeigen ausschließlich nach unten:
+Vier Gradle-Module, Abhängigkeiten zeigen ausschließlich nach unten
+(präzisiert in ADR-004):
 
 ```
 :app   (UI: Compose-Screens, ViewModels, Navigation, Theme)
-  │ nutzt
+  │ nutzt :data, :game, :core
+:data  (Daten: Repositories, Serialisierung, später Room/DataStore)
+  │ nutzt :game, :core — mappt DTOs auf :game-Domänentypen,
+  │ validiert Eingelesenes mit der :game-Validierungslogik (S4)
 :game  (Domain: Spiellogik — REINES Kotlin/JVM-Modul, KEIN Android-Import)
-:data  (Daten: Repositories, später Room/DataStore)
-  │ nutzen
+  │ nutzt :core
 :core  (Basis: RandomSource, WallClock, gemeinsame Utilities)
 ```
 
 - `:game` ist das Herzstück: alle Spielregeln als pure Functions,
   vollständig JVM-testbar, deterministisch über injizierte Seeds.
-- `:app` kennt `:game`/`:data`; `:game` und `:data` kennen nur `:core`.
+- Erlaubte Kanten (abschließende Whitelist, ADR-004):
+  `:app → :data, :game, :core` · `:data → :game, :core` ·
+  `:game → :core` · `:core → nichts`. Jede neue Kante und jedes neue
+  Modul braucht ein neues ADR.
+- Invarianten (ADR-004): `:game` referenziert NIEMALS `:data` oder
+  `:app`; `:core` referenziert kein anderes Modul; `:game`/`:core`
+  bleiben ohne Android-Plugin. Maschinelle Prüfung: Gradle-Task
+  `checkModuleGraph` (Umsetzungsticket PW-2.6-impl, Spezifikation in
+  ADR-004).
 - Muster: MVI mit unidirektionalem Datenfluss. Composables lesen einen
   immutablen `UiState` (StateFlow im ViewModel) und senden Intents;
   Seiteneffekte laufen als explizite Effects.
