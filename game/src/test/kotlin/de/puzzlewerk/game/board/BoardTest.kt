@@ -1,6 +1,6 @@
 package de.puzzlewerk.game.board
 
-import de.puzzlewerk.game.color.LightColor
+import de.puzzlewerk.game.DreiFarbenLevel
 import de.puzzlewerk.game.element.Element
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -10,19 +10,7 @@ import org.junit.jupiter.api.Test
 
 class BoardTest {
     // Beispiel-Level "Drei Farben" aus Design Paragraf 7.3 (Radius 2)
-    private val board =
-        Board(
-            radius = 2,
-            elements =
-                mapOf(
-                    HexCoord(-2, 0) to Element.Source(LightColor.WHITE, Direction.EAST),
-                    HexCoord(0, 0) to Element.Mirror(Orientation(5)),
-                    HexCoord(1, -1) to Element.Prism,
-                    HexCoord(1, -2) to Element.Crystal(LightColor.RED),
-                    HexCoord(2, -2) to Element.Crystal(LightColor.GREEN),
-                    HexCoord(2, -1) to Element.Crystal(LightColor.BLUE),
-                ),
-        )
+    private val board = DreiFarbenLevel.board()
 
     @Test
     fun `contains prueft die Brettzugehoerigkeit`() {
