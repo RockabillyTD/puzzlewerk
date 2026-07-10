@@ -97,7 +97,7 @@
       :game/:core/:data/:app projektweit auf das Muster geprüft (kein
       weiterer Treffer, einziges verbliebenes `fun x() =` ist ein
       privater Helfer ohne @Test)
-- [ ] Entwickler (BUG PW-2.3-QS-B1, Prio niedrig — theoretischer
+- [x] Entwickler (BUG PW-2.3-QS-B1, Prio niedrig — theoretischer
       Grenzwert): DefaultScoreCalculator verletzt Invariante I5 bei
       extremer Zugzahl: `50 * extraMoves` ueberlaeuft Int, dadurch
       liefert `scoreFor(Int.MAX_VALUE, 14)` 2250 Punkte statt hoechstens
@@ -108,6 +108,12 @@
       kappen. Regressionstest liegt @Disabled bereit:
       ScoreValueTableTest.`I5-Regression - Score bleibt auch bei
       extremer Zugzahl in 1000 bis 1500` — beim Fix Annotation entfernen
+      BEHOBEN im PW-2.3-Korrekturzyklus: extraMoves wird vor der
+      Multiplikation per `coerceIn(0, 10)` gekappt (exakt, da der Bonus
+      ab Par+10 ohnehin 0 ist — allokationsfrei, kein Long noetig);
+      Regressionstest aktiviert und gruen. DefaultGameEngine auf
+      denselben Fehlertyp geprueft: keine Multiplikation/Addition auf
+      unbeschraenkten Zaehlern (moveCount ist history.size)
 - [ ] Test-Engineer/Architekt (aus PW-2.2-Korrektur): dauerhafte
       Absicherung gegen still ignorierte Tests evaluieren — Detekt
       bringt keine passende Regel mit; Kandidaten: (a) eigene

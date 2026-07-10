@@ -2,7 +2,6 @@ package de.puzzlewerk.game.score
 
 import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.shouldBe
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 /**
@@ -114,15 +113,9 @@ class ScoreValueTableTest {
     }
 
     @Test
-    @Disabled(
-        "BUG PW-2.3-QS-B1 (siehe docs/backlog.md): 50 * extraMoves ueberlaeuft Int — " +
-            "scoreFor(Int.MAX_VALUE, 14) liefert nachweislich 2250 statt hoechstens 1500 und " +
-            "verletzt Invariante I5 sowie den KDoc-Vertrag (Vorbedingung ist nur moves >= 0). " +
-            "Fix (Long-Arithmetik oder extraMoves-Kappung) ist ein Entwickler-Ticket.",
-    )
     fun `I5-Regression - Score bleibt auch bei extremer Zugzahl in 1000 bis 1500`() {
         val score = calculator.scoreFor(moves = Int.MAX_VALUE, par = 14)
 
-        score.points shouldBeInRange 1000..1500 // tatsaechlich: 2250 (Int-Ueberlauf im Bonus)
+        score.points shouldBeInRange 1000..1500 // vor dem B1-Fix: 2250 (Int-Ueberlauf im Bonus)
     }
 }

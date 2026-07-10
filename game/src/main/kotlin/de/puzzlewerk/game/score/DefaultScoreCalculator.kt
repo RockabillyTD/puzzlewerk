@@ -5,6 +5,9 @@ import de.puzzlewerk.game.level.LevelDefinition
 private const val BASE_POINTS = 1000
 private const val MAX_BONUS = 500
 private const val PENALTY_PER_EXTRA_MOVE = 50
+
+/** Ab `Par + 10` liegt der Bonus auf dem 0er-Plateau (§7.2) — mehr Mehrzüge ändern nichts. */
+private const val MAX_PENALIZED_EXTRA_MOVES = MAX_BONUS / PENALTY_PER_EXTRA_MOVE
 private const val THREE_STARS = 3
 private const val TWO_STARS = 2
 private const val ONE_STAR = 1
@@ -30,8 +33,12 @@ public object DefaultScoreCalculator : ScoreCalculator {
         require(par in LevelDefinition.MIN_PAR..LevelDefinition.MAX_PAR) {
             "Par muss in ${LevelDefinition.MIN_PAR}..${LevelDefinition.MAX_PAR} liegen, war $par"
         }
-        val extraMoves = (moves - par).coerceAtLeast(0)
-        val bonus = (MAX_BONUS - PENALTY_PER_EXTRA_MOVE * extraMoves).coerceAtLeast(0)
+        // BUG-Fix PW-2.3-QS-B1: Kappung VOR der Multiplikation macht
+        // `50 · extraMoves` überlaufsicher und ist exakt, weil der Abzug ab
+        // Par+10 ohnehin am Plateau endet (I5). `moves − par` selbst kann
+        // nicht überlaufen (moves ≥ 0, par ∈ 1..14).
+        val extraMoves = (moves - par).coerceIn(0, MAX_PENALIZED_EXTRA_MOVES)
+        val bonus = MAX_BONUS - PENALTY_PER_EXTRA_MOVE * extraMoves
         val stars =
             when {
                 moves <= par -> THREE_STARS
