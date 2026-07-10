@@ -67,7 +67,9 @@ class DefaultTracerPropertyTest {
     // Default-Parameter traegt; der feste Seed ist fuer Reproduzierbarkeit Pflicht.
     @OptIn(ExperimentalKotest::class)
     @Test
-    fun `I1 und I8 - jeder Trace terminiert endlich, alle Farben in 1 bis 7`() =
+    fun `I1 und I8 - jeder Trace terminiert endlich, alle Farben in 1 bis 7`() {
+        // Block-Body statt Expression-Body: eine @Test-Methode mit Rueckgabewert
+        // (PropertyContext aus checkAll) wuerde JUnit Jupiter STILL ignorieren.
         runBlocking {
             checkAll(PropTestConfig(seed = 0x505249534D41), arbBoard) { board ->
                 val result = DefaultTracer.trace(board)
@@ -91,15 +93,17 @@ class DefaultTracerPropertyTest {
                 result.solved shouldBe expectedSolved
             }
         }
+    }
 
     @OptIn(ExperimentalKotest::class)
     @Test
-    fun `Trace ist referenziell transparent - gleiche Bretter, gleiches Ergebnis`() =
+    fun `Trace ist referenziell transparent - gleiche Bretter, gleiches Ergebnis`() {
         runBlocking {
             checkAll(PropTestConfig(seed = 4711), arbBoard) { board ->
                 DefaultTracer.trace(board) shouldBe DefaultTracer.trace(board)
             }
         }
+    }
 
     @Test
     fun `Reflexions-Involution - alle 36 Kombinationen aus m und d_in (Paragraf 4_2)`() {

@@ -68,7 +68,7 @@
       Implementierungs-Ticket „PW-2.3", implementiert wurde der Tracer
       in PW-2.2 (DefaultTracer). Veraltete Referenz beim nächsten
       API-Touch korrigieren (KDoc-Änderung war in PW-2.2 out of scope)
-- [ ] Entwickler (Befund aus PW-2.2-QS, Prio hoch): In
+- [x] Entwickler (Befund aus PW-2.2-QS, Prio hoch): In
       game/src/test/.../DefaultTracerPropertyTest.kt werden die beiden
       Tests „I1 und I8 …" und „Trace ist referenziell transparent …"
       von JUnit Jupiter STILL NICHT AUSGEFÜHRT: `fun x() = runBlocking {
@@ -79,7 +79,21 @@
       Invarianten seit PW-2.2-QS durch TracerIndependentPropertyTest
       abgedeckt; Fix war hier out of scope (fremde Datei). Idee für die
       CI: Detekt-Regel oder Review-Checkliste „@Test-Methoden geben
-      Unit zurück", damit so etwas nicht wieder still verschwindet
+      Unit zurück", damit so etwas nicht wieder still verschwindet —
+      BEHOBEN im PW-2.2-Korrekturzyklus: beide Methoden auf Block-Body
+      umgestellt, Test-Report zeigt 6/6 testcases; alle Testquellen in
+      :game/:core/:data/:app projektweit auf das Muster geprüft (kein
+      weiterer Treffer, einziges verbliebenes `fun x() =` ist ein
+      privater Helfer ohne @Test)
+- [ ] Test-Engineer/Architekt (aus PW-2.2-Korrektur): dauerhafte
+      Absicherung gegen still ignorierte Tests evaluieren — Detekt
+      bringt keine passende Regel mit; Kandidaten: (a) eigene
+      Detekt-Regel „@Test-Methode muss Unit zurückgeben" als
+      custom-rules-Modul (braucht ADR, da neues Build-Artefakt),
+      (b) JUnit `-Djunit.jupiter.testmethod...`-Discovery-Warnungen
+      gibt es nicht — stattdessen im CI die testcase-Anzahl je Klasse
+      gegen die @Test-Anzahl im Quelltext diffen, oder (c) schlicht
+      Review-Checkliste. Empfehlung: (a) bei nächster Gelegenheit
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
