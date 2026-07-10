@@ -97,6 +97,17 @@
       :game/:core/:data/:app projektweit auf das Muster geprüft (kein
       weiterer Treffer, einziges verbliebenes `fun x() =` ist ein
       privater Helfer ohne @Test)
+- [ ] Entwickler (BUG PW-2.3-QS-B1, Prio niedrig — theoretischer
+      Grenzwert): DefaultScoreCalculator verletzt Invariante I5 bei
+      extremer Zugzahl: `50 * extraMoves` ueberlaeuft Int, dadurch
+      liefert `scoreFor(Int.MAX_VALUE, 14)` 2250 Punkte statt hoechstens
+      1500 (der negative Ueberlauf hebelt beide coerceAtLeast(0) aus;
+      Ueberlaufbereich beginnt ab moves ≥ par + 42 949 673). Verstoss
+      gegen KDoc-Vertrag (Vorbedingung nur `moves >= 0`) und I5/
+      Monotonie. Fix: Bonus in Long rechnen oder extraMoves auf 10
+      kappen. Regressionstest liegt @Disabled bereit:
+      ScoreValueTableTest.`I5-Regression - Score bleibt auch bei
+      extremer Zugzahl in 1000 bis 1500` — beim Fix Annotation entfernen
 - [ ] Test-Engineer/Architekt (aus PW-2.2-Korrektur): dauerhafte
       Absicherung gegen still ignorierte Tests evaluieren — Detekt
       bringt keine passende Regel mit; Kandidaten: (a) eigene
