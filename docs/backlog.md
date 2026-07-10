@@ -130,6 +130,31 @@
       Regressionstest aktiviert und gruen. DefaultGameEngine auf
       denselben Fehlertyp geprueft: keine Multiplikation/Addition auf
       unbeschraenkten Zaehlern (moveCount ist history.size)
+- [ ] Entwickler (Befund aus PW-2.4, Prio niedrig — nur adversarialer
+      Input): `HexCoord.ringIndex` läuft für `|q|`, `|r|` oder `|q+r|`
+      nahe `Int.MIN_VALUE` über (`abs(Int.MIN_VALUE)` bleibt negativ,
+      `q + r` kann wrappen) — `HexCoord(Int.MIN_VALUE, 0)` gälte als
+      „Zentrum". Innerhalb des Prozesses unkritisch (Generator/Engine
+      erzeugen nur kleine Koordinaten), an der Vertrauensgrenze fängt
+      der DefaultLevelValidator das mit eigener Long-Arithmetik ab
+      (inkl. Regressionstest). Falls ringIndex je außerhalb der
+      Validator-Absicherung auf Rohdaten trifft: HexCoord auf
+      Long-Arithmetik umstellen (eigenes Ticket, board/ war in PW-2.4
+      out of scope)
+- [ ] Orchestrator (aus PW-2.4): Ticket-Briefing nannte „Tier-Konsistenz"
+      als Validierungsaspekt — §16.2 kennt keine solche Regel und die
+      LevelViolation-API (9 Fälle) keinen passenden Verstoßtyp; Tier ist
+      als Enum typsicher, jede Stufe ist gültig. Falls Tier-↔-Parameter-
+      Konsistenz (z. B. Radius im Tier-Bereich aus §9.2) beim LADEN
+      geprüft werden soll: Design-Präzisierung + API-Erweiterung nötig
+      (eigenes Ticket; §9.2 ist bisher Generator-Qualitätsregel, keine
+      Ladevalidierung)
+- [ ] Architekt (aus PW-2.4): veraltete Ticket-Referenz auch in
+      level/LevelValidation.kt — KDoc nennt „Implementierung:
+      Ticket PW-2.6", implementiert wurde der Validator in PW-2.4
+      (DefaultLevelValidator). Beim nächsten API-Touch zusammen mit den
+      Tracer-/Engine-/Score-Einträgen korrigieren (KDoc-Änderung war in
+      PW-2.4 out of scope)
 - [ ] Test-Engineer/Architekt (aus PW-2.2-Korrektur): dauerhafte
       Absicherung gegen still ignorierte Tests evaluieren — Detekt
       bringt keine passende Regel mit; Kandidaten: (a) eigene
