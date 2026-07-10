@@ -11,7 +11,18 @@ package de.puzzlewerk.game.score
 public data class Score(
     val points: Int,
     val stars: Int,
-)
+) {
+    init {
+        // Bereichsgarantie ohne Signaturänderung (API-Review PW-2.1, NIT-2);
+        // Verletzung = Programmierfehler (Regel C3)
+        require(stars in MIN_STARS..MAX_STARS) { "Sterne müssen in $MIN_STARS..$MAX_STARS liegen, waren $stars" }
+    }
+
+    private companion object {
+        const val MIN_STARS = 1
+        const val MAX_STARS = 3
+    }
+}
 
 /**
  * Berechnet die Wertung aus Zügen und Par (Design §7.2) — pure Funktion,
