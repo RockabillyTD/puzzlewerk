@@ -168,6 +168,23 @@
       (DefaultLevelValidator). Beim nächsten API-Touch zusammen mit den
       Tracer-/Engine-/Score-Einträgen korrigieren (KDoc-Änderung war in
       PW-2.4 out of scope)
+- [ ] Game-Designer/Orchestrator (aus PW-2.5): §9.2-Spalte „Farben im
+      Level" ist im Design nicht definiert (zählen abgeleitete
+      Strahlfarben? Kristall-Mischfarben?). Der Generator interpretiert
+      sie deterministisch als „verschiedene Farben von Quellen,
+      Kristallen und Filtern" und verwirft Versuche über der Kappe
+      (dokumentiert in LevelConstruction-KDoc + Property-Test). Falls
+      eine andere Lesart gewollt ist: Design-Präzisierung — Achtung,
+      jede Änderung ist ein Generator-BREAKING (Goldens, Daily, I2)
+- [ ] Architekt (aus PW-2.5): Feinheiten der Relaxierungsleiter
+      (1000 Versuche je Stufe, optionale Elemente entfallen ab den
+      Budget-Stufen, Fallback-Radius = Tier-Minimum) sind
+      Implementierungs-Festlegungen über §9.5/7 hinaus. Für eine
+      Zweit-Implementierung (z. B. iOS) müssten sie normativ ins
+      Design-Dokument; bis dahin pinnen die Golden-Tests das Verhalten
+- [ ] Entwickler (aus PW-2.5, Idee): ParSolver ist internal; ein
+      späteres Hint-System (Backlog unten) bräuchte ihn public —
+      dann API-Design durch den Architekten (KDoc, Vertrag, Kover)
 - [ ] Test-Engineer/Architekt (aus PW-2.2-Korrektur): dauerhafte
       Absicherung gegen still ignorierte Tests evaluieren — Detekt
       bringt keine passende Regel mit; Kandidaten: (a) eigene
