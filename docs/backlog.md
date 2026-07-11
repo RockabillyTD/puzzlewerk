@@ -59,6 +59,13 @@
       Security-APPROVE); Negativproben 2a/2b nach ADR durchgeführt.
       Selbstkanten (:x → :x aus AGP-Testvarianten/Kover) sind bewusst
       erlaubt, da sie das Schichtenmodell nicht verletzen können
+- [x] Architekt (Security-Finding L3 aus dem PW-2.6-impl-Review, PR #9,
+      LOW): Regel-5-Sperrliste (androidx.*/com.android*) ließ das
+      android.jar-Stub-JAR `com.google.android:android` passieren —
+      Android-Imports in :game wären kompilierbar gewesen, checkModuleGraph
+      wäre grün geblieben. GESCHLOSSEN in ADR-005 (PW-2.8): Sperr-Präfix
+      `com.google.` (gesamter Google-Namensraum) ergänzt, Negativprobe mit
+      com.google.android:android:4.1.1.4 durchgeführt
 - [ ] Robolectric + Compose-UI-Test-Setup für :app (ab Phase 3 nötig)
 - [x] gradlew hat mit PW-0.1 das Executable-Bit verloren (Windows-Checkout,
       Mode 100755 → 100644). Vor dem Linux-CI-Lauf (PW-0.2) per
