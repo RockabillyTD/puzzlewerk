@@ -34,6 +34,23 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+// PW-2.7: CLI-Demo-Runner als Phase-2-Gate-Nachweis (docs/plan.md Abschnitt 7).
+// Aufruf: ./gradlew :game:runDemo [-PdemoArgs="<seed> <D1..D7>"] — keine neuen
+// Dependencies, kein application-Plugin; nur der Main-Klassenpfad des Moduls.
+tasks.register<JavaExec>("runDemo") {
+    group = "application"
+    description = "Fuehrt den CLI-Demo-Runner aus (Args via -PdemoArgs=\"<seed> <tier>\")"
+    mainClass.set("de.puzzlewerk.game.demo.DemoRunnerKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+    args =
+        providers
+            .gradleProperty("demoArgs")
+            .orNull
+            ?.split(" ")
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+}
+
 kover {
     reports {
         verify {
