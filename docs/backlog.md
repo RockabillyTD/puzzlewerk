@@ -13,11 +13,12 @@
       (`verify-signatures=true` + trusted-keys) — Zeitpunkt und
       Trigger-Kriterien in ADR-002 entschieden (bewusst verschoben;
       spätestens vor dem ersten an Endnutzer verteilten Release-Build)
-- [ ] Merkregel aus PW-0.3: verification-metadata.xml IMMER mit
+- [x] Merkregel aus PW-0.3: verification-metadata.xml IMMER mit
       `--refresh-dependencies --write-verification-metadata sha256 <Gate-Tasks>`
       regenerieren — mit warmem lokalem Cache fehlen sonst
-      .pom-/.module-Varianten, die nur ein kalter CI-Cache auflöst.
-      Kandidat für docs/architektur.md (Verbindliche Kommandos)
+      .pom-/.module-Varianten, die nur ein kalter CI-Cache auflöst —
+      in PW-3.1 als drittes „Verbindliches Kommando" in
+      docs/architektur.md aufgenommen
 - [ ] Release-Engineer: Umsetzungsticket PW-0.4-impl aus ADR-002 —
       `gradlePluginPortal()` in settings.gradle.kts per Content-Filter
       auf `org.jlleitschuh.gradle(.ktlint)` beschränken; exakter
@@ -36,7 +37,9 @@
       bei identischem Commit — CI-Run 29031584439). Ersatzmechanismus:
       compileSdk/targetSdk gemeinsam mit AGP-Update pro Android-Release
       per ADR anheben (Trigger: Play-Policy-Deadline, üblicherweise
-      31. August); ExpiredTargetSdkVersion bleibt als harter Gate aktiv
+      31. August); ExpiredTargetSdkVersion bleibt als harter Gate aktiv.
+      Seit ADR-009 zusätzlich: Robolectric-Version und @Config-SDK-Pin
+      beim Bump mitprüfen
 - [x] Architekt: `gradlePluginPortal()` in settings.gradle.kts
       (pluginManagement) kollidiert mit dem S6-Wortlaut („nur google() +
       mavenCentral()") — entschieden in ADR-002 (PW-0.4): Portal bleibt,
@@ -66,7 +69,26 @@
       wäre grün geblieben. GESCHLOSSEN in ADR-005 (PW-2.8): Sperr-Präfix
       `com.google.` (gesamter Google-Namensraum) ergänzt, Negativprobe mit
       com.google.android:android:4.1.1.4 durchgeführt
-- [ ] Robolectric + Compose-UI-Test-Setup für :app (ab Phase 3 nötig)
+- [x] Robolectric + Compose-UI-Test-Setup für :app (ab Phase 3 nötig) —
+      ENTSCHIEDEN in ADR-009 (PW-3.1): Robolectric + Compose-
+      ui-test-junit4 + Turbine/coroutines-test, Dependencies im Katalog
+      und in der verification-metadata; Aktivierung inkl. android-all-
+      Offline-Pinnung (S6-Auflage!) und Kover-70%-Gates :app/:data in
+      den Tickets PW-3.3/PW-3.2 (docs/phase3-tickets.md)
+- [ ] Ticket PW-3.3 (aus ADR-009, S6-Auflage): Robolectric
+      android-all-instrumented als Gradle-Konfiguration pinnen und
+      `robolectric.offline=true` setzen — kein Test-Task lädt zur
+      Laufzeit ungeprüfte Artefakte nach
+- [ ] Game-Designer (aus PW-3.1, blockiert Teile von PW-3.6): §11.3
+      nennt für die Levelbereiche 4–8, 27–31 und 37–41 Tier-SPANNEN
+      („D1–D2", „D4–D5", „D5–D6") — die exakte Level→Tier-Zuordnung
+      je Levelnummer fehlt. Ohne sie gibt es keine campaignTier(n)-
+      Funktion in :game. Design-Präzisierung nötig (kein BREAKING,
+      solange nur die offenen Bereiche fixiert werden)
+- [ ] Architekt (Phase 4): LevelRepository-API für eingecheckte,
+      kuratierte Level-Assets (§11.1) definieren — Formatregeln sind
+      mit ADR-007 bereits fixiert (Envelope+Version, Entry-Arrays,
+      Duplikat-Check, LevelValidator an der Vertrauensgrenze)
 - [x] gradlew hat mit PW-0.1 das Executable-Bit verloren (Windows-Checkout,
       Mode 100755 → 100644). Vor dem Linux-CI-Lauf (PW-0.2) per
       `git update-index --chmod=+x gradlew` wiederherstellen, sonst
