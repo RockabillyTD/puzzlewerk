@@ -56,16 +56,42 @@ Alle drei PRs: Merge nur bei CI grün + Reviewer-APPROVE + Security-APPROVE.
 Jeder Code-PR durchlief: Entwickler (Test-First) → unabhängiger
 Test-Engineer-Angriff → Code-Review mit eigener Verifikation → CI grün.
 
-## In Arbeit (Auftrag Branko 2026-07-11: „weiter bis Phase 2 komplett")
-- [ ] PW-2.4: LevelValidator (entwickler) — schließt Tracer-Restrisiken
-      (Portal ohne Zwilling, kristallloses Brett)
-- [ ] PW-2.6-impl: checkModuleGraph-Gradle-Task (release-engineer,
-      isolierter Worktree) — braucht Security-Review (Build-Code)
+## Erledigt (Zyklen 7–9, 2026-07-11)
+- [x] PW-2.4 (PR #10): DefaultLevelValidator — 100 % Branch auf der
+      Klasse, QS-Fuzzing ohne Befund, Tracer-Restrisiken geschlossen
+- [x] PW-2.6-impl (PR #9): checkModuleGraph in check + CI, beide
+      Negativproben doppelt reproduziert; ADR-004-Auflagenkette zu
+- [x] PW-2.8 (PR #11): ADR-005 Google-Namensraum-Sperre — Security-L3
+      geschlossen
+- [x] PW-2.5 (PR #12): DefaultLevelGenerator + ParSolver — QS mit
+      unabhängigem BFS-Orakel PASS, Minimalitätsbeweis reviewt,
+      Daily-Kette Ende-zu-Ende; damit R01–R43 komplett
+- [x] PW-2.7 (PR #13): CLI-Demo-Runner — Gate-Nachweis, Demo von
+      Orchestrator UND Reviewer unabhängig ausgeführt (D2/D3/D5)
+- [x] PW-2.9 (PR #14): §9/§16.2-Präzisierungen kodifiziert (kein
+      BREAKING; Kodifizierungs-Auflage aus PR #12 vor Frist erledigt)
 
-## Nächste Schritte
-1. PW-2.5: Generator + Par-Solver (nach PW-2.4)
-2. PW-2.7: CLI-Demo-Runner (Gate-Kriterium)
-3. Phase-2-Gate an Branko: Logik komplett bewiesen, ≥ 90 % Branch
-   Coverage, CLI-Demo löst ein Level
-4. Backlog: gitleaks-CI-Schritt, CVE-Scan, Renovate (inkl. SDK-Bumps),
-   PGP-Trigger, Custom-Detekt-Regel gegen stille @Test-Nichtausführung
+## Phase-2-Gate-Nachweise (Stand main nach PR #14)
+- Volle Gate-Kette grün: checkModuleGraph ktlintCheck detekt test
+  koverVerify :app:lintDebug :app:assembleDebug (Exit 0)
+- :game Coverage: **95,9 % Branch (374/390), 99,3 % Line (739/744)**
+  — Gate ≥ 90 % Branch erfüllt
+- ~300 Tests in :game (Unit, Property mit festen Seeds, Golden,
+  adversariale QS-Suiten); Invarianten I1–I10 als Property-Tests
+- CLI-Demo (`./gradlew :game:runDemo`) generiert, validiert, rendert
+  und löst Level in exakt Par Zügen (mehrfach unabhängig verifiziert)
+- 14 PRs, jeder mit: CI grün + Reviewer-APPROVE (+ Security-APPROVE wo
+  einschlägig) + bei Logik-PRs unabhängiger Test-Engineer-Pass
+- QS-Funde des Prozesses: BUG-1 (still ignorierte Tests), B1
+  (Int-Überlauf Score), L3 (Präfix-Lücke) — alle behoben
+
+## Blockiert / wartet auf den Menschen
+- [ ] **Meilenstein-Gate Phase 2:** Abnahme durch Branko
+
+## Nächste Schritte (nach Gate-Abnahme: Phase 3 — Spielbarer Prototyp)
+1. UI-Entwickler: Spielfeld-Screen (Canvas), Eingabe, Navigation
+2. :data: Fortschritts-Persistenz (Room/DataStore) — Loader testet
+   §16.2/2 (Duplikat-Schlüssel) an der Serialisierungsgrenze
+3. Offene Backlog-Punkte: ringIndex-Überlauf-Fix, KDoc-Ticket-Referenzen,
+   gitleaks-CI, CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel,
+   ParSolver-API fürs Hint-System
