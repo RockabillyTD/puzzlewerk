@@ -6,6 +6,9 @@
 > Was hier nicht steht, existiert nicht. Bewusste Präzisierungen oder
 > Abweichungen von der Konzeptvorlage sind mit „**Designentscheidung:**"
 > markiert und begründet.
+> Nachträgliche Präzisierungen des gepinnten Implementierungsverhaltens
+> (PW-2.9, 2026-07-11) sind im Text mit „(präzisiert nach
+> Implementierung, PW-2.9)" markiert — sie ändern keine Regeln.
 
 ---
 
@@ -626,6 +629,15 @@ Portalpaare ≤ 2, Quellen ≤ 3, Kristalle ≤ 6, belegte Zellen ≤ 50 % des
 Bretts (die Engine verkraftet 100 %, R41 — die Kappe ist eine
 Generator-Qualitätsregel).
 
+**Definition „Farben im Level"** (präzisiert nach Implementierung,
+PW-2.9): Anzahl der **distinkten Farbwerte** über alle Quellen
+(Emissionsfarbe), Kristalle (Sollfarbe) und Filter (Filterfarbe) der
+fertigen LevelDefinition. Unterwegs abgeleitete Strahlfarben (z. B.
+Prisma-Komponenten auf dem Weg) zählen NICHT eigenständig. Beispiel:
+Quelle Weiß, Kristalle Rot/Grün/Blau, ein Rot-Filter ⇒
+{Weiß, Rot, Grün, Blau} = 4 Farben. Konstruktionsversuche über der
+Tier-Kappe verwirft der Generator in Schritt 6 (9.3).
+
 ### 9.3 Konstruktion (rückwärts von der Lösung — Lösbarkeits-Garantie)
 
 Referenzalgorithmus „Vorwärts-Verlegung, Rückwärts-Verwürfelung".
@@ -665,6 +677,15 @@ MUSS-Eigenschaften aus 9.5 sind bindend.
    **Lösbarkeit garantiert.**
 8. **Par berechnen** (9.4) und validieren (9.5). Bei Verletzung:
    zurück zu Schritt 7 (max. 20-mal), dann zu Schritt 1.
+
+**Referenzverhalten Mindest-Splitterzahl** (präzisiert nach
+Implementierung, PW-2.9): Die Referenzimplementierung zieht in
+Schritt 1 die Splitterzahl mit der Untergrenze
+`max(0, minKristalle(Tier) − Quellen)`, gekappt auf das Budget der
+drehbaren Elemente — so entstehen genug offene Strahlenden für das
+Kristall-Budget. Das ist eine Heuristik im Sinne des obigen Absatzes
+(implementierungsfrei, aber deterministisch) und als Ist-Verhalten
+durch Golden-Tests gepinnt.
 
 ### 9.4 Par-Solver
 
@@ -715,6 +736,25 @@ für kosten c = 1, 2, 3, …, 14:
    gilt exakt `Par = o`. Das Fallback ist auf jedem Radius
    konstruierbar — damit ist Terminierung garantiert und das Ergebnis
    über Implementierungen hinweg golden-testbar.
+
+**Präzisierung Relaxierungs-Feinheiten** (präzisiert nach
+Implementierung, PW-2.9): Die Feinheiten der Relaxierungsleiter —
+Versuchszahl je Stufe, Reihenfolge und Schrittweite der
+Budget-Senkungen — sind implementierungsdefiniert, MÜSSEN aber
+deterministisch sein (aller Zufall ausschließlich aus dem einen
+fortlaufenden PRNG-Strom, 8) und sind durch Golden-Tests gepinnt;
+jede Änderung bricht I2 und ist damit BREAKING (Daily!).
+Referenzverhalten der Ist-Implementierung: **1000 verworfene Versuche
+JE Relaxierungsstufe** (nicht 1000 insgesamt). Stufenfolge:
+(0) Tier-Parameter unverändert; (1) Par-Zielbereich ±2, geklemmt auf
+1..14, Budgets unverändert; (2 ff.) Budget der drehbaren Elemente je
+Stufe um 1 senken (beide Bereichsgrenzen, Untergrenze 1) — die
+Par-Erweiterung aus Stufe 1 bleibt dabei bestehen, und ab den
+Budget-Stufen entfallen die optionalen Elementtypen Prisma, Filter
+und Portale. Ist das Budget bei 1 angekommen und auch diese Stufe
+erschöpft, folgt „Spiegelweg" mit **Fallback-Radius = Tier-Minimum**
+(kleinster Wert der Radius-Spalte des angeforderten Tiers, 9.2);
+der Scramble-Offset stammt aus demselben fortlaufenden PRNG-Strom.
 
 ---
 
@@ -1106,16 +1146,29 @@ TraceResult      = (segmente: List<Segment>,
 ### 16.2 Validierungsregeln beim Laden (Vertrauensgrenze, S4)
 
 1. `radius ∈ 2..5`; alle Koordinaten erfüllen
-   `max(|q|, |r|, |q+r|) ≤ radius`.
+   `max(|q|, |r|, |q+r|) ≤ radius`. Die Koordinatenprüfung läuft
+   gegen den DEKLARIERTEN Radius — auch wenn dieser selbst außerhalb
+   2..5 liegt: Das Level ist dann ohnehin ungültig
+   (Radius-Verstoß), die Koordinaten-Befunde sind zusätzliche
+   Diagnose (präzisiert nach Implementierung, PW-2.9).
 2. Höchstens ein Element je Zelle (Map erzwingt das strukturell; das
    Serialisierungsformat muss Duplikat-Schlüssel ablehnen).
 3. ≥ 1 Quelle, ≤ 3 Quellen; ≥ 1 Kristall, ≤ 6 Kristalle;
    ≤ 8 drehbare Elemente; Portal-IDs ∈ {0, 1} und jede ID kommt
-   **genau 0 oder genau 2** Mal vor.
+   **genau 0 oder genau 2** Mal vor. Die Paarigkeitsregel gilt für
+   JEDE im Level verwendete Paar-ID — auch für IDs außerhalb {0, 1},
+   die zusätzlich als Bereichsverstoß gemeldet werden; ein einzeln
+   stehendes Portal wird damit IMMER als „nicht gepaart"
+   diagnostiziert, unabhängig von seiner ID (präzisiert nach
+   Implementierung, PW-2.9).
 4. Farben: Quelle/Kristall ∈ 1..7, Filter ∈ {1, 2, 4};
    Richtungen/Orientierungen ∈ 0..5; `par ∈ 1..14`.
 5. Verstoß ⇒ sealed Ladefehler mit Ursache; die App zeigt eine
-   definierte Fehlermeldung, stürzt nie ab (R43).
+   definierte Fehlermeldung, stürzt nie ab (R43). Die Validierung
+   sammelt ALLE Verstöße in deterministischer Reihenfolge
+   (Regelreihenfolge 1–4; innerhalb einer Regel aufsteigend nach
+   (q, dann r) bzw. nach Paar-ID) — vollständige Diagnose statt
+   First-Fail (präzisiert nach Implementierung, PW-2.9).
 
 ---
 
