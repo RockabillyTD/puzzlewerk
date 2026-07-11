@@ -40,6 +40,11 @@ val moduleGraphWhitelist =
 val pureJvmModules = setOf(":game", ":core")
 val forbiddenAndroidPlugins = setOf("com.android.application", "com.android.library")
 
+// Regel-5-Sperrliste für externe Koordinaten in :game/:core (ADR-004, erweitert um den
+// gesamten Google-Namensraum durch ADR-005 — schließt Security-Finding L3, das android.jar-Stub
+// `com.google.android:android`). Änderungen an dieser Liste nur per neuem ADR.
+val forbiddenCoordinatePrefixes = setOf("androidx.", "com.android", "com.google.")
+
 fun moduleGraphViolations(project: Project): List<String> {
     val allowed =
         moduleGraphWhitelist[project.path]
@@ -58,7 +63,7 @@ fun moduleGraphViolations(project: Project): List<String> {
             if (dependency is ProjectDependency && dependency.path != project.path && dependency.path !in allowed) {
                 violations += "${project.path} → ${dependency.path} (Konfiguration «${configuration.name}»)"
             } else if (isPureJvm && dependency !is ProjectDependency &&
-                (group.startsWith("androidx.") || group.startsWith("com.android"))
+                forbiddenCoordinatePrefixes.any(group::startsWith)
             ) {
                 violations += "${project.path}: verbotene Koordinate «$group:${dependency.name}» " +
                     "(Konfiguration «${configuration.name}»)"
@@ -70,14 +75,16 @@ fun moduleGraphViolations(project: Project): List<String> {
 
 val checkModuleGraph by tasks.registering {
     group = "verification"
-    description = "Prüft Modul-Kanten und Android-Freiheit von :game/:core gegen die Whitelist aus ADR-004."
+    description = "Prüft Modul-Kanten und Android-Freiheit von :game/:core gegen die Whitelist aus ADR-004/ADR-005."
     doLast {
         val violations = subprojects.flatMap(::moduleGraphViolations)
         check(violations.isEmpty()) {
             violations.joinToString(
-                prefix = "Schichtenmodell verletzt (siehe docs/decisions/adr-004-schichtenmodell.md):\n",
+                prefix =
+                    "Schichtenmodell verletzt (siehe docs/decisions/adr-004-schichtenmodell.md " +
+                        "und adr-005-android-koordinaten-sperre.md):\n",
                 separator = "\n",
-            ) { "  - $it — verstößt gegen ADR-004" }
+            ) { "  - $it — verstößt gegen ADR-004/ADR-005" }
         }
     }
 }
