@@ -1,6 +1,7 @@
 # Game-Design — „Prisma" (Puzzlewerk, Version 1)
 
-> STATUS: ZUR ABNAHME (Phase 1, Ticket PW-1.1) — erstellt 2026-07-09.
+> STATUS: ABGENOMMEN durch Branko am 2026-07-09 (Phase-1-Gate);
+> präzisiert nach Implementierung am 2026-07-11 (PW-2.9, kein BREAKING).
 > Grundlage: Entscheidung für Konzept C aus docs/phase1-vorschlaege.md.
 > Dieses Dokument ist die einzige Quelle der Wahrheit für die Spiellogik.
 > Was hier nicht steht, existiert nicht. Bewusste Präzisierungen oder

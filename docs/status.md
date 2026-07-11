@@ -85,13 +85,23 @@ Test-Engineer-Angriff → Code-Review mit eigener Verifikation → CI grün.
 - QS-Funde des Prozesses: BUG-1 (still ignorierte Tests), B1
   (Int-Überlauf Score), L3 (Präfix-Lücke) — alle behoben
 
-## Blockiert / wartet auf den Menschen
-- [ ] **Meilenstein-Gate Phase 2:** Abnahme durch Branko
+## Aktuelle Phase (aktualisiert)
+Phase 3 — Spielbarer Prototyp (gestartet 2026-07-11).
+**Phase 2 durch Branko abgenommen am 2026-07-11.**
+Gate Phase 3: APK auf Brankos Gerät installierbar, ein Level von
+Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
 
-## Nächste Schritte (nach Gate-Abnahme: Phase 3 — Spielbarer Prototyp)
-1. UI-Entwickler: Spielfeld-Screen (Canvas), Eingabe, Navigation
-2. :data: Fortschritts-Persistenz (Room/DataStore) — Loader testet
-   §16.2/2 (Duplikat-Schlüssel) an der Serialisierungsgrenze
+## In Arbeit (Phase 3)
+- [ ] PW-3.1 (architekt): ADRs für DI-Framework und Persistenz-Stack
+      (neue Dependencies!), :data-Repository-APIs, UI-Architektur-
+      Konventionen (MVI), Compose-Test-Setup-Entscheidung,
+      Ticket-Schnitte für ui-entwickler und entwickler
+
+## Nächste Schritte
+1. Nach PW-3.1: :data-Persistenz (entwickler) und UI-Tickets
+   (ui-entwickler) — Level-Screen, Eingabe, Navigation
+2. Neue Dependencies: verification-metadata mit --refresh-dependencies
+   regenerieren, Security-Review pflicht
 3. Offene Backlog-Punkte: ringIndex-Überlauf-Fix, KDoc-Ticket-Referenzen,
    gitleaks-CI, CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel,
    ParSolver-API fürs Hint-System
