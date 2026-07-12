@@ -70,9 +70,10 @@ internal object BoardSampleStates {
         )
 
     /**
-     * Schaufenster-Zustand: alle acht Elementtypen (§13.1) plus die vier
-     * Kristallzustände (§12.3) und ein Mischfarben-Strahl mit Symbol-Chips
-     * (§13.2). Physikalisch NICHT konsistent — reiner Render-Zustand.
+     * Schaufenster-Zustand: alle acht Elementtypen (§13.1, inkl. beider
+     * Portal-Paare A und B) plus die vier Kristallzustände (§12.3) und ein
+     * Mischfarben-Strahl mit Symbol-Chips (§13.2). Physikalisch NICHT
+     * konsistent — reiner Render-Zustand.
      */
     val elementZoo: BoardUiState =
         boardUiState(
@@ -88,6 +89,8 @@ internal object BoardSampleStates {
                             HexCoord(-1, -1) to Element.Filter(LightColor.RED),
                             HexCoord(-2, 2) to Element.Portal(0),
                             HexCoord(2, 0) to Element.Portal(0),
+                            HexCoord(1, -2) to Element.Portal(1),
+                            HexCoord(-1, 2) to Element.Portal(1),
                             HexCoord(-1, 1) to Element.Wall,
                             HexCoord(2, -2) to Element.Crystal(LightColor.WHITE),
                             HexCoord(2, -1) to Element.Crystal(LightColor.YELLOW),

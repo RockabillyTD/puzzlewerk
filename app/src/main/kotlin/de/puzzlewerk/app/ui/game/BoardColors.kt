@@ -51,7 +51,7 @@ private val DefaultMuted = Color(0xFF39424C)
  * @property beamColors Lichtfarben nach Bitmaske, Index `bits − 1` (§13.4).
  */
 @Immutable
-data class BoardColors(
+internal data class BoardColors(
     val background: Color = DefaultBackground,
     val outline: Color = DefaultOutline,
     val element: Color = DefaultElement,

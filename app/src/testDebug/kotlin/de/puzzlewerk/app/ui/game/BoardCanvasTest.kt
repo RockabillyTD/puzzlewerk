@@ -92,6 +92,7 @@ class BoardCanvasTest {
         compose.onNodeWithContentDescription("Filter Rot, Reihe -1, Spalte -1").assertExists()
         compose.onNodeWithContentDescription("Wand, Reihe 1, Spalte -1").assertExists()
         compose.onAllNodesWithContentDescription("Portal A", substring = true).assertCountEquals(2)
+        compose.onAllNodesWithContentDescription("Portal B", substring = true).assertCountEquals(2)
     }
 
     @Test

@@ -32,15 +32,22 @@ import kotlin.math.roundToInt
  *
  * Barrierefreiheit: je Zelle ein Semantics-Knoten mit §13.5-Beschreibung —
  * TalkBack navigiert Zelle für Zelle über das Brett.
+ *
+ * Vorbedingung: endliche Constraints in beiden Achsen (z. B. über
+ * `Modifier.fillMaxSize()` oder feste Größe) — unbounded Messung wäre ein
+ * Aufruffehler und wird per `check` abgewiesen.
  */
 @Composable
-fun BoardCanvas(
+internal fun BoardCanvas(
     state: BoardUiState,
     modifier: Modifier = Modifier,
     colors: BoardColors = BoardColors(),
 ) {
     val boardDescription = stringResource(R.string.board_canvas)
     BoxWithConstraints(modifier = modifier.semantics { contentDescription = boardDescription }) {
+        check(constraints.hasBoundedWidth && constraints.hasBoundedHeight) {
+            "BoardCanvas braucht endliche Constraints (z. B. fillMaxSize oder feste Größe)"
+        }
         val widthPx = constraints.maxWidth.toFloat()
         val heightPx = constraints.maxHeight.toFloat()
         val geometry =
@@ -56,10 +63,15 @@ fun BoardCanvas(
     }
 }
 
+/** Zeilenabstand des Hex-Rasters in Zellgrößen (§2.4: `y = size·1.5·r`). */
+private const val SEMANTICS_ROW_PITCH = 1.5f
+
 /**
- * Unsichtbare, zellgroße Semantics-Knoten über dem Canvas — einer je Zelle
- * (§13.5). In PW-3.5 werden dieselben Knoten um die Tap-Interaktion ergänzt;
- * die Zellgröße für ≥ 48-dp-Touch-Targets (§13.6) verantwortet dort der Screen.
+ * Unsichtbare Semantics-Knoten über dem Canvas — einer je Zelle (§13.5).
+ * Knotenmaß: Zellbreite `√3·size` × Zeilenabstand `1,5·size` — damit
+ * überlappen sich die Knoten vertikal NICHT (volle Zellhöhe `2·size` würde
+ * benachbarte Reihen überdecken). PW-3.5 stimmt die Tap-Hit-Box darauf ab
+ * und verantwortet die ≥ 48-dp-Touch-Targets (§13.6) über die Brettgröße.
  */
 @Composable
 private fun BoardCellSemantics(
@@ -67,7 +79,10 @@ private fun BoardCellSemantics(
     geometry: BoardGeometry,
 ) {
     val cellWidthPx = geometry.cellSize * HexGeometry.SQRT3
-    val cellSizeDp = with(LocalDensity.current) { cellWidthPx.toDp() }
+    val cellHeightPx = geometry.cellSize * SEMANTICS_ROW_PITCH
+    val density = LocalDensity.current
+    val cellWidthDp = with(density) { cellWidthPx.toDp() }
+    val cellHeightDp = with(density) { cellHeightPx.toDp() }
     for (cell in state.cells) {
         val description = cellContentDescription(cell)
         val center = geometry.center(cell.coord)
@@ -77,9 +92,9 @@ private fun BoardCellSemantics(
                     .offset {
                         IntOffset(
                             (center.x - cellWidthPx / 2f).roundToInt(),
-                            (center.y - cellWidthPx / 2f).roundToInt(),
+                            (center.y - cellHeightPx / 2f).roundToInt(),
                         )
-                    }.size(cellSizeDp)
+                    }.size(width = cellWidthDp, height = cellHeightDp)
                     .semantics { contentDescription = description },
         )
     }

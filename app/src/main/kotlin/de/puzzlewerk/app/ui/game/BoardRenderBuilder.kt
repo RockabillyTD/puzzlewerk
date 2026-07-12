@@ -1,11 +1,11 @@
 package de.puzzlewerk.app.ui.game
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import de.puzzlewerk.game.board.HexCoord
 import de.puzzlewerk.game.board.Orientation
 import de.puzzlewerk.game.color.CrystalFill
 import de.puzzlewerk.game.color.LightColor
@@ -27,7 +27,6 @@ private const val SOCKET_WIDTH = 0.07f
 private const val BEAM_WIDTH = 0.13f
 private const val SYMBOL_STROKE_WIDTH = 0.035f
 private const val SYMBOL_SIZE = 0.15f
-private const val SYMBOL_SPACING = 2.4f
 private const val SOURCE_RADIUS = 0.52f
 private const val SOURCE_ARROW_LENGTH = 0.95f
 private const val PRISM_RADIUS = 0.58f
@@ -36,25 +35,11 @@ private const val PORTAL_OUTER_RADIUS = 0.55f
 private const val PORTAL_INNER_RADIUS = 0.34f
 private const val PORTAL_TICK_HALF = 0.11f
 private const val PORTAL_TICK_SPACING = 0.2f
-private const val CRYSTAL_RADIUS = 0.62f
-private const val CRYSTAL_SYMBOL_LIFT = -0.2f
-private const val CRYSTAL_SYMBOL_SIZE = 0.13f
-private const val AURA_RADIUS = 0.95f
-private const val AURA_ALPHA = 0.3f
 private const val CHIP_RADIUS = 0.24f
 private const val CHIP_SYMBOL_SIZE = 0.08f
-private const val CHECK_START_X = -0.2f
-private const val CHECK_START_Y = 0.26f
-private const val CHECK_MID_X = -0.07f
-private const val CHECK_MID_Y = 0.4f
-private const val CHECK_END_X = 0.2f
-private const val CHECK_END_Y = 0.14f
-private const val FOREIGN_ROW_Y = 0.34f
-private const val FOREIGN_SYMBOL_SIZE = 0.1f
-private const val STRIKE_HALF_WIDTH = 0.3f
 
 // Strahlmuster §13.2 (relativ zur Zellgröße): Rot = Strich, Grün = Punkt,
-// Blau = Strich-Punkt; Mischfarben durchgezogen (Chips siehe addChip).
+// Blau = Strich-Punkt; Mischfarben durchgezogen (Chips siehe addMixedChips).
 private val RED_DASH = floatArrayOf(0.42f, 0.28f)
 private val GREEN_DOT = floatArrayOf(0.02f, 0.3f)
 private val BLUE_DASH_DOT = floatArrayOf(0.4f, 0.24f, 0.02f, 0.24f)
@@ -65,6 +50,14 @@ private fun scaled(
     pattern: FloatArray,
     cellSize: Float,
 ): FloatArray = FloatArray(pattern.size) { pattern[it] * cellSize }
+
+/** Mischfarben-Segment, vorgemerkt für die Chip-Vergabe (§13.2). */
+private class MixedChipSegment(
+    val color: LightColor,
+    val from: HexCoord,
+    val to: HexCoord,
+    val mid: Offset,
+)
 
 /** Übersetzt den [BoardUiState] EINMAL je State/Geometrie in Zeichenlisten. */
 internal fun buildBoardRenderSpec(
@@ -92,7 +85,7 @@ private class BoardSpecBuilder(
     private val beams = mutableListOf<LineSpec>()
     private val gridPath = Path()
     private val wallPath = Path()
-    private var mixedSegments = 0
+    private val mixedSegments = mutableListOf<MixedChipSegment>()
 
     private val outlineStroke = Stroke(width = cellSize * OUTLINE_WIDTH)
     private val elementStroke = Stroke(width = cellSize * ELEMENT_STROKE_WIDTH)
@@ -102,6 +95,16 @@ private class BoardSpecBuilder(
     private val dotEffect = PathEffect.dashPathEffect(scaled(GREEN_DOT, cellSize))
     private val dashDotEffect = PathEffect.dashPathEffect(scaled(BLUE_DASH_DOT, cellSize))
     private val splitterEffect = PathEffect.dashPathEffect(scaled(SPLITTER_DASH, cellSize))
+
+    private val crystals =
+        BoardCrystalRender(
+            overlay = overlay,
+            colors = colors,
+            cellSize = cellSize,
+            symbolStroke = symbolStroke,
+            elementStroke = elementStroke,
+            lineWidth = cellSize * ELEMENT_LINE_WIDTH,
+        )
 
     fun addCell(cell: BoardCell) {
         val center = geometry.center(cell.coord)
@@ -125,7 +128,10 @@ private class BoardSpecBuilder(
                 overlay.paths += PathSpec(trianglePath(center, cellSize * PRISM_RADIUS), colors.element, elementStroke)
             is Element.Filter -> addFilter(element, center)
             is Element.Portal -> addPortal(element, center)
-            is Element.Crystal -> crystal?.let { addCrystal(it, center) }
+            // DARK-Fallback konsistent zur TalkBack-Beschreibung (BoardCellDescriptions):
+            // auch ein handgebauter BoardCell ohne CrystalCellState rendert einen dunklen Kristall.
+            is Element.Crystal ->
+                crystals.addCrystal(crystal ?: CrystalCellState(element.required, null, CrystalFill.DARK), center)
         }
     }
 
@@ -142,11 +148,13 @@ private class BoardSpecBuilder(
             }
         beams += LineSpec(start, end, colors.beam(segment.color), cellSize * BEAM_WIDTH, effect)
         if (effect == null) {
-            addChip(segment.color, start, end)
+            val mid = Offset((start.x + end.x) / 2f, (start.y + end.y) / 2f)
+            mixedSegments += MixedChipSegment(segment.color, segment.from, segment.to, mid)
         }
     }
 
     fun build(): BoardRenderSpec {
+        addMixedChips()
         val base =
             DrawOps(
                 paths =
@@ -160,18 +168,54 @@ private class BoardSpecBuilder(
         return BoardRenderSpec(base = base, beams = beams.toList(), overlay = overlay.build())
     }
 
-    /** Symbol-Chip „etwa alle 2 Zellen" (§13.2): deterministisch jedes zweite Mischfarben-Segment. */
-    private fun addChip(
+    /**
+     * Symbol-Chips „etwa alle 2 Zellen" auf Mischfarben-Strahlen (§13.2) —
+     * ORDNUNGSUNABHÄNGIG: Segmente werden je Farbe über gemeinsame Endpunkte
+     * zu zusammenhängenden Strahlzügen gruppiert (Union-Find); jedes zweite
+     * Segment eines Zugs — beginnend mit dem ersten — erhält einen Chip.
+     * Damit trägt JEDER zusammenhängende Mischfarben-Strahl mindestens einen
+     * Chip, auch bei BFS-verzahnter Segmentreihenfolge des Tracers (§5.2)
+     * und bei Ein-Segment-Strahlen (§13-Grundregel: Farbe nie einziger Kanal).
+     */
+    private fun addMixedChips() {
+        val parent = HashMap<Pair<Int, HexCoord>, Pair<Int, HexCoord>>()
+        for (segment in mixedSegments) {
+            val fromRoot = chipRoot(parent, segment.color.bits to segment.from)
+            val toRoot = chipRoot(parent, segment.color.bits to segment.to)
+            parent[fromRoot] = toRoot
+        }
+        val segmentIndexInBeam = HashMap<Pair<Int, HexCoord>, Int>()
+        for (segment in mixedSegments) {
+            val root = chipRoot(parent, segment.color.bits to segment.from)
+            val index = segmentIndexInBeam.getOrDefault(root, 0)
+            segmentIndexInBeam[root] = index + 1
+            if (index % 2 == 0) {
+                addChipAt(segment.mid, segment.color)
+            }
+        }
+    }
+
+    /** Union-Find-Wurzel des Endpunkt-Schlüssels (Farbe, Zelle). */
+    private fun chipRoot(
+        parent: Map<Pair<Int, HexCoord>, Pair<Int, HexCoord>>,
+        key: Pair<Int, HexCoord>,
+    ): Pair<Int, HexCoord> {
+        var current = key
+        var next = parent[current]
+        while (next != null && next != current) {
+            current = next
+            next = parent[current]
+        }
+        return current
+    }
+
+    private fun addChipAt(
+        mid: Offset,
         color: LightColor,
-        start: Offset,
-        end: Offset,
     ) {
-        mixedSegments += 1
-        if (mixedSegments % 2 != 0) return
-        val mid = Offset((start.x + end.x) / 2f, (start.y + end.y) / 2f)
         overlay.circles += CircleSpec(mid, cellSize * CHIP_RADIUS, colors.background)
         overlay.circles += CircleSpec(mid, cellSize * CHIP_RADIUS, colors.beam(color), symbolStroke)
-        addSymbols(mid, color, color.bits, cellSize * CHIP_SYMBOL_SIZE)
+        crystals.addSymbols(mid, color, color.bits, cellSize * CHIP_SYMBOL_SIZE)
     }
 
     /** Quelle §4.1: eingelassenes Gehäuse, Emissionspfeil, Farbsymbole (§13.1). */
@@ -188,7 +232,7 @@ private class BoardSpecBuilder(
                 color = colors.beam(element.color),
                 strokeWidth = cellSize * BEAM_WIDTH,
             )
-        addSymbols(center, element.color, element.color.bits, cellSize * SYMBOL_SIZE)
+        crystals.addSymbols(center, element.color, element.color.bits, cellSize * SYMBOL_SIZE)
     }
 
     /**
@@ -221,7 +265,7 @@ private class BoardSpecBuilder(
         center: Offset,
     ) {
         overlay.circles += CircleSpec(center, cellSize * FILTER_RADIUS, colors.beam(element.color), elementStroke)
-        addSymbols(center, element.color, element.color.bits, cellSize * SYMBOL_SIZE)
+        crystals.addSymbols(center, element.color, element.color.bits, cellSize * SYMBOL_SIZE)
     }
 
     /** Portal §4.6: Doppelring; Paar-ID als 1 bzw. 2 Markierungsstriche (nie nur Farbe). */
@@ -240,106 +284,6 @@ private class BoardSpecBuilder(
                     color = colors.element,
                     strokeWidth = cellSize * ELEMENT_LINE_WIDTH,
                 )
-        }
-    }
-
-    /**
-     * Kristall §4.7/§12.3: Raute; erfüllt = Leuchtaura + Haken; Soll-Symbole
-     * immer sichtbar, empfangene Komponenten gefüllt, fehlende als Umriss (§13.3).
-     */
-    private fun addCrystal(
-        state: CrystalCellState,
-        center: Offset,
-    ) {
-        val fulfilled = state.fill == CrystalFill.FULFILLED
-        val beamColor = colors.beam(state.required)
-        if (fulfilled) {
-            overlay.circles += CircleSpec(center, cellSize * AURA_RADIUS, beamColor.copy(alpha = AURA_ALPHA))
-        }
-        val body = diamondPath(center, cellSize * CRYSTAL_RADIUS)
-        overlay.paths += PathSpec(body, if (fulfilled) beamColor else colors.muted, Fill)
-        overlay.paths += PathSpec(body, colors.element, elementStroke)
-        addSymbols(
-            center = offsetBy(center, 0f, CRYSTAL_SYMBOL_LIFT, cellSize),
-            shown = state.required,
-            filledMask = state.received?.bits ?: 0,
-            size = cellSize * CRYSTAL_SYMBOL_SIZE,
-            filledTint = if (fulfilled) colors.background else null,
-        )
-        addCrystalExtras(state, center)
-    }
-
-    private fun addCrystalExtras(
-        state: CrystalCellState,
-        center: Offset,
-    ) {
-        when (state.fill) {
-            CrystalFill.FULFILLED -> {
-                val start = offsetBy(center, CHECK_START_X, CHECK_START_Y, cellSize)
-                val mid = offsetBy(center, CHECK_MID_X, CHECK_MID_Y, cellSize)
-                val end = offsetBy(center, CHECK_END_X, CHECK_END_Y, cellSize)
-                val width = cellSize * ELEMENT_LINE_WIDTH
-                overlay.lines += LineSpec(start, mid, colors.background, width)
-                overlay.lines += LineSpec(mid, end, colors.background, width)
-            }
-            CrystalFill.OVERSATURATED -> addForeignComponents(state, center)
-            else -> Unit
-        }
-    }
-
-    /** Übersättigt §12.3: Fremdkomponenten klein darunter, durchgestrichen. */
-    private fun addForeignComponents(
-        state: CrystalCellState,
-        center: Offset,
-    ) {
-        val received = state.received ?: return
-        val foreign = LightColor.of(received.bits and state.required.bits.inv()) ?: return
-        val row = offsetBy(center, 0f, FOREIGN_ROW_Y, cellSize)
-        addSymbols(row, foreign, foreign.bits, cellSize * FOREIGN_SYMBOL_SIZE)
-        overlay.lines +=
-            LineSpec(
-                start = offsetBy(row, -STRIKE_HALF_WIDTH, 0f, cellSize),
-                end = offsetBy(row, STRIKE_HALF_WIDTH, 0f, cellSize),
-                color = colors.element,
-                strokeWidth = cellSize * ELEMENT_LINE_WIDTH,
-            )
-    }
-
-    /**
-     * Komponenten-Symbolzeile §13.1 (▲●■): gezeigt werden die Komponenten von
-     * [shown]; gefüllt, wenn die Komponente in [filledMask] steckt, sonst Umriss.
-     */
-    private fun addSymbols(
-        center: Offset,
-        shown: LightColor,
-        filledMask: Int,
-        size: Float,
-        filledTint: Color? = null,
-    ) {
-        val components = shown.components
-        val spacing = size * SYMBOL_SPACING
-        val startX = center.x - spacing * (components.size - 1) / 2f
-        for (i in components.indices) {
-            val component = components[i]
-            val filled = filledMask and component.bits != 0
-            val tint = if (filled) filledTint ?: colors.beam(component) else colors.element
-            addSymbol(Offset(startX + i * spacing, center.y), component, size, filled, tint)
-        }
-    }
-
-    /** Ein Formsymbol §13.1: Rot = ▲, Grün = ●, Blau = ■ — Form kodiert die Komponente. */
-    private fun addSymbol(
-        center: Offset,
-        component: LightColor,
-        size: Float,
-        filled: Boolean,
-        tint: Color,
-    ) {
-        val style = if (filled) Fill else symbolStroke
-        when (component.bits) {
-            LightColor.GREEN.bits -> overlay.circles += CircleSpec(center, size, tint, style)
-            LightColor.BLUE.bits -> overlay.paths += PathSpec(squarePath(center, size), tint, style)
-            else -> overlay.paths += PathSpec(trianglePath(center, size), tint, style)
         }
     }
 }
