@@ -1019,7 +1019,14 @@ Gemeinsame Regeln für beide Aktionen:
 - Eine gerade laufende, noch nicht gewertete Partie ist kein
   Bestandteil des jeweiligen Fortschritts und bleibt vom Reset
   unberührt; wird sie danach gelöst, wird sie regulär als (dann
-  erster) Eintrag gewertet.
+  erster) Eintrag gewertet. Randfall Daily-Reset während einer
+  laufenden Partie: Der vor dem Reset erfasste Gespielt-Eintrag des
+  Tages ist gelöscht und wird beim anschließenden Lösen NICHT
+  nachgeholt (`recordSolved` erhöht nur `geloestGesamt` und die
+  Serienfelder). Die Statistik kann dann `geloestGesamt >
+  gespieltGesamt` zeigen — bewusst akzeptierter Randfall; die
+  Invariante „gespielt ≥ gelöst" wird NICHT garantiert und darf
+  weder von Tests noch von der UI vorausgesetzt werden.
 - Nach erfolgreichem Reset: kurze, neutrale Bestätigung (sinngemäß
   „Zurückgesetzt."), keine Trauer- oder Warn-Dramaturgie —
   konsistent zu 10.3 (keine Dark Patterns, Grundregel 5).
