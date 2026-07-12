@@ -98,6 +98,8 @@ class HomeScreenTest {
 
         composeRule.onNodeWithText(string(R.string.home_load_error)).assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.home_continue)).assertIsNotEnabled()
+        // Fortschritt unbekannt — der Ziel-Untertitel („Level 1") darf nicht erscheinen.
+        composeRule.onNodeWithText(string(R.string.home_continue_level, 1)).assertDoesNotExist()
     }
 
     @Test

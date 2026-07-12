@@ -153,14 +153,17 @@ private fun ContinueButton(
                 text = stringResource(R.string.home_continue),
                 style = MaterialTheme.typography.titleMedium,
             )
-            Text(
-                text =
-                    when (val target = state.continueTarget) {
-                        is ContinueTarget.Level -> stringResource(R.string.home_continue_level, target.levelNumber)
-                        ContinueTarget.AllSolved -> stringResource(R.string.home_continue_all_solved)
-                    },
-                style = MaterialTheme.typography.bodySmall,
-            )
+            // Im Fehlerzustand ist der Fortschritt unbekannt — kein Ziel vorgaukeln.
+            if (!state.hasLoadError) {
+                Text(
+                    text =
+                        when (val target = state.continueTarget) {
+                            is ContinueTarget.Level -> stringResource(R.string.home_continue_level, target.levelNumber)
+                            ContinueTarget.AllSolved -> stringResource(R.string.home_continue_all_solved)
+                        },
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }

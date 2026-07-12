@@ -54,6 +54,20 @@ class InMemoryProgressRepositoryTest {
         }
 
     @Test
+    fun `progress emittiert den Bestand sofort und danach jede Aenderung`() =
+        runTest {
+            repository.progress.test {
+                assertEquals(DataResult.Success(CampaignProgress.EMPTY), awaitItem())
+
+                repository.recordSolved(3, Score(points = 1500, stars = 3))
+
+                val updated = (awaitItem() as DataResult.Success).value
+                assertEquals(Score(points = 1500, stars = 3), updated.bestByLevel[3])
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `reset leert den gesamten Fortschritt`() =
         runTest {
             repository.recordSolved(7, Score(points = 1500, stars = 3))
