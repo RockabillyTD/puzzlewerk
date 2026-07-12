@@ -233,6 +233,31 @@
       moves ≥ 1) nur im KDoc, während Score sie per init-require erzwingt.
       Beim nächsten API-Touch init-Block ergänzen (Konsistenz mit dem
       Score-Muster; bis dahin fangen die PW-3.2-Mapper-Checks das ab)
+- [ ] Architekt (Review-MINOR-4 aus PR #17): Brettform-Zugehörigkeit
+      (§2.1) existiert doppelt — game/.../generator/BeamPaths.kt (internal)
+      und app/.../ui/game/HexGeometry.boardCells. Public `Board.cells()`
+      in :game entscheiden, dann beide Duplikate darauf zurückführen
+- [ ] Game-Designer (Review-NIT-1 aus PR #18): §12.3 („empfangene
+      Komponenten klein darunter") und §13.3 (Umriss-Reihe) beschreiben
+      die Teilerfüllt-Darstellung unterschiedlich — vereinheitlichen
+      (Implementierung folgt §13.3; kein Verstoß, nur Doku-Drift)
+- [ ] Entwickler (Folge-Ticket aus PR-#20-Review, klein): (a) Lademapper
+      Daily: Invariante currentStreak ≤ longestStreak beim Laden als
+      Corrupted abweisen; Plausibilitätsgrenzen für Zähler/Arrays prüfen
+      oder bewusstes Nicht-Prüfen im KDoc begründen (Int-Überlauf
+      currentStreak+1 bei manipuliertem Int.MAX_VALUE-Bestand);
+      (b) S4-Strictness-Test „String-Literal statt Zahl ⇒ Corrupted"
+      für Progress- UND Daily-Schema (pinnt die Streaming-Decoder-Wahl)
+- [ ] Entwickler (aus PW-3.2-Bericht): Fakes können keine Io-Schreibfehler
+      simulieren; PersistenceFailure.Io-Pfad nur strukturell, nicht per
+      Test provoziert — falls PW-3.5/3.6 Fehler-UI testen wollen,
+      failWith um Write-Fehler erweitern
+- [ ] Release-Engineer (aus PW-3.4-Bericht): detekt scannt src/testDebug
+      mit den Standard-Quellpfaden nicht (ktlint deckt es ab) —
+      Build-Pflege-Ticket
+- [ ] PW-3.5-MUSS-PUNKT (Review-MINOR-2 aus PR #18): Tap-Hit-Box des
+      Spielfelds mit der auf 1,5·size begrenzten Semantics-Box abstimmen;
+      Touch-Targets ≥ 48 dp verantwortet der Spiel-Screen (Brettskalierung)
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
