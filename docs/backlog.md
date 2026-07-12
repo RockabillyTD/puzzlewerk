@@ -266,6 +266,26 @@
       umstellen. Zusätzlich NIT: BoardRenderSpecTest prüft PathEffects
       nur mit assertNotNull — assertNotSame zwischen den drei
       Beam-Effekten würde „alle Muster identisch"-Mutationen fangen
+- [ ] Release-Engineer (Qualitäts-Gate-Lücke, HIGH-Fund der PW-3.2-
+      Fix-Verifikation): Java-9+-APIs oberhalb von minSdk (z. B.
+      InputStream.readNBytes, erst API 33) werden in :data/:app-Hauptquellen
+      von keinem Gate gestoppt — JVM-Unit-Tests sind blind, :data-Lint
+      läuft nicht in der Gate-Kette. Optionen: :data:lintDebug (NewApi)
+      in die Verbindlichen Kommandos + CI aufnehmen, oder Desugaring-
+      Entscheidung per ADR. Konkreter Vorfall: readNBytes hätte auf
+      Android 8–12L jeden Store-Read gecrasht (vor Merge gefangen)
+- [ ] Security/Orchestrator (wiederholt aus zwei Audits): gitleaks ist
+      auf der Maschine nicht installiert — S7-Scan je PR läuft nur als
+      manueller Muster-Sweep; Tool in die Toolchain aufnehmen
+- [ ] Release-Engineer (Security-LOW-2 aus PW-3.3-Audit): Robolectric-
+      Offline-Pinnung wurzelweit heben (Convention/subprojects) beim
+      android-all-Katalogumzug; bis dahin schützt nur der Wächter-Test
+      in :app
+- [ ] Game-Designer (aus Review PR #21, für A11y-Pass PW-3.7/Phase 4):
+      Magenta #D6409F erreicht auf #101418 nur 4,49:1 — AA für
+      Normaltext knapp verfehlt; als on-Farbe nur für großen Text/
+      UI-Komponenten dokumentiert. Finale Ton-Entscheidung (§13.4
+      normativ) steht aus
 - [ ] Architekt (Review-Frage aus PR #19): Soll der Progress-Lademapper
       Kreuz-Konsistenz Punkte↔Sterne (Punkte ∈ 1000+50er-Raster, Sterne
       passend zu §7.2) als Corrupted werten? Braucht KDoc-/ADR-007-
