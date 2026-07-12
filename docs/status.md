@@ -111,17 +111,27 @@ Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
 | PW-3.4 BoardCanvas :app | ui-entwickler | in Arbeit (Worktree) | — |
 | PW-3.8 Design-Präzisierung §11.3/§12.5 | game-designer | in Arbeit (Worktree) | — |
 
-## In Arbeit (Phase 3, Wave 1 — parallel, disjunkte Dateimengen)
-- [ ] PW-3.2 (entwickler): DataStore-Repos + Fakes + isLevelUnlocked,
-      Kover ≥ 70 % :data
-- [ ] PW-3.3 (ui-entwickler): Application/Container, Theme, Navigation,
-      Home, Robolectric-Setup mit Offline-Pinnung (Merge-Blocker-Prüfpunkt
-      aus Security-Review #15), Kover ≥ 70 % :app
-- [ ] PW-3.4 (ui-entwickler): BoardCanvas statisch (ui/game/, Farben
-      lokal per §13.4 — Theme-Verdrahtung folgt in PW-3.5)
-- [ ] PW-3.8 (game-designer): §11.3 exakte Level→Tier-Zuordnung
-      (entblockt PW-3.6 vollständig) + §12.5 Reset-Semantik
-      (Review-Befund MINOR-1 aus PR #15)
+## Erledigt (Zyklus 11, 2026-07-12)
+- [x] PW-3.8 (PR #16, gemergt 719e8c0): §11.3 campaignTier(n) exakt
+      fixiert (D1:1–6, D2:7–12, D3:13–21, D4:22–29, D5:30–39, D6:40–46,
+      D7:47–50) + §12.5 Reset als zwei getrennte Aktionen inkl.
+      kodifiziertem Daily-Reset-Randfall — Reviewer-APPROVE mit
+      Handnachrechnung, MINOR per game-designer-Entscheidung gepatcht
+- [x] PW-3.4 (PR #17 + #18, gemergt 3314041/8d712b9): HexGeometrie +
+      BoardCanvas komplett — Korrekturzyklus 1 behob 1 BLOCKER
+      (Split-Vorwärtsreferenz), 2 MAJOR (ordnungsabhängige Chip-Vergabe →
+      Union-Find mit Chip-Garantie je Strahl; C4-Dateisplit); 23 Tests,
+      Re-Reviews APPROVE. Größen-Ausnahme (~1050 Zeilen, PR #18) als
+      Orchestrator-Entscheidung dokumentiert → Offenlegung im Phasenbericht
+
+## In Arbeit (Phase 3)
+- [ ] PW-3.2 (entwickler): GELIEFERT (2 Branches, Kover :data 97,8 %,
+      90 Tests; PR #19 Code+Security-APPROVE, PR #20 APPROVE) —
+      Härtungspaket vor Merge läuft (Security-MEDIUM Byte-Kappung,
+      Golden-Fixture-Konsistenz, Streak-Invariante)
+- [ ] PW-3.3 (ui-entwickler): GELIEFERT (2 Branches, Kover :app 95,8 %,
+      43 Tests, Offline-Pinnung per Negativtest belegt) — PR #21 + #22
+      offen, 2 Code-Reviews + Security-Audit laufen
 
 ## Nächste Schritte
 1. Wave-1-PRs: je Review (code-reviewer; PW-3.3 zusätzlich

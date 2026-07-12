@@ -258,6 +258,18 @@
 - [ ] PW-3.5-MUSS-PUNKT (Review-MINOR-2 aus PR #18): Tap-Hit-Box des
       Spielfelds mit der auf 1,5·size begrenzten Semantics-Box abstimmen;
       Touch-Targets ≥ 48 dp verantwortet der Spiel-Screen (Brettskalierung)
+- [ ] ui-entwickler (aus Re-Review PR #18, akzeptierter V1-Randfall):
+      GLEICHFARBIGE sich kreuzende Mischfarben-Strahlen verschmelzen in
+      der Union-Find-Chipvergabe zu einem Zug — einer kann chip-arm
+      werden (Komponente behält ≥ 1 Chip, Farbinfo nie falsch). Falls
+      Playtests sichtbare Lücken zeigen: auf from→to-Pfad-Verkettung
+      umstellen. Zusätzlich NIT: BoardRenderSpecTest prüft PathEffects
+      nur mit assertNotNull — assertNotSame zwischen den drei
+      Beam-Effekten würde „alle Muster identisch"-Mutationen fangen
+- [ ] Architekt (Review-Frage aus PR #19): Soll der Progress-Lademapper
+      Kreuz-Konsistenz Punkte↔Sterne (Punkte ∈ 1000+50er-Raster, Sterne
+      passend zu §7.2) als Corrupted werten? Braucht KDoc-/ADR-007-
+      Präzisierung — kein Alleingang der Implementierung
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
