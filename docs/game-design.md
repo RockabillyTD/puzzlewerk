@@ -858,6 +858,51 @@ Progression zu entwerten. Sterne/Score schalten nichts frei (7.2).
 Element-Infokarten erscheinen beim ersten Auftreten eines Elementtyps
 (Level 1, 9, 17, 27, 37 — bzw. ggf. früher im Daily, 12.5).
 
+**Level→Tier-Zuordnung `campaignTier(n)`** (Präzisierung 2026-07-12,
+PW-3.8): Für die Funktion `campaignTier(n)` in `:game` gilt je
+Levelnummer GENAU EIN Tier. Die oben als Spannen notierten Bereiche
+4–8 (D1–D2), 27–31 (D4–D5) und 37–41 (D5–D6) sind wie folgt fixiert;
+alle bereits eindeutigen Bereiche (1–3, 9–26, 32–36, 42–50) sind
+unverändert übernommen. Normative Gesamtzuordnung:
+
+| n | 1–6 | 7–12 | 13–21 | 22–29 | 30–39 | 40–46 | 47–50 |
+|---|---|---|---|---|---|---|---|
+| `campaignTier(n)` | D1 | D2 | D3 | D4 | D5 | D6 | D7 |
+
+Äquivalente Regel (erste zutreffende Zeile gewinnt):
+`campaignTier(n) = D1 falls n ≤ 6; D2 falls n ≤ 12; D3 falls n ≤ 21;
+D4 falls n ≤ 29; D5 falls n ≤ 39; D6 falls n ≤ 46; D7 falls n ≤ 50`.
+
+- `campaignTier(n)` ist eine pure, totale Funktion auf `n ∈ 1..50`.
+  Aufrufe außerhalb 1..50 sind ein Programmierfehler des Aufrufers
+  (require/Exception, C3: Bugs sind Exceptions) — es gibt keinen
+  Level-Kontext außerhalb der Kampagne.
+- Testbare Eigenschaften: (a) monoton nicht-fallend über n; (b)
+  benachbarte Level unterscheiden sich um höchstens eine Tier-Stufe;
+  (c) jede Zuordnung liegt innerhalb der Tier-Spanne ihres
+  Levelbereichs in der Progressionstabelle; (d) jedes Tier D1–D7
+  kommt mindestens einmal vor. Verteilung: D1×6, D2×6, D3×9, D4×8,
+  D5×10, D6×7, D7×4 (Summe 50 — lange Mitte, kurzes Maximum).
+- Spielerische Begründung der neuen Fixierungen: **4–6 = D1** (die
+  farbigen Quellen kommen zuerst mit dem vertrauten
+  Nur-Spiegel-Werkzeug — ein neues Konzept pro Schritt),
+  **7–8 = D2** (2–3 drehbare Elemente als sanfte Brücke zum
+  Splitter-Block ab 9). **27–29 = D4** (drei Lern-Level für den neuen
+  Filter im vertrauten D4-Rahmen), **30–31 = D5** (Anstieg als
+  Vorbereitung auf die Filterketten 32–36). **37–39 = D5**
+  (Portal-Einführung mit höchstens 1 Paar — der größte Konzeptsprung
+  des Spiels bekommt drei sanfte Level), **40–41 = D6** (Überleitung
+  zur vollen Palette 42–46).
+- Klarstellungen (keine Regeländerungen): Die Spalten
+  Radius/Quellen/Kristalle der Progressionstabelle bleiben
+  Kuratierungs-Richtwerte innerhalb der Tier-Bereiche aus 9.2
+  (z. B. kann ein D5-Seed für Level 37–39 Radius 3 liefern; Branko
+  kuratiert dann gemäß Richtwert Radius 4). Enthält ein kuratiertes
+  D2-Level 7–8 bereits einen Splitter bzw. ein D5-Level 30–36 bereits
+  ein Portal, greift die normative Infokarten-Regel „beim ersten
+  Auftreten eines Elementtyps" — die Levelliste „1, 9, 17, 27, 37"
+  oben beschreibt den Normalfall, nicht den Trigger.
+
 ---
 
 ## 12. UX-Flows
@@ -916,12 +961,68 @@ Home ──► Levelauswahl ──► Spiel (Kampagne) ──► Ergebnis-Overla
 - Einstellungen: Sound an/aus, Haptik an/aus, **Farbsymbole an/aus
   (Default: AN)**, **Strahlmuster an/aus (Default: AN)** (beide siehe
   13), Sprache folgt System (de/en), Lizenzen/Impressum, „Fortschritt
-  zurücksetzen" (doppelte Bestätigung).
+  zurücksetzen" (doppelte Bestätigung; präzisiert als zwei getrennte
+  Aktionen, siehe „Reset-Semantik" unten).
 - Onboarding: keine Tutorial-Videos; Element-Infokarten (statische
   Grafik + 2 Sätze) beim jeweils ersten Kontakt mit einem Elementtyp,
   jederzeit im Elemente-Lexikon nachlesbar.
 - Keine Notifications, keine Wartezeiten, keine Werbung, keine Käufe
   in V1 (17).
+
+**Reset-Semantik** (Präzisierung 2026-07-12, PW-3.8): Die bisher als
+eine Aktion notierte Funktion „Fortschritt zurücksetzen" besteht aus
+**zwei getrennten, klar beschrifteten Aktionen** im
+Einstellungs-Abschnitt „Zurücksetzen". Begründung: „Kampagne neu
+anfangen" darf die Daily-Serie nicht kosten — und wer nur seine
+Daily-Historie löschen will, verliert nicht 50 Level Fortschritt.
+
+1. **„Kampagnen-Fortschritt zurücksetzen"** — führt nach der zweiten
+   Bestätigung genau EINEN Aufruf `ProgressRepository.reset()` aus.
+   Löscht: gelöste Level, Sterne und beste Scores je Level (damit
+   auch Gesamtsterne/Gesamtscore der Levelauswahl, 12.4); danach sind
+   wieder nur Level 1–3 offen (11.2). Bleibt erhalten:
+   Daily-Statistik (10.3), alle Einstellungen, Gesehen-Status der
+   Element-Infokarten.
+2. **„Daily-Statistik zurücksetzen"** — führt nach der zweiten
+   Bestätigung genau EINEN Aufruf `DailyStatsRepository.reset()` aus.
+   Löscht: `gespieltGesamt`, `geloestGesamt`, `aktuelleSerie`,
+   `laengsteSerie`, `ergebnisJeDatum` (10.3). Bleibt erhalten:
+   Kampagnen-Fortschritt, alle Einstellungen, Gesehen-Status der
+   Element-Infokarten.
+
+Gemeinsame Regeln für beide Aktionen:
+
+- **Doppelte Bestätigung, je Aktion ein eigener zweistufiger
+  Dialogfluss.** Dialog 1 benennt konkret, was gelöscht wird UND was
+  erhalten bleibt — sinngemäß für Aktion 1: „Kampagnen-Fortschritt
+  zurücksetzen? Alle gelösten Level, Sterne und Punkte werden
+  gelöscht. Deine Daily-Serie und deine Einstellungen bleiben
+  erhalten." — Buttons [Abbrechen] / [Weiter]. Sinngemäß für
+  Aktion 2: „Daily-Statistik zurücksetzen? Serie, längste Serie und
+  alle Tagesergebnisse werden gelöscht. Dein Kampagnen-Fortschritt
+  und deine Einstellungen bleiben erhalten." Dialog 2 (beide
+  Aktionen) warnt vor der Irreversibilität — sinngemäß: „Wirklich
+  zurücksetzen? Das kann nicht rückgängig gemacht werden." — Buttons
+  [Abbrechen] / [Endgültig zurücksetzen].
+- Fokus-/Default-Aktion ist in beiden Dialogen IMMER „Abbrechen";
+  der destruktive Button ist visuell als destruktiv markiert.
+  Zurück-Geste, Außenklick oder Prozessende an beliebiger Stelle =
+  Abbruch. Der Repository-Aufruf erfolgt ausschließlich nach der
+  zweiten Bestätigung; bei Abbruch wird NICHTS aufgerufen.
+- Einstellungen (Sound, Haptik, Farbsymbole, Strahlmuster, Sprache)
+  werden von KEINER der beiden Aktionen verändert. Es gibt in V1
+  keine kombinierte „Alles löschen"-Aktion.
+- Der Gesehen-Status der Element-Infokarten wird von KEINER der
+  beiden Aktionen zurückgesetzt: Die Karten sind jederzeit im
+  Elemente-Lexikon nachlesbar; ein erneutes Aufdrängen nach einem
+  Reset hätte keinen Lernwert und bräuchte einen dritten Reset-Pfad.
+- Eine gerade laufende, noch nicht gewertete Partie ist kein
+  Bestandteil des jeweiligen Fortschritts und bleibt vom Reset
+  unberührt; wird sie danach gelöst, wird sie regulär als (dann
+  erster) Eintrag gewertet.
+- Nach erfolgreichem Reset: kurze, neutrale Bestätigung (sinngemäß
+  „Zurückgesetzt."), keine Trauer- oder Warn-Dramaturgie —
+  konsistent zu 10.3 (keine Dark Patterns, Grundregel 5).
 
 ---
 
