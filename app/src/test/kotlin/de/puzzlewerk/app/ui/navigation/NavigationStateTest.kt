@@ -111,6 +111,23 @@ class NavigationStateTest {
     }
 
     @Test
+    fun `Saver verwirft Nicht-String-Eintraege ohne Absturz`() {
+        // Der Listentyp aus dem SavedState ist zur Laufzeit ungeprüft (S4).
+        assertNull(NavigationState.saver.restore(listOf("home", 42)))
+        assertNull(NavigationState.saver.restore(listOf(7L, "home")))
+    }
+
+    @Test
+    fun `Konstruktor erzwingt Home als Wurzel`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            NavigationState(listOf(Screen.LevelSelect))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            NavigationState(emptyList())
+        }
+    }
+
+    @Test
     fun `LevelRequest validiert seine Wertebereiche`() {
         assertThrows(IllegalArgumentException::class.java) { LevelRequest.Campaign(0) }
         assertThrows(IllegalArgumentException::class.java) { LevelRequest.Campaign(51) }
