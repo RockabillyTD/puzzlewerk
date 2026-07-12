@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     // ADR-007: kotlinx.serialization für die versionierten Persistenz-Schemata.
     alias(libs.plugins.kotlin.serialization)
+    // ADR-009: Coverage-Gate ≥ 70 % Line, scharf ab PW-3.2.
+    alias(libs.plugins.kover)
 }
 
 android {
@@ -48,4 +50,15 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+kover {
+    reports {
+        verify {
+            rule {
+                // Quality Gate :data ≥ 70 % Line (ADR-009, docs/plan.md §4.3)
+                minBound(70)
+            }
+        }
+    }
 }
