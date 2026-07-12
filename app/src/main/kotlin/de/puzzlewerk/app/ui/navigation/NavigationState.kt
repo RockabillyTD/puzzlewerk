@@ -20,7 +20,11 @@ class NavigationState internal constructor(
     initialBackstack: List<Screen>,
 ) {
     init {
+        // Beide Invarianten lokal erzwingen (Review-NIT PW-3.3): der Saver
+        // prüft sie zwar bereits graceful (null ⇒ Neustart), aber ein
+        // Programmierfehler an anderer Stelle soll laut knallen (C3).
         require(initialBackstack.isNotEmpty()) { "Der Backstack darf nie leer sein" }
+        require(initialBackstack.first() == Screen.Home) { "Die Wurzel des Backstacks ist immer Home (ADR-008)" }
     }
 
     /** Aktueller Stack; das erste Element ist die Wurzel. */
@@ -52,15 +56,20 @@ class NavigationState internal constructor(
         /**
          * Saver für `rememberSaveable`: Screens als kompakte Strings.
          * SavedState kommt von außerhalb des Prozesses (S4) — jeder nicht
-         * strikt dekodierbare Eintrag verwirft den GESAMTEN Stack, die App
+         * strikt dekodierbare Eintrag (auch ein Nicht-String, der Listentyp
+         * ist zur Laufzeit ungeprüft) verwirft den GESAMTEN Stack; die App
          * startet dann definiert auf Home statt auf einem geratenen Zustand.
          */
         val saver: Saver<NavigationState, Any> =
             listSaver(
                 save = { state -> state.backstack.map(::encodeScreen) },
                 restore = { saved ->
-                    val screens = saved.mapNotNull(::decodeScreen)
-                    if (screens.size == saved.size && screens.firstOrNull() == Screen.Home) {
+                    val tokens = saved.filterIsInstance<String>()
+                    val screens = tokens.mapNotNull(::decodeScreen)
+                    if (tokens.size == saved.size &&
+                        screens.size == saved.size &&
+                        screens.firstOrNull() == Screen.Home
+                    ) {
                         NavigationState(screens)
                     } else {
                         null
@@ -85,7 +94,7 @@ private const val TOKEN_SETTINGS = "settings"
 private const val TOKEN_GAME_CAMPAIGN = "game/campaign/"
 private const val TOKEN_GAME_DAILY = "game/daily/"
 
-/** Bijektive Kurzform eines [Screen] für den [NavigationState.saver]. */
+/** Umkehrbare (injektive) Kurzform eines [Screen] für den [NavigationState.saver]. */
 internal fun encodeScreen(screen: Screen): String =
     when (screen) {
         Screen.Home -> TOKEN_HOME
