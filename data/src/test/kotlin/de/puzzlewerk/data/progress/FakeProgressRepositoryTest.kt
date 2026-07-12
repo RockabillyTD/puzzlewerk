@@ -24,8 +24,8 @@ class FakeProgressRepositoryTest {
             val repository = FakeProgressRepository()
             repository.progress.test {
                 awaitItem() shouldBe DataResult.Success(CampaignProgress.EMPTY)
-                repository.recordSolved(2, Score(points = 1200, stars = 2)) shouldBe WriteResult.Success
-                awaitItem() shouldBe DataResult.Success(CampaignProgress(mapOf(2 to Score(points = 1200, stars = 2))))
+                repository.recordSolved(2, Score(points = 1400, stars = 2)) shouldBe WriteResult.Success
+                awaitItem() shouldBe DataResult.Success(CampaignProgress(mapOf(2 to Score(points = 1400, stars = 2))))
                 // schlechteres Ergebnis: No-op ohne neue Emission
                 repository.recordSolved(2, Score(points = 1000, stars = 1)) shouldBe WriteResult.Success
                 repository.recordSolved(2, Score(points = 1500, stars = 3)) shouldBe WriteResult.Success

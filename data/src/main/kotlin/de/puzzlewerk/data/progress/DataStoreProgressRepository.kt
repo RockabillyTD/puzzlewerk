@@ -22,6 +22,10 @@ import java.io.File
  * als [DataResult.Failure] im Flow; Schreibversuche auf einen solchen Bestand
  * schlagen als Wert fehl — nur [reset] überschreibt ihn explizit.
  *
+ * Flow-Semantik (Review PW-3.2): Nach einem `PersistenceFailure.Io`-LESEfehler
+ * beendet der [progress]-Flow — der Collector muss neu kollektieren.
+ * Korruption/Versionskonflikt beenden den Flow nicht.
+ *
  * @param scope Coroutine-Scope des DataStores (Lebensdauer der App bzw. des
  *   Tests); Dispatcher-Wahl liegt beim Aufrufer (Composition Root, ADR-006).
  * @param produceFile liefert die Store-Datei im App-Sandbox-Verzeichnis (S2).

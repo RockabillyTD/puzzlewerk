@@ -27,7 +27,7 @@ class ProgressSchemaV1Test {
                 CampaignProgress(
                     mapOf(
                         1 to Score(points = 1500, stars = 3),
-                        2 to Score(points = 1200, stars = 2),
+                        2 to Score(points = 1400, stars = 2),
                         5 to Score(points = 1000, stars = 1),
                     ),
                 ),

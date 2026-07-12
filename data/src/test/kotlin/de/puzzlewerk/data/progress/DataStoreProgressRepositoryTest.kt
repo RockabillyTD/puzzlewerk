@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import de.puzzlewerk.data.DataResult
 import de.puzzlewerk.data.PersistenceFailure
 import de.puzzlewerk.data.WriteResult
+import de.puzzlewerk.data.store.MAX_STORE_FILE_BYTES
 import de.puzzlewerk.game.score.Score
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -49,15 +50,15 @@ class DataStoreProgressRepositoryTest {
     fun `nur ein besseres Ergebnis ueberschreibt den Bestwert (Paragraf 7_2)`() =
         runTest {
             val repository = newRepository()
-            repository.recordSolved(3, Score(points = 1200, stars = 2)) shouldBe WriteResult.Success
+            repository.recordSolved(3, Score(points = 1400, stars = 2)) shouldBe WriteResult.Success
             // schlechter und gleich gut: No-op mit Success
             repository.recordSolved(3, Score(points = 1100, stars = 1)) shouldBe WriteResult.Success
-            repository.recordSolved(3, Score(points = 1200, stars = 2)) shouldBe WriteResult.Success
+            repository.recordSolved(3, Score(points = 1400, stars = 2)) shouldBe WriteResult.Success
             repository.progress.first() shouldBe
-                DataResult.Success(CampaignProgress(mapOf(3 to Score(points = 1200, stars = 2))))
-            repository.recordSolved(3, Score(points = 1450, stars = 3)) shouldBe WriteResult.Success
+                DataResult.Success(CampaignProgress(mapOf(3 to Score(points = 1400, stars = 2))))
+            repository.recordSolved(3, Score(points = 1500, stars = 3)) shouldBe WriteResult.Success
             repository.progress.first() shouldBe
-                DataResult.Success(CampaignProgress(mapOf(3 to Score(points = 1450, stars = 3))))
+                DataResult.Success(CampaignProgress(mapOf(3 to Score(points = 1500, stars = 3))))
         }
 
     @Test
@@ -67,7 +68,7 @@ class DataStoreProgressRepositoryTest {
             // absichtlich unsortiert gespeichert — encode sortiert nach Level
             repository.recordSolved(5, Score(points = 1000, stars = 1))
             repository.recordSolved(1, Score(points = 1500, stars = 3))
-            repository.recordSolved(2, Score(points = 1200, stars = 2))
+            repository.recordSolved(2, Score(points = 1400, stars = 2))
             storeFile().readText() shouldBe goldenText()
         }
 
@@ -80,7 +81,7 @@ class DataStoreProgressRepositoryTest {
                     CampaignProgress(
                         mapOf(
                             1 to Score(points = 1500, stars = 3),
-                            2 to Score(points = 1200, stars = 2),
+                            2 to Score(points = 1400, stars = 2),
                             5 to Score(points = 1000, stars = 1),
                         ),
                     ),
@@ -103,6 +104,21 @@ class DataStoreProgressRepositoryTest {
                 .failure
                 .shouldBeInstanceOf<PersistenceFailure.Corrupted>()
             storeFile().readText() shouldBe "{"
+        }
+
+    @Test
+    fun `uebergrosse Datei ist Corrupted als Wert, Bestand bleibt unangetastet (S4)`() =
+        runTest {
+            storeFile().writeText("x".repeat(MAX_STORE_FILE_BYTES + 1))
+            val repository = newRepository()
+            repository.progress.first() shouldBe
+                DataResult.Failure(PersistenceFailure.Corrupted("progress: Datei überschreitet Maximalgröße"))
+            repository
+                .recordSolved(1, Score(points = 1500, stars = 3))
+                .shouldBeInstanceOf<WriteResult.Failure>()
+                .failure
+                .shouldBeInstanceOf<PersistenceFailure.Corrupted>()
+            storeFile().length() shouldBe (MAX_STORE_FILE_BYTES + 1).toLong()
         }
 
     @Test
@@ -154,7 +170,7 @@ class DataStoreProgressRepositoryTest {
     fun `reset setzt einen gefuellten Bestand auf EMPTY zurueck (Paragraf 12_5)`() =
         runTest {
             val repository = newRepository()
-            repository.recordSolved(4, Score(points = 1300, stars = 2))
+            repository.recordSolved(4, Score(points = 1350, stars = 2))
             repository.reset() shouldBe WriteResult.Success
             repository.progress.first() shouldBe DataResult.Success(CampaignProgress.EMPTY)
         }
