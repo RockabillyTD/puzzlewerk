@@ -3,6 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    // ADR-007: kotlinx.serialization für die versionierten Persistenz-Schemata.
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -29,8 +31,18 @@ kotlin {
 dependencies {
     implementation(project(":game"))
 
+    // Flow ist Teil der öffentlichen Repository-API → api statt implementation.
+    api(libs.kotlinx.coroutines.core)
+
+    // ADR-007: typisierter DataStore + JSON-Codec.
+    implementation(libs.androidx.datastore)
+    implementation(libs.kotlinx.serialization.json)
+
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions)
+    // ADR-009: Flow-/Coroutine-Tests für die Repository-Implementierungen.
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

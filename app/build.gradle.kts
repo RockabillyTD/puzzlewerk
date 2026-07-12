@@ -39,6 +39,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests {
+            // ADR-009: Robolectric-Compose-Tests brauchen die Android-Ressourcen.
+            isIncludeAndroidResources = true
+        }
+    }
+
     lint {
         warningsAsErrors = true
         abortOnError = true
@@ -78,4 +85,15 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
 
     debugImplementation(libs.compose.ui.tooling)
+    // ADR-009: Test-Activity für createComposeRule unter Robolectric.
+    debugImplementation(libs.compose.ui.test.manifest)
+
+    // ADR-009: UI-Test-Stack — Robolectric ist ein JUnit4-Runner; JUnit 5
+    // bleibt Standard in :game/:core/:data.
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
 }
