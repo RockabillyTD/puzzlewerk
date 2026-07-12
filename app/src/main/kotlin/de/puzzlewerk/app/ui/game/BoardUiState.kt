@@ -11,9 +11,9 @@ import de.puzzlewerk.game.trace.Segment
 import de.puzzlewerk.game.trace.TraceResult
 
 /**
- * Render-fertiger Spielfeld-Zustand für [BoardCanvas] — die einzige Wahrheit
- * des Brett-Renderings (unidirektionaler Datenfluss; ab PW-3.5 Teil des
- * `GameUiState`, hier per [boardUiState] aus `:game`-Werten abgeleitet).
+ * Render-fertiger Spielfeld-Zustand für `BoardCanvas` (PW-3.4b) — die einzige
+ * Wahrheit des Brett-Renderings (unidirektionaler Datenfluss; ab PW-3.5 Teil
+ * des `GameUiState`, hier per [boardUiState] aus `:game`-Werten abgeleitet).
  *
  * @property radius Brettradius `R ∈ 2..5` (§2.1).
  * @property cells Alle Brettzellen in deterministischer Lesereihenfolge
@@ -22,7 +22,7 @@ import de.puzzlewerk.game.trace.TraceResult
  *   normativen Erzeugungsreihenfolge (§5.2).
  */
 @Immutable
-data class BoardUiState(
+internal data class BoardUiState(
     val radius: Int,
     val cells: List<BoardCell>,
     val beams: List<Segment>,
@@ -37,7 +37,7 @@ data class BoardUiState(
  *   [element] ein Kristall ist.
  */
 @Immutable
-data class BoardCell(
+internal data class BoardCell(
     val coord: HexCoord,
     val element: Element?,
     val crystal: CrystalCellState? = null,
@@ -53,7 +53,7 @@ data class BoardCell(
  *   berechnet in `:game` ([crystalFill]), nie in der UI.
  */
 @Immutable
-data class CrystalCellState(
+internal data class CrystalCellState(
     val required: LightColor,
     val received: LightColor?,
     val fill: CrystalFill,
@@ -64,7 +64,7 @@ data class CrystalCellState(
  * Kristall-Klassifikation über [crystalFill] aus `:game` — KEINE Spiellogik
  * in der UI (CLAUDE.md; ab PW-3.5 ruft das `GameViewModel` diese Funktion).
  */
-fun boardUiState(
+internal fun boardUiState(
     board: Board,
     trace: TraceResult,
 ): BoardUiState =

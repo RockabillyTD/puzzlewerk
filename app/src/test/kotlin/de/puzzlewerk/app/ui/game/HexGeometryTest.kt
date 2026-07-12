@@ -6,6 +6,7 @@ import de.puzzlewerk.game.board.HexCoord
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
@@ -67,6 +68,30 @@ class HexGeometryTest {
             assertTrue("Breite $boardWidth > $width", boardWidth <= width + 0.001f)
             assertTrue("Höhe $boardHeight > $height", boardHeight <= height + 0.001f)
         }
+    }
+
+    @Test
+    fun `fittingCellSize ist straff - minimal groesser reisst eine Schranke`() {
+        val width = 411f
+        val height = 320f
+        for (radius in Board.MIN_RADIUS..Board.MAX_RADIUS) {
+            val oversized = HexGeometry.fittingCellSize(radius, width, height) * 1.001f
+            val widthOver = HexGeometry.SQRT3 * oversized * (2 * radius + 1) > width
+            val heightOver = oversized * (3 * radius + 2) > height
+            assertTrue("R=$radius: 1,001-fache Zellgröße müsste eine Schranke reißen", widthOver || heightOver)
+        }
+    }
+
+    @Test
+    fun `Hex-Ecken liegen im Zellgroessen-Abstand mit Spitzen oben und unten`() {
+        val cellSize = 24f
+        val corners = (0 until 6).map { HexGeometry.cornerX(cellSize, it) to HexGeometry.cornerY(cellSize, it) }
+        for ((x, y) in corners) {
+            assertEquals("Ecke ($x, $y)", cellSize, sqrt(x * x + y * y), 0.001f)
+        }
+        // pointy-top (§2.1): genau eine Spitze bei (0, −size) und eine bei (0, +size).
+        assertEquals(1, corners.count { (x, y) -> abs(x) < 0.001f && abs(y - cellSize) < 0.001f })
+        assertEquals(1, corners.count { (x, y) -> abs(x) < 0.001f && abs(y + cellSize) < 0.001f })
     }
 
     @Test
