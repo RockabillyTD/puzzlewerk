@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test
 
 /** Serien-Semantik §10.3: Serie, verpasster Tag, R38-Idempotenz, Datum rückwärts. */
 class DailyStatsStateTest {
-    private fun record(moves: Int = 3): DailyRecord =
-        DailyRecord(moves = moves, par = 3, score = Score(points = 1500, stars = 3))
+    // §7.2-konsistente Fixture: Punkte/Sterne folgen aus moves und par.
+    private fun record(moves: Int = 3): DailyRecord = consistentDailyRecord(moves = moves, par = 3)
 
     @Test
     fun `Erstloesung startet die Serie bei 1`() {
@@ -128,7 +128,8 @@ class DailyStatsStateTest {
 
     @Test
     fun `gueltige Grenzwerte passieren die Vorbedingungen`() {
-        requireValidDailyRecord(DailyRecord(moves = 1, par = 1, score = Score(points = 1000, stars = 1)))
-        requireValidDailyRecord(DailyRecord(moves = 99, par = 14, score = Score(points = 1500, stars = 3)))
+        // par=1/moves=1 ⇒ 1500/3; par=14/moves=99 ⇒ 1000/1 (§7.2-Grenzen beider Bereiche)
+        requireValidDailyRecord(consistentDailyRecord(moves = 1, par = 1))
+        requireValidDailyRecord(consistentDailyRecord(moves = 99, par = 14))
     }
 }

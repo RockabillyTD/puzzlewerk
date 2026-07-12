@@ -12,8 +12,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class FakeDailyStatsRepositoryTest {
-    private fun record(moves: Int = 3): DailyRecord =
-        DailyRecord(moves = moves, par = 3, score = Score(points = 1500, stars = 3))
+    // §7.2-konsistente Fixture: Punkte/Sterne folgen aus moves und par.
+    private fun record(moves: Int = 3): DailyRecord = consistentDailyRecord(moves = moves, par = 3)
 
     @Test
     fun `Erststart emittiert Success EMPTY`() =

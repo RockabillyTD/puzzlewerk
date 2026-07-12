@@ -51,9 +51,11 @@ internal object ProgressSchemaV1 : StoreSchema<CampaignProgress> {
         )
 
     override fun decode(payload: JsonElement): PayloadDecodeResult<CampaignProgress> {
-        // Streaming-Decoder statt decodeFromJsonElement: nur er unterscheidet strikt
-        // zwischen String- und Zahl-Literalen (S4). runCatching: die Parser-Exception
-        // darf nicht in die Diagnose (ihre Message enthält Nutzdaten).
+        // Streaming-Decoder statt decodeFromJsonElement: der Tree-Decoder ist insgesamt
+        // laxer (u. a. Null-/Typ-Behandlung). Quotierte Zahlen ("1" als Int) akzeptieren
+        // BEIDE Decoder — dokumentierte kotlinx-Toleranz, siehe Known-Behavior-Test in
+        // EnvelopeTest. runCatching: die Parser-Exception darf nicht in die Diagnose
+        // (ihre Message enthält Nutzdaten).
         val dto =
             runCatching { json.decodeFromString<ProgressPayloadV1>(payload.toString()) }.getOrNull()
                 ?: return PayloadDecodeResult.Invalid("$storeName: Payload verletzt das v1-Schema")
