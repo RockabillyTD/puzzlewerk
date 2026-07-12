@@ -6,6 +6,7 @@ import de.puzzlewerk.data.PersistenceFailure
 import de.puzzlewerk.data.WriteResult
 import de.puzzlewerk.data.store.EnvelopeSerializer
 import de.puzzlewerk.data.store.StoreState
+import de.puzzlewerk.data.store.ioDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -20,6 +21,10 @@ import java.io.IOException
  * ist nicht schützenswert — bei Korruption, Versionskonflikt oder Lesefehler
  * fällt [settings] auf [Settings.DEFAULT] zurück, und das nächste [update]
  * überschreibt die unbrauchbare Datei mit einem gültigen v1-Bestand.
+ *
+ * Flow-Semantik (Review PW-3.2): Nach einem E/A-LESEfehler emittiert
+ * [settings] einmalig [Settings.DEFAULT] und beendet — der Collector muss
+ * neu kollektieren. Korruption/Versionskonflikt beenden den Flow nicht.
  *
  * @param scope Coroutine-Scope des DataStores (Lebensdauer der App bzw. des
  *   Tests); Dispatcher-Wahl liegt beim Aufrufer (Composition Root, ADR-006).
@@ -48,7 +53,8 @@ class DataStoreSettingsRepository(
             store.updateData { current -> StoreState.Loaded(transform(current.valueOrDefault())) }
             WriteResult.Success
         } catch (cause: IOException) {
-            WriteResult.Failure(PersistenceFailure.Io(cause.message ?: "E/A-Fehler beim Schreiben der Einstellungen"))
+            // ioDetails: nur der Klassenname, keine Message (Pfad-Leak, Security-Review PW-3.2)
+            WriteResult.Failure(PersistenceFailure.Io(cause.ioDetails()))
         }
 }
 

@@ -72,10 +72,18 @@ internal object DailySchemaV1 : StoreSchema<DailyStatsState> {
             ),
         )
 
+    /**
+     * Bewusste Entscheidung (Review PW-3.2 #20-MINOR-1b): Riesen-Arrays werden durch
+     * die 256-KiB-Kappung auf DATEI-Ebene ([de.puzzlewerk.data.store.MAX_STORE_FILE_BYTES])
+     * begrenzt statt durch Einzelfeld-Plausibilitätsfenster — jede weitere Grenze
+     * (z. B. max. Einträge) wäre eine erfundene Spielregel ohne Design-Grundlage.
+     */
     override fun decode(payload: JsonElement): PayloadDecodeResult<DailyStatsState> {
-        // Streaming-Decoder statt decodeFromJsonElement: nur er unterscheidet strikt
-        // zwischen String- und Zahl-Literalen (S4). runCatching: die Parser-Exception
-        // darf nicht in die Diagnose (ihre Message enthält Nutzdaten).
+        // Streaming-Decoder statt decodeFromJsonElement: der Tree-Decoder ist insgesamt
+        // laxer (u. a. Null-/Typ-Behandlung). Quotierte Zahlen ("1" als Int) akzeptieren
+        // BEIDE Decoder — dokumentierte kotlinx-Toleranz, siehe Known-Behavior-Test in
+        // EnvelopeTest. runCatching: die Parser-Exception darf nicht in die Diagnose
+        // (ihre Message enthält Nutzdaten).
         val dto =
             runCatching { json.decodeFromString<DailyPayloadV1>(payload.toString()) }.getOrNull()
                 ?: return PayloadDecodeResult.Invalid("$storeName: Payload verletzt das v1-Schema")
@@ -83,15 +91,23 @@ internal object DailySchemaV1 : StoreSchema<DailyStatsState> {
     }
 
     private fun mapPayload(dto: DailyPayloadV1): PayloadDecodeResult<DailyStatsState> {
-        if (dto.currentStreak < 0 || dto.longestStreak < 0) {
-            return PayloadDecodeResult.Invalid("$storeName: Serienzähler dürfen nicht negativ sein (§10.3)")
-        }
+        val counterViolation = dto.counterViolation()
+        if (counterViolation != null) return PayloadDecodeResult.Invalid(counterViolation)
         val played = dto.playedEpochDays.toSet()
         if (played.size != dto.playedEpochDays.size) {
             return PayloadDecodeResult.Invalid("$storeName: doppelter playedEpochDays-Eintrag (§16.2/2)")
         }
         return mapResults(dto, played)
     }
+
+    private fun DailyPayloadV1.counterViolation(): String? =
+        when {
+            currentStreak < 0 || longestStreak < 0 -> "$storeName: Serienzähler dürfen nicht negativ sein (§10.3)"
+            // §10.3-Invariante: laengsteSerie ist das laufende Maximum der aktuellen
+            // Serie — kein App-Schreibpfad kann currentStreak > longestStreak erzeugen.
+            currentStreak > longestStreak -> "$storeName: currentStreak > longestStreak (§10.3)"
+            else -> null
+        }
 
     private fun mapResults(
         dto: DailyPayloadV1,

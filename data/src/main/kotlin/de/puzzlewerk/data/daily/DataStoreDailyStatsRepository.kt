@@ -21,6 +21,10 @@ import java.io.File
  * [DataResult.Failure] im Flow, Schreibversuche darauf schlagen als Wert
  * fehl — nur [reset] überschreibt einen solchen Bestand explizit.
  *
+ * Flow-Semantik (Review PW-3.2): Nach einem `PersistenceFailure.Io`-LESEfehler
+ * beendet der [stats]-Flow — der Collector muss neu kollektieren.
+ * Korruption/Versionskonflikt beenden den Flow nicht.
+ *
  * @param scope Coroutine-Scope des DataStores (Lebensdauer der App bzw. des
  *   Tests); Dispatcher-Wahl liegt beim Aufrufer (Composition Root, ADR-006).
  * @param produceFile liefert die Store-Datei im App-Sandbox-Verzeichnis (S2).
@@ -44,12 +48,7 @@ class DataStoreDailyStatsRepository(
             }
         }
 
-    override suspend fun recordPlayed(epochDay: Long): WriteResult =
-        store.updateLoaded { current ->
-            current.withPlayed(
-                epochDay,
-            )
-        }
+    override suspend fun recordPlayed(epochDay: Long): WriteResult = store.updateLoaded { it.withPlayed(epochDay) }
 
     override suspend fun recordSolved(
         epochDay: Long,

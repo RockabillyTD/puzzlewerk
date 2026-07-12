@@ -93,6 +93,34 @@ class DailySchemaV1Test {
     }
 
     @Test
+    fun `currentStreak groesser longestStreak ist Corrupted (Paragraf 10_3-Invariante)`() {
+        DailySchemaV1
+            .decodeStoreText(
+                payloadText(
+                    currentStreak = 3,
+                    longestStreak = 2,
+                    playedEpochDays = "[100]",
+                    results = "[${resultEntry(100)}]",
+                ),
+            ).shouldBeCorrupted()
+        // Gleichstand ist der Normalfall einer laufenden Rekordserie — gültig
+        DailySchemaV1.decodeStoreText(
+            payloadText(currentStreak = 1, longestStreak = 1, results = "[${resultEntry(100)}]"),
+        ) shouldBe
+            StoreState.Loaded(
+                DailyStatsState(
+                    playedEpochDays = emptySet(),
+                    currentStreak = 1,
+                    longestStreak = 1,
+                    resultByEpochDay =
+                        mapOf(
+                            100L to DailyRecord(moves = 3, par = 3, score = Score(points = 1500, stars = 3)),
+                        ),
+                ),
+            )
+    }
+
+    @Test
     fun `doppelte playedEpochDays sind Corrupted (Paragraf 16_2)`() {
         DailySchemaV1.decodeStoreText(payloadText(playedEpochDays = "[100,100]")).shouldBeCorrupted()
     }
@@ -100,7 +128,9 @@ class DailySchemaV1Test {
     @Test
     fun `doppelte results-Eintraege sind Corrupted (Paragraf 16_2)`() {
         DailySchemaV1
-            .decodeStoreText(payloadText(results = "[${resultEntry(100)},${resultEntry(100, moves = 5)}]"))
+            .decodeStoreText(
+                payloadText(results = "[${resultEntry(100)},${resultEntry(100, moves = 5, points = 1400, stars = 2)}]"),
+            )
             .shouldBeCorrupted()
     }
 

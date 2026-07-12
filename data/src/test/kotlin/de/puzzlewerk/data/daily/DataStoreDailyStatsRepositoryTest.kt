@@ -75,7 +75,7 @@ class DataStoreDailyStatsRepositoryTest {
             repository.recordPlayed(100) shouldBe WriteResult.Success
             repository.recordPlayed(100) shouldBe WriteResult.Success
             repository.recordSolved(100, record()) shouldBe WriteResult.Success
-            repository.recordSolved(100, record(moves = 9, points = 1200, stars = 2)) shouldBe WriteResult.Success
+            repository.recordSolved(100, record(moves = 9, points = 1200, stars = 1)) shouldBe WriteResult.Success
             val stats = (repository.stats.first() as DataResult.Success).value
             stats.playedTotal shouldBe 1
             stats.solvedTotal shouldBe 1
