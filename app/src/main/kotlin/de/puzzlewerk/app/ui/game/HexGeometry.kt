@@ -63,7 +63,7 @@ internal object HexGeometry {
         radius: Int,
         width: Float,
         height: Float,
-    ): Float = minOf(width / (SQRT3 * (2 * radius + 1)), height / (ROW_HEIGHT * 2 * radius + 2))
+    ): Float = minOf(width / (SQRT3 * (2 * radius + 1)), height / (ROW_HEIGHT * (2 * radius) + 2))
 
     /** x-Anteil der Hex-Ecke [corner] ∈ 0..5 relativ zum Zellzentrum. */
     fun cornerX(

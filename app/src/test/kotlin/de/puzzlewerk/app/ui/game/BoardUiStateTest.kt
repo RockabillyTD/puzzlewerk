@@ -1,7 +1,9 @@
 package de.puzzlewerk.app.ui.game
 
 import de.puzzlewerk.game.board.Board
+import de.puzzlewerk.game.board.Direction
 import de.puzzlewerk.game.board.HexCoord
+import de.puzzlewerk.game.board.Orientation
 import de.puzzlewerk.game.color.CrystalFill
 import de.puzzlewerk.game.color.LightColor
 import de.puzzlewerk.game.element.Element
@@ -55,7 +57,17 @@ class BoardUiStateTest {
 
     @Test
     fun `Nicht-Kristall-Zellen tragen keinen Kristallzustand`() {
-        val state = BoardSampleStates.exampleLevelStart
+        // Lokale Fixture (kein Sample-State): Quelle + Spiegel, keine Kristalle.
+        val board =
+            Board(
+                radius = 2,
+                elements =
+                    mapOf(
+                        HexCoord(-2, 0) to Element.Source(LightColor.WHITE, Direction.EAST),
+                        HexCoord(0, 0) to Element.Mirror(Orientation(5)),
+                    ),
+            )
+        val state = boardUiState(board, TraceResult(segments = emptyList(), received = emptyMap(), solved = false))
         assertNull(state.cells.first { it.coord == HexCoord(0, 0) }.crystal)
         assertNull(state.cells.first { it.coord == HexCoord(-2, 0) }.crystal)
     }
