@@ -228,6 +228,12 @@
       gegen die @Test-Anzahl im Quelltext diffen, oder (c) schlicht
       Review-Checkliste. Empfehlung: (a) bei nächster Gelegenheit
 
+- [ ] Architekt (Review-NIT aus PR #15): DailyRecord in
+      daily/DailyStatsRepository.kt dokumentiert Wertebereiche (par 1..14,
+      moves ≥ 1) nur im KDoc, während Score sie per init-require erzwingt.
+      Beim nächsten API-Touch init-Block ergänzen (Konsistenz mit dem
+      Score-Muster; bis dahin fangen die PW-3.2-Mapper-Checks das ab)
+
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
 

@@ -91,17 +91,44 @@ Phase 3 — Spielbarer Prototyp (gestartet 2026-07-11).
 Gate Phase 3: APK auf Brankos Gerät installierbar, ein Level von
 Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
 
-## In Arbeit (Phase 3)
-- [ ] PW-3.1 (architekt): ADRs für DI-Framework und Persistenz-Stack
-      (neue Dependencies!), :data-Repository-APIs, UI-Architektur-
-      Konventionen (MVI), Compose-Test-Setup-Entscheidung,
-      Ticket-Schnitte für ui-entwickler und entwickler
+## Erledigt (Zyklus 10, 2026-07-12)
+- [x] PW-3.1 (PR #15, gemergt 51fd169): ADR-006 (manueller AppContainer),
+      ADR-007 (DataStore + kotlinx.serialization, Envelope v1), ADR-008
+      (eigener Backstack-Holder), ADR-009 (Robolectric-Stack inkl.
+      S6-Auflage android-all-Offline-Pinnung); :data-Repository-API v1
+      (PersistenceResult, progress/daily/settings); docs/ui-architektur.md;
+      docs/phase3-tickets.md (Schnitte PW-3.2–3.7)
+      — Gate-Kette lokal grün, CI grün, Reviewer-APPROVE (kompakt,
+      stichprobenbasiert nach Abbruch eines überlangen Erst-Reviews),
+      Security-APPROVE (Dependencies/Metadata additiv, Scopes korrekt)
+
+## Delegationsprotokoll (Zyklus 10)
+| Ticket | Agent | Ergebnis | Gates |
+|---|---|---|---|
+| PW-3.1 Fundament | architekt | PR #15 gemergt | CI grün + Reviewer- + Security-APPROVE |
+| PW-3.2 Persistenz :data | entwickler | in Arbeit (Worktree) | — |
+| PW-3.3 App-Shell :app | ui-entwickler | in Arbeit (Worktree) | — |
+| PW-3.4 BoardCanvas :app | ui-entwickler | in Arbeit (Worktree) | — |
+| PW-3.8 Design-Präzisierung §11.3/§12.5 | game-designer | in Arbeit (Worktree) | — |
+
+## In Arbeit (Phase 3, Wave 1 — parallel, disjunkte Dateimengen)
+- [ ] PW-3.2 (entwickler): DataStore-Repos + Fakes + isLevelUnlocked,
+      Kover ≥ 70 % :data
+- [ ] PW-3.3 (ui-entwickler): Application/Container, Theme, Navigation,
+      Home, Robolectric-Setup mit Offline-Pinnung (Merge-Blocker-Prüfpunkt
+      aus Security-Review #15), Kover ≥ 70 % :app
+- [ ] PW-3.4 (ui-entwickler): BoardCanvas statisch (ui/game/, Farben
+      lokal per §13.4 — Theme-Verdrahtung folgt in PW-3.5)
+- [ ] PW-3.8 (game-designer): §11.3 exakte Level→Tier-Zuordnung
+      (entblockt PW-3.6 vollständig) + §12.5 Reset-Semantik
+      (Review-Befund MINOR-1 aus PR #15)
 
 ## Nächste Schritte
-1. Nach PW-3.1: :data-Persistenz (entwickler) und UI-Tickets
-   (ui-entwickler) — Level-Screen, Eingabe, Navigation
-2. Neue Dependencies: verification-metadata mit --refresh-dependencies
-   regenerieren, Security-Review pflicht
-3. Offene Backlog-Punkte: ringIndex-Überlauf-Fix, KDoc-Ticket-Referenzen,
-   gitleaks-CI, CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel,
-   ParSolver-API fürs Hint-System
+1. Wave-1-PRs: je Review (code-reviewer; PW-3.3 zusätzlich
+   security-auditor wegen android-all + verification-metadata) → Merge
+2. Wave 2: PW-3.5 (zwei PRs: ViewModel, dann Screen/Overlay) und
+   PW-3.6 (Levelauswahl) — Merge-Punkt Navigation-Root sequenziell
+3. PW-3.7: E2E-Smoke, assembleDebug-APK als Gate-Artefakt, Checkliste,
+   unabhängiger test-engineer-Pass → menschliches Gate (Branko)
+4. Offene Backlog-Punkte unverändert (ringIndex, KDoc-Referenzen,
+   gitleaks-CI, CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel)
