@@ -12,6 +12,12 @@ import java.io.IOException
 /**
  * Beobachtbarer Bestand als [DataResult]-Werte: dekodierte Zustände direkt,
  * E/A-Fehler des Lesens als [PersistenceFailure.Io] (nie Crash, R43-Geist).
+ *
+ * Terminierungs-Semantik (Review PW-3.2): Nach einem [PersistenceFailure.Io]
+ * BEENDET der Flow (catch ersetzt den Fehler und schließt den Strom) —
+ * der Collector muss neu kollektieren, um weitere Zustände zu sehen.
+ * Korruption/Versionskonflikt kommen dagegen als reguläre Emissionen und
+ * beenden den Flow NICHT.
  */
 internal fun <T> DataStore<StoreState<T>>.dataResults(): Flow<DataResult<T>> =
     data
@@ -57,4 +63,6 @@ private suspend fun <T> writeResultOf(write: suspend () -> StoreState<T>): Write
         WriteResult.Failure(PersistenceFailure.Io(cause.ioDetails()))
     }
 
-private fun IOException.ioDetails(): String = message ?: this::class.simpleName ?: "IOException"
+// Bewusst NUR der Klassenname (Security-Review PW-3.2): IOException-Messages können
+// Dateipfade enthalten — Diagnosen tragen niemals Pfade oder Nutzdaten.
+internal fun IOException.ioDetails(): String = this::class.simpleName ?: "IOException"
