@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Spielfeld-Texte (PW-3.4). Eigene Datei statt strings.xml, damit die
+  parallelen Phase-3-Tickets disjunkte Dateimengen behalten.
+  TalkBack-Muster nach Design §13.5.
+-->
+<resources>
+  <string name="board_canvas">Spielbrett</string>
+  <string name="board_cell_position">Reihe %1$d, Spalte %2$d</string>
+  <string name="board_cell_simple">%1$s, %2$s</string>
+  <!--
+    §13.5: „Spiegel, drehbar, Orientierung 2 von 6, Reihe 0, Spalte 1".
+    Orientierung als %s statt %d: Ordinalposition, keine Menge (kein Plural nötig).
+  -->
+  <string name="board_cell_rotatable">%1$s, drehbar, Orientierung %2$s von %3$s, %4$s</string>
+  <string name="board_cell_source">Lichtquelle, %1$s, Richtung %2$s, %3$s</string>
+  <string name="board_cell_filter">Filter %1$s, %2$s</string>
+  <string name="board_cell_portal">Portal %1$s, %2$s</string>
+  <!-- §13.5: „Kristall, benötigt Gelb (Rot und Grün), empfängt Rot" + Zustand §12.3 -->
+  <string name="board_cell_crystal">Kristall, benötigt %1$s, empfängt %2$s, %3$s, %4$s</string>
+  <string name="board_crystal_receives_nothing">nichts</string>
+  <string name="board_crystal_state_dark">dunkel</string>
+  <string name="board_crystal_state_partial">teilerfüllt</string>
+  <string name="board_crystal_state_fulfilled">erfüllt</string>
+  <string name="board_crystal_state_oversaturated">übersättigt</string>
+  <string name="board_element_empty">Leere Zelle</string>
+  <string name="board_element_wall">Wand</string>
+  <string name="board_element_prism">Prisma</string>
+  <string name="board_element_mirror">Spiegel</string>
+  <string name="board_element_splitter">Splitter</string>
+  <string name="board_portal_pair_a">A</string>
+  <string name="board_portal_pair_b">B</string>
+  <!-- Farbnamen §3.1; Sekundär-/Tertiärfarben nennen ihre Komponenten (§13.5) -->
+  <string name="board_color_red">Rot</string>
+  <string name="board_color_green">Grün</string>
+  <string name="board_color_yellow">Gelb (Rot und Grün)</string>
+  <string name="board_color_blue">Blau</string>
+  <string name="board_color_magenta">Magenta (Rot und Blau)</string>
+  <string name="board_color_cyan">Cyan (Grün und Blau)</string>
+  <string name="board_color_white">Weiß (Rot, Grün und Blau)</string>
+  <!-- Richtungsnamen §2.2 -->
+  <string name="board_direction_east">Ost</string>
+  <string name="board_direction_north_east">Nordost</string>
+  <string name="board_direction_north_west">Nordwest</string>
+  <string name="board_direction_west">West</string>
+  <string name="board_direction_south_west">Südwest</string>
+  <string name="board_direction_south_east">Südost</string>
+</resources>
