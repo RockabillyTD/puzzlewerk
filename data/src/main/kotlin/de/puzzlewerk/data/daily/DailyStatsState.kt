@@ -66,7 +66,10 @@ internal fun DailyStatsState.withSolved(
 private fun DailyStatsState.streakAfterSolving(epochDay: Long): Int {
     val lastSolved = resultByEpochDay.keys.maxOrNull() ?: return 1
     return when {
-        epochDay == lastSolved + 1 -> currentStreak + 1
+        // Sättigung statt Lade-Ablehnung (Review PW-3.2 #20-MINOR-1b): ein Bestand mit
+        // Int.MAX_VALUE Serientagen wäre valide DATEN — nur das Inkrement hier könnte
+        // überlaufen, also wird genau hier gesättigt statt beim Laden abgewiesen.
+        epochDay == lastSolved + 1 -> if (currentStreak == Int.MAX_VALUE) currentStreak else currentStreak + 1
         epochDay > lastSolved -> 1
         else -> currentStreak
     }
