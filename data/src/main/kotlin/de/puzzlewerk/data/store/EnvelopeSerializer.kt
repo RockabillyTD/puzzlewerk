@@ -25,14 +25,25 @@ internal class EnvelopeSerializer<T>(
     override val defaultValue: StoreState<T>,
 ) : Serializer<StoreState<T>> {
     override suspend fun readFrom(input: InputStream): StoreState<T> {
-        // Kappung VOR dem Parsen: readNBytes liest höchstens limit + 1 Bytes.
-        val bytes = input.readNBytes(MAX_STORE_FILE_BYTES + 1)
-        if (bytes.size > MAX_STORE_FILE_BYTES) {
+        // Kappung VOR dem Parsen: höchstens MAX_STORE_FILE_BYTES + 1 Bytes lesen.
+        // Bewusst KEIN Bulk-Read der Stream-API (die gibt es erst ab Android
+        // API 33); minSdk ist 26 (ohne Desugaring), sonst NoSuchMethodError bei
+        // jedem Store-Read (PW-3.2 HIGH). InputStream.read(buf, off, len) darf
+        // weniger als angefordert liefern, daher die akkumulierende Schleife.
+        val limit = MAX_STORE_FILE_BYTES + 1
+        val buffer = ByteArray(limit)
+        var total = 0
+        while (total < limit) {
+            val read = input.read(buffer, total, limit - total)
+            if (read < 0) break
+            total += read
+        }
+        if (total > MAX_STORE_FILE_BYTES) {
             return StoreState.Failed(
                 PersistenceFailure.Corrupted("${schema.storeName}: Datei überschreitet Maximalgröße"),
             )
         }
-        return schema.decodeStoreText(bytes.decodeToString())
+        return schema.decodeStoreText(buffer.copyOf(total).decodeToString())
     }
 
     override suspend fun writeTo(

@@ -228,6 +228,80 @@
       gegen die @Test-Anzahl im Quelltext diffen, oder (c) schlicht
       Review-Checkliste. Empfehlung: (a) bei nächster Gelegenheit
 
+- [ ] Aus PW-3.3: `org.robolectric:android-all-instrumented` steht direkt
+      in app/build.gradle.kts (Ticket-Dateimenge ließ den Version Catalog
+      unangetastet; Lint UseTomlInstead dafür begründet deaktiviert).
+      Beim nächsten Katalog-PR: Koordinate in libs.versions.toml umziehen
+      und die UseTomlInstead-Deaktivierung zurücknehmen. Achtung: Version
+      ist an Robolectric + @Config(sdk=[35]) gekoppelt (DefaultSdkProvider),
+      bei jedem Robolectric-Update mitprüfen.
+- [ ] Aus PW-3.3: AppContainer nutzt eine Übergangs-Implementierung
+      `InMemoryProgressRepository` (:app, di/) bis die DataStore-
+      Repositories aus PW-3.2 verdrahtet sind (PW-3.5/PW-3.6). Beim
+      Verdrahten die Übergangsklasse + ihren Test ersatzlos entfernen.
+- [ ] Architekt (Review-NIT aus PR #15): DailyRecord in
+      daily/DailyStatsRepository.kt dokumentiert Wertebereiche (par 1..14,
+      moves ≥ 1) nur im KDoc, während Score sie per init-require erzwingt.
+      Beim nächsten API-Touch init-Block ergänzen (Konsistenz mit dem
+      Score-Muster; bis dahin fangen die PW-3.2-Mapper-Checks das ab)
+- [ ] Architekt (Review-MINOR-4 aus PR #17): Brettform-Zugehörigkeit
+      (§2.1) existiert doppelt — game/.../generator/BeamPaths.kt (internal)
+      und app/.../ui/game/HexGeometry.boardCells. Public `Board.cells()`
+      in :game entscheiden, dann beide Duplikate darauf zurückführen
+- [ ] Game-Designer (Review-NIT-1 aus PR #18): §12.3 („empfangene
+      Komponenten klein darunter") und §13.3 (Umriss-Reihe) beschreiben
+      die Teilerfüllt-Darstellung unterschiedlich — vereinheitlichen
+      (Implementierung folgt §13.3; kein Verstoß, nur Doku-Drift)
+- [ ] Entwickler (Folge-Ticket aus PR-#20-Review, klein): (a) Lademapper
+      Daily: Invariante currentStreak ≤ longestStreak beim Laden als
+      Corrupted abweisen; Plausibilitätsgrenzen für Zähler/Arrays prüfen
+      oder bewusstes Nicht-Prüfen im KDoc begründen (Int-Überlauf
+      currentStreak+1 bei manipuliertem Int.MAX_VALUE-Bestand);
+      (b) S4-Strictness-Test „String-Literal statt Zahl ⇒ Corrupted"
+      für Progress- UND Daily-Schema (pinnt die Streaming-Decoder-Wahl)
+- [ ] Entwickler (aus PW-3.2-Bericht): Fakes können keine Io-Schreibfehler
+      simulieren; PersistenceFailure.Io-Pfad nur strukturell, nicht per
+      Test provoziert — falls PW-3.5/3.6 Fehler-UI testen wollen,
+      failWith um Write-Fehler erweitern
+- [ ] Release-Engineer (aus PW-3.4-Bericht): detekt scannt src/testDebug
+      mit den Standard-Quellpfaden nicht (ktlint deckt es ab) —
+      Build-Pflege-Ticket
+- [ ] PW-3.5-MUSS-PUNKT (Review-MINOR-2 aus PR #18): Tap-Hit-Box des
+      Spielfelds mit der auf 1,5·size begrenzten Semantics-Box abstimmen;
+      Touch-Targets ≥ 48 dp verantwortet der Spiel-Screen (Brettskalierung)
+- [ ] ui-entwickler (aus Re-Review PR #18, akzeptierter V1-Randfall):
+      GLEICHFARBIGE sich kreuzende Mischfarben-Strahlen verschmelzen in
+      der Union-Find-Chipvergabe zu einem Zug — einer kann chip-arm
+      werden (Komponente behält ≥ 1 Chip, Farbinfo nie falsch). Falls
+      Playtests sichtbare Lücken zeigen: auf from→to-Pfad-Verkettung
+      umstellen. Zusätzlich NIT: BoardRenderSpecTest prüft PathEffects
+      nur mit assertNotNull — assertNotSame zwischen den drei
+      Beam-Effekten würde „alle Muster identisch"-Mutationen fangen
+- [ ] Release-Engineer (Qualitäts-Gate-Lücke, HIGH-Fund der PW-3.2-
+      Fix-Verifikation): Java-9+-APIs oberhalb von minSdk (z. B.
+      InputStream.readNBytes, erst API 33) werden in :data/:app-Hauptquellen
+      von keinem Gate gestoppt — JVM-Unit-Tests sind blind, :data-Lint
+      läuft nicht in der Gate-Kette. Optionen: :data:lintDebug (NewApi)
+      in die Verbindlichen Kommandos + CI aufnehmen, oder Desugaring-
+      Entscheidung per ADR. Konkreter Vorfall: readNBytes hätte auf
+      Android 8–12L jeden Store-Read gecrasht (vor Merge gefangen)
+- [ ] Security/Orchestrator (wiederholt aus zwei Audits): gitleaks ist
+      auf der Maschine nicht installiert — S7-Scan je PR läuft nur als
+      manueller Muster-Sweep; Tool in die Toolchain aufnehmen
+- [ ] Release-Engineer (Security-LOW-2 aus PW-3.3-Audit): Robolectric-
+      Offline-Pinnung wurzelweit heben (Convention/subprojects) beim
+      android-all-Katalogumzug; bis dahin schützt nur der Wächter-Test
+      in :app
+- [ ] Game-Designer (aus Review PR #21, für A11y-Pass PW-3.7/Phase 4):
+      Magenta #D6409F erreicht auf #101418 nur 4,49:1 — AA für
+      Normaltext knapp verfehlt; als on-Farbe nur für großen Text/
+      UI-Komponenten dokumentiert. Finale Ton-Entscheidung (§13.4
+      normativ) steht aus
+- [ ] Architekt (Review-Frage aus PR #19): Soll der Progress-Lademapper
+      Kreuz-Konsistenz Punkte↔Sterne (Punkte ∈ 1000+50er-Raster, Sterne
+      passend zu §7.2) als Corrupted werten? Braucht KDoc-/ADR-007-
+      Präzisierung — kein Alleingang der Implementierung
+
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
 

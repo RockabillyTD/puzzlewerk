@@ -7,6 +7,7 @@
     <!-- Regel S2: Backups bewusst deaktiviert — allowBackup gilt bis Android 11,
          dataExtractionRules ab Android 12 (Cloud-Backup + Device-Transfer). -->
     <application
+        android:name=".PuzzlewerkApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/full_backup_content"

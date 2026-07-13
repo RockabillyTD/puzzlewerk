@@ -91,17 +91,54 @@ Phase 3 — Spielbarer Prototyp (gestartet 2026-07-11).
 Gate Phase 3: APK auf Brankos Gerät installierbar, ein Level von
 Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
 
+## Erledigt (Zyklus 10, 2026-07-12)
+- [x] PW-3.1 (PR #15, gemergt 51fd169): ADR-006 (manueller AppContainer),
+      ADR-007 (DataStore + kotlinx.serialization, Envelope v1), ADR-008
+      (eigener Backstack-Holder), ADR-009 (Robolectric-Stack inkl.
+      S6-Auflage android-all-Offline-Pinnung); :data-Repository-API v1
+      (PersistenceResult, progress/daily/settings); docs/ui-architektur.md;
+      docs/phase3-tickets.md (Schnitte PW-3.2–3.7)
+      — Gate-Kette lokal grün, CI grün, Reviewer-APPROVE (kompakt,
+      stichprobenbasiert nach Abbruch eines überlangen Erst-Reviews),
+      Security-APPROVE (Dependencies/Metadata additiv, Scopes korrekt)
+
+## Delegationsprotokoll (Zyklus 10)
+| Ticket | Agent | Ergebnis | Gates |
+|---|---|---|---|
+| PW-3.1 Fundament | architekt | PR #15 gemergt | CI grün + Reviewer- + Security-APPROVE |
+| PW-3.2 Persistenz :data | entwickler | in Arbeit (Worktree) | — |
+| PW-3.3 App-Shell :app | ui-entwickler | in Arbeit (Worktree) | — |
+| PW-3.4 BoardCanvas :app | ui-entwickler | in Arbeit (Worktree) | — |
+| PW-3.8 Design-Präzisierung §11.3/§12.5 | game-designer | in Arbeit (Worktree) | — |
+
+## Erledigt (Zyklus 11, 2026-07-12)
+- [x] PW-3.8 (PR #16, gemergt 719e8c0): §11.3 campaignTier(n) exakt
+      fixiert (D1:1–6, D2:7–12, D3:13–21, D4:22–29, D5:30–39, D6:40–46,
+      D7:47–50) + §12.5 Reset als zwei getrennte Aktionen inkl.
+      kodifiziertem Daily-Reset-Randfall — Reviewer-APPROVE mit
+      Handnachrechnung, MINOR per game-designer-Entscheidung gepatcht
+- [x] PW-3.4 (PR #17 + #18, gemergt 3314041/8d712b9): HexGeometrie +
+      BoardCanvas komplett — Korrekturzyklus 1 behob 1 BLOCKER
+      (Split-Vorwärtsreferenz), 2 MAJOR (ordnungsabhängige Chip-Vergabe →
+      Union-Find mit Chip-Garantie je Strahl; C4-Dateisplit); 23 Tests,
+      Re-Reviews APPROVE. Größen-Ausnahme (~1050 Zeilen, PR #18) als
+      Orchestrator-Entscheidung dokumentiert → Offenlegung im Phasenbericht
+
 ## In Arbeit (Phase 3)
-- [ ] PW-3.1 (architekt): ADRs für DI-Framework und Persistenz-Stack
-      (neue Dependencies!), :data-Repository-APIs, UI-Architektur-
-      Konventionen (MVI), Compose-Test-Setup-Entscheidung,
-      Ticket-Schnitte für ui-entwickler und entwickler
+- [ ] PW-3.2 (entwickler): GELIEFERT (2 Branches, Kover :data 97,8 %,
+      90 Tests; PR #19 Code+Security-APPROVE, PR #20 APPROVE) —
+      Härtungspaket vor Merge läuft (Security-MEDIUM Byte-Kappung,
+      Golden-Fixture-Konsistenz, Streak-Invariante)
+- [ ] PW-3.3 (ui-entwickler): GELIEFERT (2 Branches, Kover :app 95,8 %,
+      43 Tests, Offline-Pinnung per Negativtest belegt) — PR #21 + #22
+      offen, 2 Code-Reviews + Security-Audit laufen
 
 ## Nächste Schritte
-1. Nach PW-3.1: :data-Persistenz (entwickler) und UI-Tickets
-   (ui-entwickler) — Level-Screen, Eingabe, Navigation
-2. Neue Dependencies: verification-metadata mit --refresh-dependencies
-   regenerieren, Security-Review pflicht
-3. Offene Backlog-Punkte: ringIndex-Überlauf-Fix, KDoc-Ticket-Referenzen,
-   gitleaks-CI, CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel,
-   ParSolver-API fürs Hint-System
+1. Wave-1-PRs: je Review (code-reviewer; PW-3.3 zusätzlich
+   security-auditor wegen android-all + verification-metadata) → Merge
+2. Wave 2: PW-3.5 (zwei PRs: ViewModel, dann Screen/Overlay) und
+   PW-3.6 (Levelauswahl) — Merge-Punkt Navigation-Root sequenziell
+3. PW-3.7: E2E-Smoke, assembleDebug-APK als Gate-Artefakt, Checkliste,
+   unabhängiger test-engineer-Pass → menschliches Gate (Branko)
+4. Offene Backlog-Punkte unverändert (ringIndex, KDoc-Referenzen,
+   gitleaks-CI, CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel)
