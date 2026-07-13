@@ -13,4 +13,26 @@
   <string name="home_badge_soon">bald</string>
   <string name="home_loading">Fortschritt wird geladen</string>
   <string name="home_load_error">Der Spielstand konnte nicht geladen werden. Deine Daten wurden nicht überschrieben.</string>
+
+  <!-- Levelauswahl (§12.4) -->
+  <string name="level_select_loading">Levelauswahl wird geladen</string>
+  <string name="level_select_error">Der Spielstand konnte nicht geladen werden. Deine Daten wurden nicht überschrieben. Du kannst den Fortschritt zurücksetzen, um fortzufahren.</string>
+  <string name="level_select_reset">Fortschritt zurücksetzen</string>
+  <!-- Kurzes Tier-Etikett, z. B. „D3" — Schwierigkeit 1..7 -->
+  <string name="level_select_tier">D%1$d</string>
+  <string name="level_select_play">Spielen</string>
+  <string name="level_select_stars_filled">★</string>
+  <string name="level_select_stars_empty">☆</string>
+  <plurals name="level_select_total_stars">
+    <item quantity="one">%1$d Stern gesamt</item>
+    <item quantity="other">%1$d Sterne gesamt</item>
+  </plurals>
+  <plurals name="level_select_total_score">
+    <item quantity="one">%1$d Punkt gesamt</item>
+    <item quantity="other">%1$d Punkte gesamt</item>
+  </plurals>
+  <!-- Barrierefreiheit: Zustand nie nur über Farbe (§13). %2$s = Tier-Etikett -->
+  <string name="level_select_cd_locked">Level %1$d, %2$s, gesperrt</string>
+  <string name="level_select_cd_open">Level %1$d, %2$s, spielbar</string>
+  <string name="level_select_cd_solved">Level %1$d, %2$s, gelöst, Sterne von 3: %3$d, Punktzahl: %4$d</string>
 </resources>

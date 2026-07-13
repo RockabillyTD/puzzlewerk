@@ -12,4 +12,26 @@
   <string name="home_badge_soon">soon</string>
   <string name="home_loading">Loading progress</string>
   <string name="home_load_error">Your progress could not be loaded. Your data has not been overwritten.</string>
+
+  <!-- Level select (§12.4) -->
+  <string name="level_select_loading">Loading level select</string>
+  <string name="level_select_error">Your progress could not be loaded. Your data has not been overwritten. You can reset your progress to continue.</string>
+  <string name="level_select_reset">Reset progress</string>
+  <!-- Short tier label, e.g. "D3" — difficulty 1..7 -->
+  <string name="level_select_tier">D%1$d</string>
+  <string name="level_select_play">Play</string>
+  <string name="level_select_stars_filled">★</string>
+  <string name="level_select_stars_empty">☆</string>
+  <plurals name="level_select_total_stars">
+    <item quantity="one">%1$d star total</item>
+    <item quantity="other">%1$d stars total</item>
+  </plurals>
+  <plurals name="level_select_total_score">
+    <item quantity="one">%1$d point total</item>
+    <item quantity="other">%1$d points total</item>
+  </plurals>
+  <!-- Accessibility: state never encoded by colour alone (§13). %2$s = tier label -->
+  <string name="level_select_cd_locked">Level %1$d, %2$s, locked</string>
+  <string name="level_select_cd_open">Level %1$d, %2$s, playable</string>
+  <string name="level_select_cd_solved">Level %1$d, %2$s, solved, stars out of 3: %3$d, score: %4$d</string>
 </resources>
