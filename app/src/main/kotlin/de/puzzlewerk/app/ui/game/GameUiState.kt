@@ -70,6 +70,9 @@ internal sealed interface GameIntent {
 
     /** Reset-Bestätigung abgebrochen (§12.3). */
     data object DismissReset : GameIntent
+
+    /** „Nochmal spielen" aus dem Ergebnis-Overlay: frische Partie desselben Levels (§12.3, R32). */
+    data object Replay : GameIntent
 }
 
 /** Einmal-Ereignisse; die Senke (Haptik/Ton/Fehlermeldung) ist Screen-Sache (PW-3.5b). */
