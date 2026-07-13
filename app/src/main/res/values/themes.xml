@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <!-- Minimales System-Theme; das eigentliche Design kommt aus Compose (MaterialTheme). -->
-  <style name="Theme.Puzzlewerk" parent="android:Theme.Material.Light.NoActionBar" />
+  <!-- Minimales System-Theme; das eigentliche Design kommt aus Compose
+       (PuzzlewerkTheme). Dunkles Parent + dunkler windowBackground (§13.4)
+       verhindern einen hellen Blitz beim Kaltstart. -->
+  <style name="Theme.Puzzlewerk" parent="android:Theme.Material.NoActionBar">
+    <item name="android:windowBackground">@color/window_background</item>
+  </style>
 </resources>
