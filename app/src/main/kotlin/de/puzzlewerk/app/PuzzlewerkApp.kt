@@ -19,6 +19,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
+import de.puzzlewerk.app.ui.home.HomeRoute
 import de.puzzlewerk.app.ui.navigation.NavigationState
 import de.puzzlewerk.app.ui.navigation.Screen
 import de.puzzlewerk.app.ui.navigation.rememberNavigationState
@@ -30,7 +32,10 @@ import de.puzzlewerk.app.ui.theme.PuzzlewerkTheme
  * behandelt `safeDrawingPadding` (targetSdk 36 erzwingt Edge-to-Edge).
  */
 @Composable
-fun PuzzlewerkApp(navigationState: NavigationState = rememberNavigationState()) {
+fun PuzzlewerkApp(
+    viewModelFactory: ViewModelProvider.Factory,
+    navigationState: NavigationState = rememberNavigationState(),
+) {
     PuzzlewerkTheme {
         BackHandler(enabled = navigationState.canNavigateBack) {
             navigationState.navigateBack()
@@ -45,7 +50,11 @@ fun PuzzlewerkApp(navigationState: NavigationState = rememberNavigationState()) 
                         .fillMaxSize()
                         .safeDrawingPadding(),
             ) {
-                ScreenContent(navigationState.currentScreen)
+                ScreenContent(
+                    screen = navigationState.currentScreen,
+                    viewModelFactory = viewModelFactory,
+                    onNavigate = navigationState::navigateTo,
+                )
             }
         }
     }
@@ -53,9 +62,13 @@ fun PuzzlewerkApp(navigationState: NavigationState = rememberNavigationState()) 
 
 /** Exhaustives Screen-Mapping (ADR-008): ein neuer Screen erzwingt hier Behandlung. */
 @Composable
-private fun ScreenContent(screen: Screen) {
+private fun ScreenContent(
+    screen: Screen,
+    viewModelFactory: ViewModelProvider.Factory,
+    onNavigate: (Screen) -> Unit,
+) {
     when (screen) {
-        Screen.Home -> PlaceholderScreen(title = stringResource(R.string.app_name))
+        Screen.Home -> HomeRoute(viewModelFactory = viewModelFactory, onNavigate = onNavigate)
         Screen.LevelSelect -> PlaceholderScreen(title = stringResource(R.string.screen_title_level_select))
         is Screen.Game -> PlaceholderScreen(title = stringResource(R.string.screen_title_game))
         Screen.Daily -> PlaceholderScreen(title = stringResource(R.string.screen_title_daily))
@@ -93,6 +106,8 @@ private fun PlaceholderScreen(title: String) {
 
 @Preview(showBackground = true)
 @Composable
-private fun PuzzlewerkAppPreview() {
-    PuzzlewerkApp(navigationState = NavigationState.initial())
+private fun PlaceholderScreenPreview() {
+    PuzzlewerkTheme {
+        PlaceholderScreen(title = stringResource(R.string.screen_title_level_select))
+    }
 }

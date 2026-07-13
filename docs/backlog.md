@@ -228,6 +228,17 @@
       gegen die @Test-Anzahl im Quelltext diffen, oder (c) schlicht
       Review-Checkliste. Empfehlung: (a) bei nächster Gelegenheit
 
+- [ ] Aus PW-3.3: `org.robolectric:android-all-instrumented` steht direkt
+      in app/build.gradle.kts (Ticket-Dateimenge ließ den Version Catalog
+      unangetastet; Lint UseTomlInstead dafür begründet deaktiviert).
+      Beim nächsten Katalog-PR: Koordinate in libs.versions.toml umziehen
+      und die UseTomlInstead-Deaktivierung zurücknehmen. Achtung: Version
+      ist an Robolectric + @Config(sdk=[35]) gekoppelt (DefaultSdkProvider),
+      bei jedem Robolectric-Update mitprüfen.
+- [ ] Aus PW-3.3: AppContainer nutzt eine Übergangs-Implementierung
+      `InMemoryProgressRepository` (:app, di/) bis die DataStore-
+      Repositories aus PW-3.2 verdrahtet sind (PW-3.5/PW-3.6). Beim
+      Verdrahten die Übergangsklasse + ihren Test ersatzlos entfernen.
 - [ ] Architekt (Review-NIT aus PR #15): DailyRecord in
       daily/DailyStatsRepository.kt dokumentiert Wertebereiche (par 1..14,
       moves ≥ 1) nur im KDoc, während Score sie per init-require erzwingt.
