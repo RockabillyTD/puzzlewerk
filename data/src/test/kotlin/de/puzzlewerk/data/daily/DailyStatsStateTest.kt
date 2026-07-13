@@ -84,6 +84,21 @@ class DailyStatsStateTest {
     }
 
     @Test
+    fun `Serie saettigt bei Int MAX_VALUE statt ueberzulaufen`() {
+        val atMax =
+            DailyStatsState(
+                playedEpochDays = emptySet(),
+                currentStreak = Int.MAX_VALUE,
+                longestStreak = Int.MAX_VALUE,
+                resultByEpochDay = mapOf(100L to record()),
+            )
+        val next = atMax.withSolved(101, record())
+        next.currentStreak shouldBe Int.MAX_VALUE
+        next.longestStreak shouldBe Int.MAX_VALUE
+        next.toStats().solvedTotal shouldBe 2
+    }
+
+    @Test
     fun `withPlayed ist idempotent pro Datum (R38)`() {
         val state =
             DailyStatsState.EMPTY
