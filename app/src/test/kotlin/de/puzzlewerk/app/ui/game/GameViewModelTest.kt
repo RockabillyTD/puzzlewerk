@@ -228,6 +228,53 @@ class GameViewModelTest {
             }
         }
 
+    @Test
+    fun `Reset auf geloestem Brett haengt nicht`() =
+        runTest(dispatcher) {
+            val vm = viewModel(LevelRequest.Campaign(4))
+            runCurrent()
+            vm.onIntent(GameIntent.TapCell(SOLVE_CELL_L4))
+            assertNotNull(vm.state.value.result) // gelöst (§6.3/R32)
+            val solvedState = vm.state.value
+
+            vm.onIntent(GameIntent.Reset)
+
+            // Kein hängender Bestätigungsdialog, State unverändert (PW-3.5a-Fix).
+            assertFalse(vm.state.value.pendingResetConfirm)
+            assertEquals(solvedState, vm.state.value)
+        }
+
+    @Test
+    fun `Tap auf geloestes Brett meldet keinen InvalidMove und laesst State unveraendert`() =
+        runTest(dispatcher) {
+            val vm = viewModel(LevelRequest.Campaign(4))
+            runCurrent()
+            vm.onIntent(GameIntent.TapCell(SOLVE_CELL_L4))
+            val solvedState = vm.state.value
+
+            vm.effects.test {
+                vm.onIntent(GameIntent.TapCell(SOLVE_CELL_L4)) // R32: gelöst lehnt jeden Zug ab
+                expectNoEvents()
+                assertEquals(solvedState, vm.state.value)
+            }
+        }
+
+    @Test
+    fun `Replay startet dieselbe Partie frisch`() =
+        runTest(dispatcher) {
+            val vm = viewModel(LevelRequest.Campaign(4))
+            runCurrent()
+            vm.onIntent(GameIntent.TapCell(SOLVE_CELL_L4))
+            assertNotNull(vm.state.value.result)
+
+            vm.onIntent(GameIntent.Replay)
+
+            assertNull(vm.state.value.result) // Overlay weg
+            assertEquals(0, vm.state.value.moves)
+            assertFalse(vm.state.value.isLoading)
+            assertNotNull(vm.state.value.board)
+        }
+
     private companion object {
         val ROT_CELL_L1 = HexCoord(q = 1, r = 0)
         val SOLVE_CELL_L4 = HexCoord(q = 1, r = -1)

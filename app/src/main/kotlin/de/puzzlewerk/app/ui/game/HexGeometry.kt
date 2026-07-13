@@ -87,6 +87,17 @@ internal object HexGeometry {
             (maxOf(-radius, -radius - r)..minOf(radius, radius - r)).map { q -> HexCoord(q, r) }
         }
 
+    /**
+     * Ob [coord] auf einem Brett mit [radius] liegt (§2.1:
+     * `max(|q|, |r|, |q + r|) ≤ R`). Grundlage der Tap-Validierung (PW-3.5b):
+     * ein Tap außerhalb des Bretts erzeugt keinen Zug. Die Entscheidung
+     * „drehbar?" trifft danach die Engine (R27), nicht der Eingabecode.
+     */
+    fun isOnBoard(
+        coord: HexCoord,
+        radius: Int,
+    ): Boolean = maxOf(abs(coord.q), abs(coord.r), abs(coord.q + coord.r)) <= radius
+
     private fun cornerAngleRad(corner: Int): Float = (DEGREES_PER_CORNER * corner + CORNER_OFFSET_DEGREES) * DEG_TO_RAD
 
     /** Kubik-Rundung: fraktionale Axial-Koordinate → nächstliegende Zelle. */

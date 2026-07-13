@@ -83,7 +83,19 @@ internal class GameViewModel(
             GameIntent.Reset -> onReset()
             GameIntent.ConfirmReset -> onConfirmReset()
             GameIntent.DismissReset -> mutableState.update { it.copy(pendingResetConfirm = false) }
+            GameIntent.Replay -> onReplay()
         }
+    }
+
+    /**
+     * „Nochmal spielen" (§12.3): frische Partie DESSELBEN Levels. Bewusst NICHT
+     * `Move.Reset` — ein gelöstes Brett lehnt Reset ab (R32), das Overlay hinge
+     * sonst. `engine.newGame` bewertet nur `trace` (kein Neu-Generieren) und
+     * setzt Zähler 0, Verlauf leer, Overlay weg.
+     */
+    private fun onReplay() {
+        val level = gameState?.level ?: return // noch im Ladezustand: wirkungslos
+        onApplied(engine.newGame(level))
     }
 
     /** Campaign(n) ⇒ (campaignSeed, campaignTier); Daily(d) ⇒ (dailySeed, dailyTier) (§10.1/§11.1). */
@@ -114,12 +126,21 @@ internal class GameViewModel(
 
     private fun onInvalid(reason: InvalidMoveReason) {
         // §6.3/R32: Ein gelöstes Brett lehnt jeden Zug ab — kein Effect-Spam.
-        if (reason == InvalidMoveReason.ALREADY_SOLVED) return
+        // Zusätzlich einen etwaig offenen Reset-Dialog schließen, damit er auf
+        // einem zwischenzeitlich gelösten Brett nicht hängen bleibt (PW-3.5a-Fix).
+        if (reason == InvalidMoveReason.ALREADY_SOLVED) {
+            mutableState.update { it.copy(pendingResetConfirm = false) }
+            return
+        }
         effectChannel.trySend(GameEffect.InvalidMove)
     }
 
     private fun onReset() {
         val current = gameState ?: return
+        // §6.3/R32: Gelöst sperrt Reset. Ohne diesen Riegel setzte ein Reset ≥ 5
+        // Züge `pendingResetConfirm`, das folgende `Move.Reset` liefert aber
+        // `Invalid(ALREADY_SOLVED)` ⇒ der Dialog bliebe hängen (PW-3.5a-Fix).
+        if (current.solved) return
         if (current.moveCount >= RESET_CONFIRM_THRESHOLD) {
             mutableState.update { it.copy(pendingResetConfirm = true) }
         } else {
@@ -129,6 +150,11 @@ internal class GameViewModel(
 
     private fun onConfirmReset() {
         if (!mutableState.value.pendingResetConfirm) return
+        // Randfall: Brett nach dem Öffnen des Dialogs gelöst ⇒ nur Dialog schließen.
+        if (gameState?.solved == true) {
+            mutableState.update { it.copy(pendingResetConfirm = false) }
+            return
+        }
         applyMove(Move.Reset) // renderState räumt pendingResetConfirm ab
     }
 

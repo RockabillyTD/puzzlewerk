@@ -20,8 +20,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
+import de.puzzlewerk.app.ui.game.GameRoute
 import de.puzzlewerk.app.ui.home.HomeRoute
 import de.puzzlewerk.app.ui.levelselect.LevelSelectRoute
+import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.app.ui.navigation.NavigationState
 import de.puzzlewerk.app.ui.navigation.Screen
 import de.puzzlewerk.app.ui.navigation.rememberNavigationState
@@ -35,6 +37,7 @@ import de.puzzlewerk.app.ui.theme.PuzzlewerkTheme
 @Composable
 fun PuzzlewerkApp(
     viewModelFactory: ViewModelProvider.Factory,
+    gameViewModelFactory: (LevelRequest) -> ViewModelProvider.Factory,
     navigationState: NavigationState = rememberNavigationState(),
 ) {
     PuzzlewerkTheme {
@@ -54,7 +57,9 @@ fun PuzzlewerkApp(
                 ScreenContent(
                     screen = navigationState.currentScreen,
                     viewModelFactory = viewModelFactory,
+                    gameViewModelFactory = gameViewModelFactory,
                     onNavigate = navigationState::navigateTo,
+                    onNavigateBack = navigationState::navigateBack,
                 )
             }
         }
@@ -66,12 +71,20 @@ fun PuzzlewerkApp(
 private fun ScreenContent(
     screen: Screen,
     viewModelFactory: ViewModelProvider.Factory,
+    gameViewModelFactory: (LevelRequest) -> ViewModelProvider.Factory,
     onNavigate: (Screen) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     when (screen) {
         Screen.Home -> HomeRoute(viewModelFactory = viewModelFactory, onNavigate = onNavigate)
         Screen.LevelSelect -> LevelSelectRoute(viewModelFactory = viewModelFactory, onNavigate = onNavigate)
-        is Screen.Game -> PlaceholderScreen(title = stringResource(R.string.screen_title_game))
+        is Screen.Game ->
+            GameRoute(
+                request = screen.request,
+                gameViewModelFactory = gameViewModelFactory,
+                onNavigate = onNavigate,
+                onNavigateBack = onNavigateBack,
+            )
         Screen.Daily -> PlaceholderScreen(title = stringResource(R.string.screen_title_daily))
         Screen.Settings -> PlaceholderScreen(title = stringResource(R.string.screen_title_settings))
     }
