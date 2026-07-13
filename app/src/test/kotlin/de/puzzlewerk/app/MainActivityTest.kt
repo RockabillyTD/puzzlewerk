@@ -22,6 +22,10 @@ class MainActivityTest {
         @StringRes id: Int,
     ): String = composeRule.activity.getString(id)
 
+    // Für LevelSelect eindeutige Kopfzeile (nur dort vorhanden, nicht auf Home).
+    private fun totalStarsHeader(): String =
+        composeRule.activity.resources.getQuantityString(R.plurals.level_select_total_stars, 0, 0)
+
     @Test
     fun startZeigtDieHomeWurzel() {
         composeRule.onNodeWithText(string(R.string.app_name)).assertIsDisplayed()
@@ -29,14 +33,13 @@ class MainActivityTest {
 
     @Test
     fun konfigurationswechselBehaeltDenNavigationszustand() {
-        // Über die echte UI navigieren: Home → Levelauswahl (Platzhalter).
+        // Über die echte UI navigieren: Home → Levelauswahl (§12.4).
         composeRule.onNodeWithText(string(R.string.screen_title_level_select)).performClick()
-        composeRule.onNodeWithText(string(R.string.placeholder_screen_hint)).assertIsDisplayed()
+        composeRule.onNodeWithText(totalStarsHeader()).assertIsDisplayed()
 
         composeRule.activityRule.scenario.recreate()
 
         // rememberSaveable stellt den Backstack wieder her (ADR-008).
-        composeRule.onNodeWithText(string(R.string.screen_title_level_select)).assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.placeholder_screen_hint)).assertIsDisplayed()
+        composeRule.onNodeWithText(totalStarsHeader()).assertIsDisplayed()
     }
 }

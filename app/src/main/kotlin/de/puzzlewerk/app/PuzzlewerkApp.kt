@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import de.puzzlewerk.app.ui.home.HomeRoute
+import de.puzzlewerk.app.ui.levelselect.LevelSelectRoute
 import de.puzzlewerk.app.ui.navigation.NavigationState
 import de.puzzlewerk.app.ui.navigation.Screen
 import de.puzzlewerk.app.ui.navigation.rememberNavigationState
@@ -69,7 +70,7 @@ private fun ScreenContent(
 ) {
     when (screen) {
         Screen.Home -> HomeRoute(viewModelFactory = viewModelFactory, onNavigate = onNavigate)
-        Screen.LevelSelect -> PlaceholderScreen(title = stringResource(R.string.screen_title_level_select))
+        Screen.LevelSelect -> LevelSelectRoute(viewModelFactory = viewModelFactory, onNavigate = onNavigate)
         is Screen.Game -> PlaceholderScreen(title = stringResource(R.string.screen_title_game))
         Screen.Daily -> PlaceholderScreen(title = stringResource(R.string.screen_title_daily))
         Screen.Settings -> PlaceholderScreen(title = stringResource(R.string.screen_title_settings))

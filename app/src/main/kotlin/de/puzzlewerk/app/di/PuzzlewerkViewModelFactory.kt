@@ -3,6 +3,7 @@ package de.puzzlewerk.app.di
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import de.puzzlewerk.app.ui.home.HomeViewModel
+import de.puzzlewerk.app.ui.levelselect.LevelSelectViewModel
 
 /**
  * Gemeinsame ViewModel-Factory (ADR-006): konstruiert jedes ViewModel per
@@ -17,6 +18,8 @@ internal class PuzzlewerkViewModelFactory(
             when {
                 modelClass.isAssignableFrom(HomeViewModel::class.java) ->
                     HomeViewModel(progressRepository = container.progressRepository)
+                modelClass.isAssignableFrom(LevelSelectViewModel::class.java) ->
+                    LevelSelectViewModel(progressRepository = container.progressRepository)
                 else ->
                     error("Unbekanntes ViewModel ${modelClass.name} — hier registrieren (ADR-006)")
             }
