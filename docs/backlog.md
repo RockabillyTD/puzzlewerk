@@ -324,6 +324,16 @@
       dreht +30° vor (ruckelt optisch; Logik korrekt). Drehrichtung aus dem
       Vorzeichen der Orientierungsdifferenz (mod 6, kürzerer Weg) ableiten
       oder Undo nicht einzeln animieren. Beim nächsten Animations-Feinschliff.
+- [ ] ui-entwickler/architect (aus PW-3.7): GameViewModels sind Activity-
+      scoped und werden je Request geschlüsselt (Fix des „Weiter"-Bugs in
+      GameRoute). Folgen des eigenen Backstacks (ADR-008) ohne Owner je
+      Eintrag: (a) ViewModels gelöster/verlassener Level bleiben bis zum
+      Activity-Ende im Store (bounded: ≤ 50 Kampagnen + Dailys, kleine
+      Objekte); (b) Rückkehr zu einem in DIESER Sitzung gelösten Level
+      zeigt wieder das Ergebnis-Overlay statt einer frischen Partie
+      (Workaround: „Nochmal"). Sauber wäre ein ViewModelStoreOwner je
+      Backstack-Eintrag mit Clear beim Pop — bei Gelegenheit als kleine
+      Erweiterung des Navigation-Roots (ADR-008-konform) nachziehen.
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
