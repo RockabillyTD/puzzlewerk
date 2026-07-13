@@ -16,7 +16,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val container = (application as PuzzlewerkApplication).container
         setContent {
-            PuzzlewerkApp(viewModelFactory = container.viewModelFactory)
+            PuzzlewerkApp(
+                viewModelFactory = container.viewModelFactory,
+                gameViewModelFactory = container::gameViewModelFactory,
+            )
         }
     }
 }

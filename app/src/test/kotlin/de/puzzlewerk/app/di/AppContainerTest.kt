@@ -1,7 +1,9 @@
 package de.puzzlewerk.app.di
 
 import androidx.lifecycle.ViewModel
+import de.puzzlewerk.app.ui.game.GameViewModel
 import de.puzzlewerk.app.ui.home.HomeViewModel
+import de.puzzlewerk.app.ui.navigation.LevelRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -40,6 +42,24 @@ class AppContainerTest {
 
         assertThrows(IllegalStateException::class.java) {
             factory.create(UnregisteredViewModel::class.java)
+        }
+    }
+
+    @Test
+    fun `gameViewModelFactory baut ein GameViewModel fuer den Request`() {
+        val container = AppContainer()
+
+        val factory = container.gameViewModelFactory(LevelRequest.Campaign(1))
+
+        assertNotNull(factory.create(GameViewModel::class.java))
+    }
+
+    @Test
+    fun `gameViewModelFactory lehnt fremde ViewModels ab`() {
+        val factory = AppContainer().gameViewModelFactory(LevelRequest.Campaign(1))
+
+        assertThrows(IllegalArgumentException::class.java) {
+            factory.create(HomeViewModel::class.java)
         }
     }
 

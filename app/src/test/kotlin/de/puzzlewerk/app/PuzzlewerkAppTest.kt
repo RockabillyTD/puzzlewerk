@@ -32,9 +32,13 @@ class PuzzlewerkAppTest {
     private fun setApp(navigationState: NavigationState) {
         // Der echte Container ist hier bewusst im Spiel: die Übergangs-
         // Implementierung hält alles im Speicher (kein I/O, deterministisch).
-        val factory = AppContainer().viewModelFactory
+        val container = AppContainer()
         composeRule.setContent {
-            PuzzlewerkApp(viewModelFactory = factory, navigationState = navigationState)
+            PuzzlewerkApp(
+                viewModelFactory = container.viewModelFactory,
+                gameViewModelFactory = container::gameViewModelFactory,
+                navigationState = navigationState,
+            )
         }
     }
 
@@ -55,7 +59,9 @@ class PuzzlewerkAppTest {
         composeRule.onNodeWithText(string(R.string.screen_title_level_select)).assertIsDisplayed()
 
         composeRule.runOnIdle { navigationState.navigateTo(Screen.Game(LevelRequest.Campaign(1))) }
-        composeRule.onNodeWithText(string(R.string.screen_title_game)).assertIsDisplayed()
+        // Der Spiel-Screen (PW-3.5b) zeigt statt eines Platzhalters seine Kopfzeile;
+        // „Zurück" ist unabhängig vom Lade-/Spielzustand immer sichtbar.
+        composeRule.onNodeWithText(string(R.string.game_back)).assertIsDisplayed()
     }
 
     @Test
@@ -83,7 +89,7 @@ class PuzzlewerkAppTest {
 
         composeRule.onNodeWithText(string(R.string.home_continue)).performClick()
 
-        composeRule.onNodeWithText(string(R.string.screen_title_game)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.game_back)).assertIsDisplayed()
         composeRule.runOnIdle {
             assertEquals(Screen.Game(LevelRequest.Campaign(1)), navigationState.currentScreen)
         }
