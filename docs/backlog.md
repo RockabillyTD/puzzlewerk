@@ -277,14 +277,30 @@
       umstellen. Zusätzlich NIT: BoardRenderSpecTest prüft PathEffects
       nur mit assertNotNull — assertNotSame zwischen den drei
       Beam-Effekten würde „alle Muster identisch"-Mutationen fangen
-- [ ] Release-Engineer (Qualitäts-Gate-Lücke, HIGH-Fund der PW-3.2-
+- [x] Release-Engineer (Qualitäts-Gate-Lücke, HIGH-Fund der PW-3.2-
       Fix-Verifikation): Java-9+-APIs oberhalb von minSdk (z. B.
       InputStream.readNBytes, erst API 33) werden in :data/:app-Hauptquellen
       von keinem Gate gestoppt — JVM-Unit-Tests sind blind, :data-Lint
       läuft nicht in der Gate-Kette. Optionen: :data:lintDebug (NewApi)
       in die Verbindlichen Kommandos + CI aufnehmen, oder Desugaring-
       Entscheidung per ADR. Konkreter Vorfall: readNBytes hätte auf
-      Android 8–12L jeden Store-Read gecrasht (vor Merge gefangen)
+      Android 8–12L jeden Store-Read gecrasht (vor Merge gefangen) —
+      UMGESETZT in PW-3.10 (Branch build/pw-3.10-data-lint-gate),
+      minimale Option per Orchestrator-Entscheid: :data:lintDebug in
+      den Verbindlichen Kommandos (docs/architektur.md) und im
+      CI-quality-gates-Job; Lint-Reports von :data sind vom bestehenden
+      Failure-Artefakt-Glob **/build/reports/lint-results-* bereits
+      erfasst. NewApi-Negativprobe durchgeführt (readNBytes temporär in
+      :data ⇒ Task rot, danach zurückgesetzt). KEIN Desugaring, KEIN ADR
+- [ ] Release-Engineer (Nachtrag aus PW-3.10, LOW): :data hat — anders
+      als :app — keinen lint{}-Block; warningsAsErrors/abortOnError
+      laufen dort mit AGP-Defaults (abortOnError=true, Warnungen
+      brechen NICHT). NewApi ist per Default Error-Severity, die
+      PW-3.10-Lücke ist also geschlossen; für volle Konsistenz mit der
+      Quality-Gates-Tabelle („Android Lint | warningsAsErrors") den
+      Lint-Block beim nächsten Build-Pflege-Ticket auf :data spiegeln
+      (war in PW-3.10 explizit out of scope: „keine inhaltlichen
+      Lint-Konfigurationsänderungen über die Gate-Aufnahme hinaus")
 - [ ] Security/Orchestrator (wiederholt aus zwei Audits): gitleaks ist
       auf der Maschine nicht installiert — S7-Scan je PR läuft nur als
       manueller Muster-Sweep; Tool in die Toolchain aufnehmen

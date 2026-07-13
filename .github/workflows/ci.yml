@@ -42,7 +42,9 @@ jobs:
         run: ./gradlew koverVerify
 
       - name: Android Lint + Debug-Build
-        run: ./gradlew :app:lintDebug :app:assembleDebug
+        # :data:lintDebug schließt die NewApi-Gate-Lücke (PW-3.10) —
+        # JVM-Unit-Tests sehen Java-9+-APIs oberhalb von minSdk nicht.
+        run: ./gradlew :data:lintDebug :app:lintDebug :app:assembleDebug
 
       - name: Testberichte archivieren
         if: failure()
