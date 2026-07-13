@@ -123,8 +123,11 @@ Duplikat-Schlüssel prüft der Mapper explizit (§16.2/2). JSON strikt:
 ## Verbindliche Kommandos
 
 - Vollständige lokale Prüfung: `./gradlew checkModuleGraph ktlintCheck detekt test koverVerify`
-- Vor jedem PR zusätzlich: `./gradlew :app:lintDebug :app:assembleDebug`
+- Vor jedem PR zusätzlich: `./gradlew :data:lintDebug :app:lintDebug :app:assembleDebug`
+  (`:data:lintDebug` schließt die NewApi-Gate-Lücke aus PW-3.10:
+  Java-9+-APIs oberhalb von minSdk in :data-Hauptquellen sieht kein
+  JVM-Unit-Test — nur Android Lint)
 - Nach JEDER Dependency-Änderung (Merkregel aus PW-0.3/PW-2.3 —
   mit warmem lokalem Cache fehlen sonst .pom-/.module-Varianten, die
   nur ein kalter CI-Cache auflöst):
-  `./gradlew --refresh-dependencies --write-verification-metadata sha256 checkModuleGraph ktlintCheck detekt test koverVerify :app:lintDebug :app:assembleDebug`
+  `./gradlew --refresh-dependencies --write-verification-metadata sha256 checkModuleGraph ktlintCheck detekt test koverVerify :data:lintDebug :app:lintDebug :app:assembleDebug`
