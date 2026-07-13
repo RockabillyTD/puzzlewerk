@@ -71,6 +71,19 @@ internal class DrawOpsBuilder {
     fun build(): DrawOps = DrawOps(paths.toList(), circles.toList(), lines.toList())
 }
 
+/**
+ * Laufende Dreh-Animation (§12.3): das drehbare Element auf [cell] wird um
+ * [angleOffsetRad] gegenüber seiner ZIEL-Orientierung versetzt gezeichnet. Die
+ * Logik ist längst angewandt (Zielorientierung steht im UiState); dieser
+ * Versatz lässt nur die Optik von der Start- zur Zielstellung nachlaufen.
+ * `angleOffsetRad = 0` ⇒ Element steht am Ziel (Animation beendet).
+ */
+@Immutable
+internal data class BoardSpin(
+    val cell: HexCoord,
+    val angleOffsetRad: Float,
+)
+
 /** Brett-Geometrie je (Radius, Canvas-Größe): Zellgröße plus Ursprung. */
 @Immutable
 internal class BoardGeometry(

@@ -3,7 +3,6 @@
 <resources>
   <string name="app_name">Puzzlewerk</string>
   <string name="screen_title_level_select">Levelauswahl</string>
-  <string name="screen_title_game">Spiel</string>
   <string name="screen_title_daily">Tägliches Prisma</string>
   <string name="screen_title_settings">Einstellungen</string>
   <string name="placeholder_screen_hint">Dieser Bereich entsteht in einem späteren Schritt von Phase 3.</string>
@@ -35,4 +34,34 @@
   <string name="level_select_cd_locked">Level %1$d, %2$s, gesperrt</string>
   <string name="level_select_cd_open">Level %1$d, %2$s, spielbar</string>
   <string name="level_select_cd_solved">Level %1$d, %2$s, gelöst, Sterne von 3: %3$d, Punktzahl: %4$d</string>
+
+  <!-- Spiel-Screen (§12.3) -->
+  <string name="game_moves_par">Züge %1$d · Par %2$d</string>
+  <string name="game_loading">Level wird geladen</string>
+  <string name="game_undo">Zug zurücknehmen</string>
+  <string name="game_reset">Zurücksetzen</string>
+  <string name="game_back">Zurück</string>
+  <string name="game_rotate_action">Element drehen</string>
+  <string name="game_save_failed">Der Fortschritt konnte nicht gespeichert werden.</string>
+  <!-- Reset-Bestätigung ab ≥ 5 Zügen (§12.3) -->
+  <string name="game_reset_confirm_title">Wirklich zurücksetzen?</string>
+  <string name="game_reset_confirm_message">Alle Züge dieser Partie gehen verloren.</string>
+  <string name="game_reset_confirm_confirm">Zurücksetzen</string>
+  <string name="game_reset_confirm_cancel">Abbrechen</string>
+  <!-- Ergebnis-Overlay (§7.2, §12.3). Sterne mehrkanalig: Glyphe + Textwertung. -->
+  <string name="game_result_title">Gelöst!</string>
+  <string name="game_stars_filled">★</string>
+  <string name="game_stars_empty">☆</string>
+  <!-- „von 3" verlangt im Deutschen immer den Dativ Plural „Sternen"; one/other gleich. -->
+  <plurals name="game_result_stars">
+    <item quantity="one">%1$d von 3 Sternen</item>
+    <item quantity="other">%1$d von 3 Sternen</item>
+  </plurals>
+  <plurals name="game_result_points">
+    <item quantity="one">%1$d Punkt</item>
+    <item quantity="other">%1$d Punkte</item>
+  </plurals>
+  <string name="game_result_next">Weiter</string>
+  <string name="game_result_replay">Nochmal</string>
+  <string name="game_result_back">Zurück</string>
 </resources>

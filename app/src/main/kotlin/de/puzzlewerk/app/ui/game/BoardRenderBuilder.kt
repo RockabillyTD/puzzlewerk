@@ -59,13 +59,18 @@ private class MixedChipSegment(
     val mid: Offset,
 )
 
-/** Übersetzt den [BoardUiState] EINMAL je State/Geometrie in Zeichenlisten. */
+/**
+ * Übersetzt den [BoardUiState] EINMAL je (State, Geometrie, [spin]) in
+ * Zeichenlisten. [spin] ist eine laufende Dreh-Animation (§12.3) oder `null`;
+ * es versetzt nur das eine drehbare Element optisch, ändert sonst nichts.
+ */
 internal fun buildBoardRenderSpec(
     state: BoardUiState,
     geometry: BoardGeometry,
     colors: BoardColors,
+    spin: BoardSpin? = null,
 ): BoardRenderSpec {
-    val builder = BoardSpecBuilder(geometry, colors)
+    val builder = BoardSpecBuilder(geometry, colors, spin)
     for (cell in state.cells) {
         builder.addCell(cell)
     }
@@ -79,6 +84,7 @@ internal fun buildBoardRenderSpec(
 private class BoardSpecBuilder(
     private val geometry: BoardGeometry,
     private val colors: BoardColors,
+    private val spin: BoardSpin?,
 ) {
     private val cellSize = geometry.cellSize
     private val overlay = DrawOpsBuilder()
@@ -111,7 +117,7 @@ private class BoardSpecBuilder(
         addHexagonTo(gridPath, center, cellSize * CELL_OUTLINE_SCALE)
         val element = cell.element
         if (element != null) {
-            addElement(element, cell.crystal, center)
+            addElement(element, cell.crystal, center, cell.coord)
         }
     }
 
@@ -119,11 +125,12 @@ private class BoardSpecBuilder(
         element: Element,
         crystal: CrystalCellState?,
         center: Offset,
+        coord: HexCoord,
     ) {
         when (element) {
             is Element.Wall -> addHexagonTo(wallPath, center, cellSize * WALL_SCALE)
             is Element.Source -> addSource(element, center)
-            is Element.Rotatable -> addRotatable(element.orientation, element is Element.Splitter, center)
+            is Element.Rotatable -> addRotatable(element.orientation, element is Element.Splitter, center, coord)
             is Element.Prism ->
                 overlay.paths += PathSpec(trianglePath(center, cellSize * PRISM_RADIUS), colors.element, elementStroke)
             is Element.Filter -> addFilter(element, center)
@@ -244,9 +251,13 @@ private class BoardSpecBuilder(
         orientation: Orientation,
         dashed: Boolean,
         center: Offset,
+        coord: HexCoord,
     ) {
         overlay.circles += CircleSpec(center, cellSize * SOCKET_RADIUS, colors.socket, socketStroke)
-        val angle = orientation.steps * ORIENTATION_STEP_RAD
+        // Dreh-Animation (§12.3): der Sockelring bleibt fix, nur der Strich läuft
+        // von der Start- zur Zielstellung nach (angleOffsetRad ⇒ 0 am Ende).
+        val spinOffset = if (spin?.cell == coord) spin.angleOffsetRad else 0f
+        val angle = orientation.steps * ORIENTATION_STEP_RAD + spinOffset
         val dx = cos(angle) * cellSize * MIRROR_HALF_LENGTH
         val dy = -sin(angle) * cellSize * MIRROR_HALF_LENGTH
         overlay.lines +=
