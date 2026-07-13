@@ -301,6 +301,24 @@
       Kreuz-Konsistenz Punkte↔Sterne (Punkte ∈ 1000+50er-Raster, Sterne
       passend zu §7.2) als Corrupted werten? Braucht KDoc-/ADR-007-
       Präzisierung — kein Alleingang der Implementierung
+- [ ] ui-entwickler (Review-MINOR aus PW-3.5a, notiert in PW-3.5b):
+      `GameViewModel.init` ruft `generateLevel`/`newGame` ohne
+      Fehlerbehandlung — schlägt die Generierung (§9.4) je fehl, bliebe
+      der Screen in `isLoading=true` hängen (Dauer-Ladezustand). Ein
+      Lade-Fehlerfeld im `GameUiState` plus definierte Fehler-UI (analog
+      LevelSelect `hasLoadError`) erwägen; braucht zuvor eine
+      `:game`-Entscheidung, ob/wie `LevelGenerator.generate` scheitern darf.
+- [ ] ui-entwickler (NIT-1 aus PR #25, notiert in PW-3.5b): Die
+      Tier-Anzeige nutzt `Difficulty.ordinal + 1` in :app (LevelSelect
+      und ggf. Spiel-Screen). Sauberer wäre ein Anzeige-Akzessor in :game
+      (z. B. `Difficulty.displayNumber`), damit die 1-basierte D1..D7-
+      Darstellung nicht in der UI hartkodiert ist.
+- [ ] ui-entwickler (aus PW-3.5b): Die Dreh-Animation läuft optisch zum
+      JEWEILS neuesten Brettzustand nach (Interrupt statt strenger
+      FIFO-Puffer). Bei sehr schnellen Taps wird nur der letzte Übergang
+      animiert — Logik bleibt korrekt (im ViewModel längst angewandt).
+      Falls Playtests das Nachlaufen als sprunghaft empfinden: echte
+      Warteschlange der Einzeldrehungen erwägen.
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
