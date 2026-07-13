@@ -146,25 +146,54 @@ Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
   konfliktfrei außer docs/backlog.md (Union), 3.2-Stack konfliktfrei;
   CI je Update grün nachgezogen.
 
+- [x] PW-3.9 (PR #23 gemergt 6835e09): `campaignTier(levelNumber)` in
+      :game — §11.3-Abbildung (in PW-3.8 nur im Design fixiert, Funktion
+      fehlte; Wave-2-Voraussetzung, da die UI den Tier nicht selbst
+      berechnen darf, ui-architektur §2). code-reviewer: MERGEABLE mit
+      Handnachrechnung der Tabelle. (Nebenbei aufgeräumt: ein versehentlich
+      im Primär-Worktree gelandeter Status-Commit — Ursache: Agent ohne
+      isolation:worktree — non-destruktiv entflochten.)
+
+## Erledigt (Zyklus 13, 2026-07-13) — Wave 2, Kampagnenpfad spielbar
+- [x] PW-3.5a (PR #24 gemergt 62ee9a6): GameViewModel + MVI-Typen
+      (GameUiState/Intent/Effect), 10 JVM-Tests, :app-Coverage 94,6 %.
+      Level off-main via generate(campaignSeed/Tier); Tap→Rotate, Undo,
+      Reset (Bestätigung ≥5), Gelöst→Score, recordSolved nur Kampagne;
+      Brett aus MoveResult.trace (Tracer nie direkt). Bewusste
+      Phase-3-Eingrenzung: kein DailyStatsRepository (Phase 4).
+- [x] PW-3.6 (PR #25 gemergt 4c8a6b9): Levelauswahl — ViewModel +
+      50-Kachel-Grid (gesperrt/offen/gelöst mit Sternen+Score, Kopf-Summen),
+      Freischaltung via isLevelUnlocked, Tier via campaignTier (beide :game);
+      Fehlerzustand+Reset (R43); A11y mehrkanalig. Größen-Ausnahme
+      ~541 Zeilen (ein kohärenter Screen) dokumentiert.
+- [x] PW-3.5b (PR #26 gemergt 15e1228): interaktiver Spiel-Screen —
+      GameScreen, Brett-Tap (inverse Pixel→Axial in BoardCanvas), Kopfzeile,
+      Dreh-Animation (~150 ms, reduce-motion-fest), Ergebnis-Overlay
+      (Sterne/Punkte/Weiter/Nochmal/Zurück), Root-Game-Route,
+      request-parametrierte gameViewModelFactory (ADR-006, keine Reflection).
+      Behob Review-MINOR PW-3.5a (Reset-Guard bei Gelöst) + Replay-Intent
+      (R32-konform). code-reviewer verifizierte detekt/lint/test selbst,
+      MERGEABLE. Größen-Ausnahme ~780 Zeilen (nach Concern gesplittet).
+      **Damit Kampagnenpfad Ende-zu-Ende spielbar: Home → Levelauswahl →
+      Level → drehen/lösen → Overlay → Weiter.**
+- Wave-2-Merges: PW-3.5a & PW-3.6 parallel entwickelt (disjunkt), 3.5a
+  zuerst gemergt, 3.6 mit main aktualisiert, dann 3.5b (Root-Game-Zweig,
+  additiv zum LevelSelect-Zweig aus 3.6). Alle mit isolation:worktree.
+
 ## In Arbeit (Phase 3)
-- [ ] PW-3.9 (entwickler): `campaignTier(levelNumber)` in :game —
-      §11.3-Abbildung (in PW-3.8 nur im Design fixiert, Funktion fehlte;
-      Wave-2-Voraussetzung, da die UI den Tier nicht selbst berechnen
-      darf, ui-architektur §2). Branch feature/pw-3.9-campaign-tier,
-      Review + Merge ausstehend.
+- [ ] PW-3.7 (ui-entwickler): E2E-Smoke (Home→Auswahl→Level 1 lösen→
+      Overlay→Weiter, echter Pixel-Tap), assembleDebug-APK als
+      Gate-Artefakt, docs/phase3-gate-checklist.md. Branch
+      feature/pw-3.7-integration. Danach unabhängiger test-engineer-Pass.
 
 ## Nächste Schritte
-1. PW-3.9 reviewen (code-reviewer, reine :game-Funktion) → Merge.
-2. Wave 2 starten (ui-entwickler): PW-3.5a (GameViewModel+Intents+Tests)
-   und PW-3.6 (Levelauswahl) parallel — disjunkte Dateimengen
-   (ui/game/ vs ui/levelselect/); danach PW-3.5b (Screen+Overlay).
-   Merge-Punkt Navigation-Root (Screen-Registrierung PW-3.5b/PW-3.6)
-   sequenziell mergen.
-3. PW-3.7: E2E-Smoke (Home→Auswahl→Level 1 lösen→Overlay→Weiter),
-   assembleDebug-APK als Gate-Artefakt, Checkliste, unabhängiger
-   test-engineer-Pass → menschliches Gate (Branko).
-4. Backlog-Nachtrag aus diesem Zyklus: :data:lintDebug (NewApi) in
-   Gate-Kette + CI aufnehmen (Release-Engineer) — der Blindfleck, der
-   den readNBytes-HIGH erst spät sichtbar machte, ist offen.
-   Übrige Punkte unverändert (ringIndex, KDoc-Referenzen, gitleaks-CI,
-   CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel).
+1. PW-3.7 reviewen → Merge; assembleDebug-APK bereitstellen.
+2. Unabhängiger test-engineer-Pass gegen §12/§13-Akzeptanzkriterien.
+3. **Menschliches Gate (Branko):** Debug-APK installieren, ein Level von
+   Anfang bis Ende spielen; Spielgefühl-Feedback als Tickets zurück.
+4. Offene Backlog-Punkte: :data:lintDebug (NewApi) in Gate-Kette + CI
+   (Release-Engineer, der Blindfleck hinter dem readNBytes-HIGH); aus
+   Wave 2: GameViewModel-Ladefehler-Pfad, Difficulty-Anzeige-Akzessor
+   in :game statt ordinal+1, Dreh-Puffer/Undo-Animationsrichtung.
+   Übrige unverändert (ringIndex, KDoc-Referenzen, gitleaks-CI, CVE-Scan,
+   Renovate, PGP-Trigger, Custom-Detekt-Regel).

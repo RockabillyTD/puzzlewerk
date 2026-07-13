@@ -319,6 +319,11 @@
       animiert — Logik bleibt korrekt (im ViewModel längst angewandt).
       Falls Playtests das Nachlaufen als sprunghaft empfinden: echte
       Warteschlange der Einzeldrehungen erwägen.
+- [ ] ui-entwickler (Review-MINOR aus PR #26): Dreh-Animation läuft immer
+      vorwärts — bei einem Undo (m→m−1) springt das Element 60° zurück und
+      dreht +30° vor (ruckelt optisch; Logik korrekt). Drehrichtung aus dem
+      Vorzeichen der Orientierungsdifferenz (mod 6, kürzerer Weg) ableiten
+      oder Undo nicht einzeln animieren. Beim nächsten Animations-Feinschliff.
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
