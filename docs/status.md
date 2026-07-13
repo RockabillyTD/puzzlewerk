@@ -124,21 +124,47 @@ Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
       Re-Reviews APPROVE. Größen-Ausnahme (~1050 Zeilen, PR #18) als
       Orchestrator-Entscheidung dokumentiert → Offenlegung im Phasenbericht
 
+## Erledigt (Zyklus 12, 2026-07-13) — Wave 1 vollständig gemergt
+- [x] PW-3.2 (PR #19 gemergt c2ff198, PR #20 gemergt 55f8a2c):
+      Persistenzkern v1 (Envelope-Serializer, DataStore-Repositories für
+      Progress/Daily/Settings, In-Memory-Fakes, isLevelUnlocked §11.2) +
+      Golden-Suiten; Kover :data-Gate ≥ 70 % scharf.
+      **HIGH vor Merge gefangen und behoben (3b024ce):** die
+      Byte-Kappungs-Härtung hatte `InputStream.readNBytes` (erst API 33)
+      eingeführt — minSdk 26 ohne Desugaring ⇒ NoSuchMethodError bei
+      JEDEM Store-Read auf Android 8–12L. Ersetzt durch akkumulierende
+      `read(buf,off,len)`-Schleife (Teil-Read-fest) + Regressionstests;
+      `:data:lintDebug` 0 NewApi, `git grep readNBytes` leer.
+      Orchestrator-verifiziert (Semantik-Äquivalenz + Grenzfälle).
+- [x] PW-3.3 (PR #21 gemergt 886a826, PR #22 gemergt 6e9f640):
+      App-Shell — Theme (§13.4), Navigation (ADR-008, defensiver Saver),
+      Composition Root (ADR-006), HomeScreen/HomeViewModel (§12.2),
+      Robolectric-Offline-Pinnung (S6/ADR-009) per Wächtertest belegt.
+      code-reviewer: MERGEABLE (keine Funde); security-auditor:
+      SECURITY-APPROVE (verification-metadata additiv, Manifest S5).
+- Alle vier PRs vor Merge mit `main` aktualisiert (strict-Gate): 3.3-Stack
+  konfliktfrei außer docs/backlog.md (Union), 3.2-Stack konfliktfrei;
+  CI je Update grün nachgezogen.
+
 ## In Arbeit (Phase 3)
-- [ ] PW-3.2 (entwickler): GELIEFERT (2 Branches, Kover :data 97,8 %,
-      90 Tests; PR #19 Code+Security-APPROVE, PR #20 APPROVE) —
-      Härtungspaket vor Merge läuft (Security-MEDIUM Byte-Kappung,
-      Golden-Fixture-Konsistenz, Streak-Invariante)
-- [ ] PW-3.3 (ui-entwickler): GELIEFERT (2 Branches, Kover :app 95,8 %,
-      43 Tests, Offline-Pinnung per Negativtest belegt) — PR #21 + #22
-      offen, 2 Code-Reviews + Security-Audit laufen
+- [ ] PW-3.9 (entwickler): `campaignTier(levelNumber)` in :game —
+      §11.3-Abbildung (in PW-3.8 nur im Design fixiert, Funktion fehlte;
+      Wave-2-Voraussetzung, da die UI den Tier nicht selbst berechnen
+      darf, ui-architektur §2). Branch feature/pw-3.9-campaign-tier,
+      Review + Merge ausstehend.
 
 ## Nächste Schritte
-1. Wave-1-PRs: je Review (code-reviewer; PW-3.3 zusätzlich
-   security-auditor wegen android-all + verification-metadata) → Merge
-2. Wave 2: PW-3.5 (zwei PRs: ViewModel, dann Screen/Overlay) und
-   PW-3.6 (Levelauswahl) — Merge-Punkt Navigation-Root sequenziell
-3. PW-3.7: E2E-Smoke, assembleDebug-APK als Gate-Artefakt, Checkliste,
-   unabhängiger test-engineer-Pass → menschliches Gate (Branko)
-4. Offene Backlog-Punkte unverändert (ringIndex, KDoc-Referenzen,
-   gitleaks-CI, CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel)
+1. PW-3.9 reviewen (code-reviewer, reine :game-Funktion) → Merge.
+2. Wave 2 starten (ui-entwickler): PW-3.5a (GameViewModel+Intents+Tests)
+   und PW-3.6 (Levelauswahl) parallel — disjunkte Dateimengen
+   (ui/game/ vs ui/levelselect/); danach PW-3.5b (Screen+Overlay).
+   Merge-Punkt Navigation-Root (Screen-Registrierung PW-3.5b/PW-3.6)
+   sequenziell mergen.
+3. PW-3.7: E2E-Smoke (Home→Auswahl→Level 1 lösen→Overlay→Weiter),
+   assembleDebug-APK als Gate-Artefakt, Checkliste, unabhängiger
+   test-engineer-Pass → menschliches Gate (Branko).
+4. Backlog-Nachtrag aus diesem Zyklus: :data:lintDebug (NewApi) in
+   Gate-Kette + CI aufnehmen (Release-Engineer) — der Blindfleck, der
+   den readNBytes-HIGH erst spät sichtbar machte, ist offen.
+   Übrige Punkte unverändert (ringIndex, KDoc-Referenzen, gitleaks-CI,
+   CVE-Scan, Renovate, PGP-Trigger, Custom-Detekt-Regel).
