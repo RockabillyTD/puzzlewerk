@@ -2,5 +2,15 @@
 <!-- Basissprache: Deutsch. Englisch unter values-en/. Keine Hardcoded Strings im Code! -->
 <resources>
   <string name="app_name">Puzzlewerk</string>
-  <string name="phase2_status">Spiellogik-API steht (Phase 2) — Zellen im kleinsten Hex-Brett: %1$d</string>
+  <string name="screen_title_level_select">Levelauswahl</string>
+  <string name="screen_title_game">Spiel</string>
+  <string name="screen_title_daily">Tägliches Prisma</string>
+  <string name="screen_title_settings">Einstellungen</string>
+  <string name="placeholder_screen_hint">Dieser Bereich entsteht in einem späteren Schritt von Phase 3.</string>
+  <string name="home_continue">Weiter</string>
+  <string name="home_continue_level">Level %1$d</string>
+  <string name="home_continue_all_solved">Alle Level gelöst – zur Levelauswahl</string>
+  <string name="home_badge_soon">bald</string>
+  <string name="home_loading">Fortschritt wird geladen</string>
+  <string name="home_load_error">Der Spielstand konnte nicht geladen werden. Deine Daten wurden nicht überschrieben.</string>
 </resources>
