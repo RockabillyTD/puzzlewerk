@@ -351,6 +351,33 @@
       Backstack-Eintrag mit Clear beim Pop — bei Gelegenheit als kleine
       Erweiterung des Navigation-Roots (ADR-008-konform) nachziehen.
 
+- [ ] ui-entwickler (QS-Befund PW-3.7-QS, MINOR): „Weiter" im
+      Ergebnis-Overlay PUSHT `Game(n+1)` auf den Backstack statt den
+      obersten Eintrag zu ersetzen (`GameRoute` → `onNavigate` →
+      `NavigationState.navigateTo`). Folgen: (a) System-Zurück nach
+      „Weiter" führt zurück auf das GELÖSTE Vorlevel (Overlay wieder
+      sichtbar, vgl. bestehenden ViewModel-Store-Eintrag oben); (b) wer
+      viele Level am Stück löst, sammelt einen langen Game-Stack an;
+      (c) `navigateTo` dedupliziert nicht — ein Doppel-Tap-Race auf
+      „Weiter" kann denselben Screen zweimal stapeln (Zurück wirkt dann
+      scheinbar wirkungslos). Vorschlag: Replace-Top-Semantik für
+      Game→Game-Navigation im Navigation-Root (ADR-008-konform) und/oder
+      No-op bei `navigateTo(currentScreen)`.
+- [ ] architect/game-designer (QS-Befund PW-3.7-QS, MINOR, Phase 4):
+      `LevelRequest.Daily` verlangt `epochDay >= 0` und
+      `decodeScreen` verwirft `game/daily/<negativ>` — das kollidiert
+      mit R37 (Gerätedatum vor 1970: Daily muss funktionieren, Seed-
+      Formel ist definiert). Vor dem Daily-Einstieg (Phase 4)
+      entscheiden: R37 auf den Navigations-/Request-Pfad ausdehnen
+      (negative epochDay zulassen) ODER R37 im Design auf die reine
+      Seed-Formel eingrenzen.
+- [ ] ui-entwickler (QS-Befund PW-3.7-QS, MINOR):
+      `rememberAnimationsEnabled` liest `ANIMATOR_DURATION_SCALE` genau
+      einmal je Context (`remember(context)`) — schaltet die Nutzerin
+      „Animationen entfernen" um, während die App läuft, greift die
+      Änderung erst nach Activity-Recreate. Falls Feinschliff gewünscht:
+      Setting per `ContentObserver`/`snapshotFlow` beobachten.
+
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
 
