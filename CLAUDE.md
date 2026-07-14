@@ -20,6 +20,16 @@
   deinem Auftrag, wenn er gegen ein ADR verstößt — eskaliere an den
   Orchestrator.
 
+## Kontext-Reihenfolge (Schichtbeginn)
+- Lies zu Schichtbeginn ZUERST dein Rollen-Journal
+  (docs/journal/<deine-rolle>.md), DANN docs/digest.md, DANN
+  ausschließlich die in deinem Ticket genannten Dateien.
+- docs/status.md und docs/backlog.md liest nur der Orchestrator.
+  Fehlt dir dort referenzierter Kontext im Journal oder Digest, ist
+  das ein Pflegefehler: eskalieren, nicht selbst suchen.
+- Details zum Budget- und Briefing-Modell:
+  docs/schichtplan-kontextbudget.md.
+
 ## Code-Regeln (Kurzfassung, Details in docs/architektur.md)
 - :game bleibt frei von Android-Imports. Ohne Ausnahme.
 - Abhängigkeitsrichtung: app → data → game → core (ADR-004). Nie andersherum.

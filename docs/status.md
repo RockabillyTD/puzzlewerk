@@ -219,6 +219,21 @@ Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
       dreifach kopiert → Backlog) + 1 NIT. CI quality-gates grün.
       Merge durch Branko freigegeben (2026-07-14). QS-Worktree entfernt.
 
+## Erledigt (Zyklus 16, 2026-07-14) — Team-Alignment für Phase 4
+- [x] Phase-4-Plandokumente eingecheckt: docs/phase4-10-punkte-plan.md
+      (PW-4.1–4.10, Schrittbudgets, Reihenfolge) und
+      docs/schichtplan-kontextbudget.md (Kontextbudget-Modell,
+      Rollen-Codex, Briefing-Schablone).
+- [x] Einführungs-Ticket aus schichtplan §5 ausgeführt: sechs
+      Rollen-Journale docs/journal/*.md initial aus der status.md-
+      Historie befüllt; docs/digest.md erstmalig geschnitten
+      (≤ 150 Zeilen); CLAUDE.md um Abschnitt „Kontext-Reihenfolge"
+      ergänzt. Ab sofort gilt die Briefing-Schablone für jede
+      Delegation.
+- Hinweis: Phase-4-Voraussetzungen noch offen —
+      docs/phase4-juice-update.md fehlt, die 18 OGG-Assets fehlen
+      unter app/src/main/res/raw/; Phase-3-Gate (Branko) steht aus.
+
 ## In Arbeit (Phase 3)
 - (nichts delegiert — alle Phase-3-Tickets inkl. QS-Pass sind gemergt)
 
