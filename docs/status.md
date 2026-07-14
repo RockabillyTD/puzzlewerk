@@ -180,20 +180,36 @@ Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
   zuerst gemergt, 3.6 mit main aktualisiert, dann 3.5b (Root-Game-Zweig,
   additiv zum LevelSelect-Zweig aus 3.6). Alle mit isolation:worktree.
 
+## Erledigt (Zyklus 14, 2026-07-14) — PW-3.7 gemergt, Gate-Artefakt liegt vor
+- [x] PW-3.7 (PR #28 gemergt f8dd279): E2E-Smoke-Test (Home→Levelauswahl→
+      Level 1 lösen per echtem Pixel-Tap durch den pointerInput-Pfad→
+      Overlay→Weiter→Folgelevel + Repository-Check), Fix GameViewModel
+      je Partie geschlüsselt (`viewModel(key=encodeScreen(...))` — ohne
+      den Fix lädt „Weiter" nie das Folgelevel), docs/
+      phase3-gate-checklist.md, Backlog-Notiz ViewModel-Scoping.
+      code-reviewer: APPROVE mit eigener Verifikation — Testlauf grün,
+      **Mutationsprobe** (Fix revertiert ⇒ Test schlägt fehl, fängt den
+      Bug nachweislich), Level-Lösung/Score von Hand nachgerechnet
+      (1500 P, 3★), Checklisten-Stichproben bestätigt. 3 NITs notiert
+      (Test-Source-Set-Split, KDoc-Ergänzung Main-Dispatcher-Seam,
+      VM-Key-Kopplung an Nav-Encoding — dokumentiert, nicht blockierend).
+      Merge durch Branko freigegeben (2026-07-14).
+- [x] Debug-APK als Phase-3-Gate-Artefakt gebaut (Tree-identisch zu
+      main@f8dd279, verifiziert via `git rev-parse <sha>^{tree}`):
+      `app/build/outputs/apk/debug/app-debug.apk` (~10,4 MB).
+- PW-3.7-Agent-Worktree entfernt (gemergt, APK vorher gesichert).
+
 ## In Arbeit (Phase 3)
-- [ ] PW-3.7 (ui-entwickler): E2E-Smoke (Home→Auswahl→Level 1 lösen→
-      Overlay→Weiter, echter Pixel-Tap), assembleDebug-APK als
-      Gate-Artefakt, docs/phase3-gate-checklist.md. Branch
-      feature/pw-3.7-integration. Danach unabhängiger test-engineer-Pass.
+- (nichts delegiert — Phase-3-Tickets PW-3.1–3.10 sind alle gemergt)
 
 ## Nächste Schritte
-1. PW-3.7 reviewen → Merge; assembleDebug-APK bereitstellen.
-2. Unabhängiger test-engineer-Pass gegen §12/§13-Akzeptanzkriterien.
-3. **Menschliches Gate (Branko):** Debug-APK installieren, ein Level von
+1. Unabhängiger test-engineer-Pass gegen §12/§13-Akzeptanzkriterien.
+2. **Menschliches Gate (Branko):** Debug-APK installieren
+   (`app/build/outputs/apk/debug/app-debug.apk`), ein Level von
    Anfang bis Ende spielen; Spielgefühl-Feedback als Tickets zurück.
-4. Offene Backlog-Punkte: :data:lintDebug (NewApi) in Gate-Kette + CI
-   (Release-Engineer, der Blindfleck hinter dem readNBytes-HIGH); aus
-   Wave 2: GameViewModel-Ladefehler-Pfad, Difficulty-Anzeige-Akzessor
-   in :game statt ordinal+1, Dreh-Puffer/Undo-Animationsrichtung.
+3. Offene Backlog-Punkte: aus Wave 2: GameViewModel-Ladefehler-Pfad,
+   Difficulty-Anzeige-Akzessor in :game statt ordinal+1,
+   Dreh-Puffer/Undo-Animationsrichtung; aus PW-3.7: ViewModel-Scoping
+   (bounded Leak + Overlay-bei-Rückkehr), Test-Source-Set-Vereinheitlichung.
    Übrige unverändert (ringIndex, KDoc-Referenzen, gitleaks-CI, CVE-Scan,
    Renovate, PGP-Trigger, Custom-Detekt-Regel).
