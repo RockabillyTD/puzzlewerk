@@ -377,6 +377,13 @@
       „Animationen entfernen" um, während die App läuft, greift die
       Änderung erst nach Activity-Recreate. Falls Feinschliff gewünscht:
       Setting per `ContentObserver`/`snapshotFlow` beobachten.
+- [ ] test-engineer (Review-MINOR aus PR #29): die Test-Fixture
+      `tinySolvableLevel()` existiert dreifach (E2eSmokeTest,
+      GameViewModelQsTest, GameRouteQsTest) — bei Änderungen am
+      Level-Schema driften die Kopien auseinander. In eine gemeinsame
+      Test-Fixture-Datei im Package `de.puzzlewerk.app.ui.game`
+      konsolidieren (zusammen mit der Test-Source-Set-Vereinheitlichung
+      aus den PR-#28-NITs erledigen).
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)

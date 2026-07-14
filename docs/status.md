@@ -199,15 +199,40 @@ Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
       `app/build/outputs/apk/debug/app-debug.apk` (~10,4 MB).
 - PW-3.7-Agent-Worktree entfernt (gemergt, APK vorher gesichert).
 
+## Erledigt (Zyklus 15, 2026-07-14) — QS-Pass gemergt, Phase 3 wartet nur noch auf das menschliche Gate
+- [x] PW-3.7-QS (PR #29 gemergt 60a8fc6): unabhängiger test-engineer-Pass
+      gegen §12/§13 — 14 neue deterministische Tests auf Lücken NEBEN den
+      Entwickler-Tests (GameViewModelQsTest 6: R28-Undo-leer, Intents im
+      Ladezustand, Reset-Schwelle beidseitig exakt ≥5, ConfirmReset-Race,
+      volle Undo-Kette I10, Daily ohne Kampagnen-Persistenz;
+      GameRouteQsTest 4: Level-50-Kante ohne „Weiter" §11.1, Daily ohne
+      „Weiter", Speicherfehler-Meldung, Sterne-Glyphen-Semantik §13.5 via
+      TalkBack-Doppeltipp-Pfad; GameRotationAnimationQsTest 4:
+      Reduce-Motion §13.6 beide Skalen, Spin ~150 ms rein auf mainClock).
+      Drei QS-Befunde nur dokumentiert (Backlog): „Weiter" pusht statt
+      ersetzt Backstack-Top, LevelRequest.Daily vs. R37 (negative
+      epochDay), rememberAnimationsEnabled-Einmallesung.
+      code-reviewer: MERGEABLE mit eigener Verifikation (Testlauf grün,
+      14 Testcases nachgezählt, ktlint/detekt grün, Mutationssensitivität
+      stichprobenhaft geprüft, alle drei Backlog-Befunde am
+      Produktionscode bestätigt); 1 MINOR (tinySolvableLevel-Fixture
+      dreifach kopiert → Backlog) + 1 NIT. CI quality-gates grün.
+      Merge durch Branko freigegeben (2026-07-14). QS-Worktree entfernt.
+
 ## In Arbeit (Phase 3)
-- (nichts delegiert — Phase-3-Tickets PW-3.1–3.10 sind alle gemergt)
+- (nichts delegiert — alle Phase-3-Tickets inkl. QS-Pass sind gemergt)
 
 ## Nächste Schritte
-1. Unabhängiger test-engineer-Pass gegen §12/§13-Akzeptanzkriterien.
-2. **Menschliches Gate (Branko):** Debug-APK installieren
-   (`app/build/outputs/apk/debug/app-debug.apk`), ein Level von
-   Anfang bis Ende spielen; Spielgefühl-Feedback als Tickets zurück.
-3. Offene Backlog-Punkte: aus Wave 2: GameViewModel-Ladefehler-Pfad,
+1. **Menschliches Gate (Branko):** Debug-APK installieren
+   (`app/build/outputs/apk/debug/app-debug.apk`, Tree-identisch zu
+   main@f8dd279 — der QS-Merge ändert nur Test-Quellen+docs, kein
+   Neubau nötig), ein Level von Anfang bis Ende spielen; Checkliste
+   docs/phase3-gate-checklist.md; Spielgefühl-Feedback als Tickets zurück.
+2. Nach Gate-Feedback: Phase-4-Planung (Daily-Einstieg, Feinschliff)
+   inkl. der R37-Entscheidung (LevelRequest.Daily vs. negative epochDay).
+3. Offene Backlog-Punkte: aus PW-3.7-QS: Weiter-als-Replace-Top,
+   R37/epochDay-Entscheidung, Animations-Setting-Observer,
+   Fixture-Konsolidierung; aus Wave 2: GameViewModel-Ladefehler-Pfad,
    Difficulty-Anzeige-Akzessor in :game statt ordinal+1,
    Dreh-Puffer/Undo-Animationsrichtung; aus PW-3.7: ViewModel-Scoping
    (bounded Leak + Overlay-bei-Rückkehr), Test-Source-Set-Vereinheitlichung.
