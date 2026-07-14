@@ -40,6 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.puzzlewerk.app.R
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.app.ui.navigation.Screen
+import de.puzzlewerk.app.ui.navigation.encodeScreen
 import de.puzzlewerk.app.ui.theme.PuzzlewerkTheme
 import de.puzzlewerk.game.level.CAMPAIGN_LEVEL_COUNT
 import kotlinx.coroutines.flow.Flow
@@ -67,7 +68,16 @@ internal fun GameRoute(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val viewModel: GameViewModel = viewModel(factory = gameViewModelFactory(request))
+    // Ein ViewModel JE PARTIE: „Weiter" ersetzt Game(n) durch Game(n+1) im selben
+    // Composition-Slot mit demselben ViewModelStoreOwner — ohne request-eindeutigen
+    // key käme das gelöste Level-n-ViewModel zurück und die Factory des neuen
+    // Requests würde nie aufgerufen (E2E-Befund PW-3.7). Schlüssel ist die
+    // injektive Screen-Kurzform aus der Navigation (z. B. „game/campaign/2").
+    val viewModel: GameViewModel =
+        viewModel(
+            key = encodeScreen(Screen.Game(request)),
+            factory = gameViewModelFactory(request),
+        )
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val shake = remember { Animatable(0f) }
