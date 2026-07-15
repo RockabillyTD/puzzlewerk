@@ -234,22 +234,78 @@ Anfang bis Ende spielbar; Spielgefühl-Feedback fließt als Tickets zurück.
       docs/phase4-juice-update.md fehlt, die 18 OGG-Assets fehlen
       unter app/src/main/res/raw/; Phase-3-Gate (Branko) steht aus.
 
-## In Arbeit (Phase 3)
-- (nichts delegiert — alle Phase-3-Tickets inkl. QS-Pass sind gemergt)
+## Aktuelle Phase (aktualisiert)
+Phase 4 — „Juice-Update" (gestartet 2026-07-15).
+**Phase 3 durch Branko abgenommen** — Gate-Feedback: Kampagnenpfad
+funktioniert, aber „zu langweilig; Richtung Zuma" (Effektdichte,
+Laser, Explosionen, steigernder Sound). Feedback-Vorlage:
+docs/phase4-juice-update.md; Umsetzungsplan:
+docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
+
+## Erledigt (Zyklus 17, 2026-07-15) — Phase 4 gestartet: Juice-Paket + Design-Addendum
+- [x] **PW-4.0 (Voraussetzungen, Branch build/pw-4.0-juice-paket,
+      gepusht, PR ausstehend):** docs/phase4-juice-update.md,
+      18 OGG-Assets (4 Stems 17,14 s/112 BPM synchron loopbar, 13 SFX,
+      1 Demo-Mix) nach app/src/main/res/raw/, Generator
+      tools/audio/synth.py (deterministisch, Seed 42). Zweiter Commit:
+      res/raw/keep.xml (tools:keep für alle 18 OGGs) — Lint
+      UnusedResources schlägt sonst als Error zu (warningsAsErrors),
+      und der Release-Shrinker würde die noch unreferenzierten Assets
+      entfernen; Rückbau-Prüfung in PW-4.10 (Backlog-Eintrag).
+      Volle Gate-Kette lokal grün (checkModuleGraph ktlintCheck detekt
+      test koverVerify :app:lintDebug :data:lintDebug
+      :app:assembleDebug, Exit 0). security-auditor:
+      **SECURITY-APPROVE** (synth.py rein synthetisch, kein Netz/kein
+      shell=True; alle 18 OGGs Magic-Bytes „OggS" verifiziert, Summe
+      1.351.809 Bytes; keine Gradle-/Manifest-/CI-Änderung; kein
+      Secret) mit 2 MINOR → Backlog (keep.xml-Rückbau,
+      Encode-Reproduzierbarkeit/OUT-Pfad in synth.py).
+- [x] **PW-4.1 (game-designer, Branch docs/pw-4.1-juice-addendum auf
+      PW-4.0 gestackt, gepusht, PR ausstehend):** BREAKING-Addendum
+      „Juice" in docs/game-design.md (+297/−3, dann +50/−22
+      Review-Runde): §13.7 neu gefasst (Statik-Verbot → präzisierte
+      Fotosensitivitäts-Grenzen), §13.8–13.13 (Laser-Look, Feedback je
+      Aktion, Feuerwerk, adaptive Stems mit exakten
+      Ebenen-Bedingungen, SFX-Tabelle mit 13 Assets, V4/V5,
+      Juice-Determinismus per SplitMix64-Seed), Randfälle R44–R50,
+      §12.5-Sound-Schalter als ERSETZT markiert. Status im Dokument:
+      ENTWURF bis Abnahme. code-reviewer: **MERGEABLE** mit eigener
+      Verifikation (Arithmetik komplett nachgerechnet: 580 ≤ 600 ms,
+      Stem-Schwellen K=1/2/3/10 monoton, Beispiel 7.3 gegen §7.3,
+      Asset-Namen zeichengenau); 3 MINOR + 4 NIT vom game-designer im
+      Folge-Commit gepatcht — wichtigste Funde: SFX-Zählfehler (13
+      statt 12, aus der Vorlage übernommen), Stern-Bounce-ENDE 800 ms
+      > 600-ms-Frist (jetzt als bewusste, abnahmebedürftige
+      V3-Abweichung kodifiziert), 3-Hz-Blitz-Grenze auf
+      Vollbild-Blitzen präzisiert (Kaskade hätte sonst die eigene
+      harte Grenze verletzt).
+- [x] Orchestrator-Pflege gemäß Schichtplan: journal/game-designer.md
+      (PW-4.1-Eintrag inkl. Learnings + verbrauchte Schritte 16/80),
+      digest.md neu geschnitten (Phase-4-Stand, Gate = Abnahme
+      Addendum), backlog.md (3 neue Einträge aus den Audits).
+- Prozess-Notiz: gh CLI ist auf dieser Maschine nicht mehr
+      authentifiziert (`gh auth status` leer) — Branches wurden per
+      git-Credential-Manager gepusht, die beiden PRs (PW-4.0, PW-4.1
+      als Stack) konnten nicht automatisch erstellt werden.
+
+## In Arbeit (Phase 4)
+- PW-4.0 + PW-4.1: Branches gepusht, warten auf PR-Erstellung
+  (gh-Auth) + CI + Abnahme des Addendums durch Branko.
 
 ## Nächste Schritte
-1. **Menschliches Gate (Branko):** Debug-APK installieren
-   (`app/build/outputs/apk/debug/app-debug.apk`, Tree-identisch zu
-   main@f8dd279 — der QS-Merge ändert nur Test-Quellen+docs, kein
-   Neubau nötig), ein Level von Anfang bis Ende spielen; Checkliste
-   docs/phase3-gate-checklist.md; Spielgefühl-Feedback als Tickets zurück.
-2. Nach Gate-Feedback: Phase-4-Planung (Daily-Einstieg, Feinschliff)
-   inkl. der R37-Entscheidung (LevelRequest.Daily vs. negative epochDay).
-3. Offene Backlog-Punkte: aus PW-3.7-QS: Weiter-als-Replace-Top,
-   R37/epochDay-Entscheidung, Animations-Setting-Observer,
-   Fixture-Konsolidierung; aus Wave 2: GameViewModel-Ladefehler-Pfad,
-   Difficulty-Anzeige-Akzessor in :game statt ordinal+1,
-   Dreh-Puffer/Undo-Animationsrichtung; aus PW-3.7: ViewModel-Scoping
-   (bounded Leak + Overlay-bei-Rückkehr), Test-Source-Set-Vereinheitlichung.
-   Übrige unverändert (ringIndex, KDoc-Referenzen, gitleaks-CI, CVE-Scan,
-   Renovate, PGP-Trigger, Custom-Detekt-Regel).
+1. **Branko:** `gh auth login` ausführen (oder PRs von Hand öffnen:
+   build/pw-4.0-juice-paket → main, docs/pw-4.1-juice-addendum →
+   build/pw-4.0-juice-paket als Stack bzw. nach dessen Merge → main).
+2. **Menschliche Abnahme (Branko): Juice-Addendum PW-4.1** — Diff von
+   docs/game-design.md lesen; explizit mit abzunehmen laut
+   game-designer: Kaskaden-Kappe ab 5. Burst, Feuerwerk-Formel
+   F = min(120, 60+12·K), Stem-Ebene-4-Bedingung L ≥ max(1, K−1),
+   3 Dreh-Funken fix, V3-Abweichung (600-ms-Frist schlägt „Sterne
+   zuerst"), Brettrand ohne Auftreff-Funken. Optional zum Anhören:
+   music_demo_steigerung (68-s-Demo der Stem-Steigerung).
+3. Nach Abnahme + Merges: Punkt 2 (PW-4.2, architekt — ADRs
+   Audio-Architektur + VFX-Layer), dann 3 → 4 → (5, 8 parallel) →
+   6 → 7 → 9 → 10 gemäß Plan.
+4. Offene Backlog-Punkte unverändert (PW-3.7-QS-Funde, Wave-2-Reste,
+   Infra) + neu: keep.xml-Rückbau, Encode-Reproduzierbarkeit,
+   SFX-Zählfehler-Notiz/Demo-Asset-Entscheidung (PW-4.8).

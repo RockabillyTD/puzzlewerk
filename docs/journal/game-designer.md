@@ -4,6 +4,25 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.1 — BREAKING-Addendum „Juice" §13/§15 (Branch docs/pw-4.1-juice-addendum, 2026-07-15, wartet auf Abnahme)
+- Gebaut: V1–V5 aus docs/phase4-juice-update.md normativ als §13.7
+  (neu gefasst)/§13.8–13.13 + Randfälle R44–R50; §12.5-Sound-Schalter
+  als ERSETZT markiert (→ 13.11, Musik/SFX getrennt, Default AN).
+  Alle Werte mit Zahlen + durchgerechnetem Beispiel (Level 7.3).
+- Review: MERGEABLE; 3 MINOR + 4 NIT in Folge-Commit gepatcht —
+  wichtigste: SFX sind 13, nicht 12 (Zählfehler aus der Vorlage
+  übernommen!); Stern-Bounce-ENDE (800 ms) überschreitet die
+  600-ms-Frist → als bewusste, abnahmebedürftige V3-Abweichung
+  kodifiziert; 3-Hz-Blitz-Grenze auf Vollbild präzisiert, sonst
+  verletzt die eigene Kaskade die eigene harte Grenze.
+- Learning: Zahlen aus Vorlagen nachzählen statt übernehmen; bei
+  Zeitbudgets immer START- und ENDzeiten nachrechnen; harte Grenzen
+  gegen die eigenen neuen Effekte gegenprüfen.
+- Offen: Abnahme Branko (Entscheidungsliste im Abschlussbericht:
+  Kaskaden-Kappe ab 5. Burst, F = 60+12·K, Ebene-4-Bedingung
+  max(1, K−1), 3 Dreh-Funken fix, V3-Abweichung, Brettrand-Emitter).
+- Schritte: 16 von 60+20 (Erstlauf 10, Review-Runde 6).
+
 ## PW-3.8 — §11.3/§12.5-Präzisierung (PR #16, gemergt 2026-07-12)
 - Gebaut: campaignTier(n) exakt fixiert (D1:1–6, D2:7–12, D3:13–21,
   D4:22–29, D5:30–39, D6:40–46, D7:47–50); §12.5 Reset als zwei
@@ -34,6 +53,6 @@
 - Schritte: n. a.
 
 ## Offen für diese Rolle
-- Phase 4, Punkt 1 (PW-4.1): BREAKING-Addendum „Juice" in §13/§15 —
-  wartet auf Phase-3-Gate durch Branko und auf die Vorlage
-  docs/phase4-juice-update.md (liegt noch NICHT im Repo).
+- PW-4.1: Abnahme des Addendums durch Branko abwarten; danach ggf.
+  Nacharbeiten aus der Abnahme. Bis dahin keine weiteren
+  Design-Tickets in Phase 4 (Punkt 2 startet erst nach Abnahme).
