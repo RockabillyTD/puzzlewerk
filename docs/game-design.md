@@ -1077,13 +1077,18 @@ erheblichen Teil der Spielerschaft (Farbfehlsichtigkeit betrifft ca.
    respektieren die System-Einstellung „Animationen entfernen".
 7. **Fotosensitivität (GEÄNDERT durch Addendum 13.8–13.13 — BREAKING,
    PW-4.1):** Die alte Regel „Strahlen leuchten statisch, keine
-   Blitzeffekte" ist aufgehoben. Neue, weiterhin harte Grenze: KEIN
-   wiederholtes Blitzen oder Flackern mit mehr als 3 Ereignissen pro
-   Sekunde. Konkret: Der Laser-Puls liegt fix bei 2,0 Hz (13.8), der
-   Lösungs-Flash ist ein EINMALIGES Ereignis von 80 ms pro Lösung
-   (13.10) — niemals eine Blitzfolge, nie mehr als 1 Vollbild-Flash
-   pro Sekunde. Unter Reduce-Motion (13.12) entfallen Flash und Puls
-   vollständig.
+   Blitzeffekte" ist aufgehoben. Neue, weiterhin harte Grenze (Geist
+   von WCAG 2.3.1): KEIN Vollbild- oder großflächiges Blitzen mit
+   mehr als 3 Ereignissen pro Sekunde. Konkret: Der Laser-Puls liegt
+   fix bei 2,0 Hz (13.8a), der Lösungs-Flash ist ein EINMALIGES
+   großflächiges Ereignis von 80 ms pro Lösung (13.10) — niemals eine
+   Blitzfolge, nie mehr als 1 Vollbild-Flash pro Sekunde.
+   KLEINFLÄCHIGE, ortsverschiedene Effekte fallen ausdrücklich NICHT
+   unter diese Grenze: Kristall-Bursts der Kaskade (bis zu 5 in
+   160 ms, 13.9), Auftreff-Funken und Element-Blitze (auch bei
+   gepufferten Taps > 3/s, 12.3) sind lokal begrenzt und nie
+   bildschirmfüllend. Unter Reduce-Motion (13.12) entfallen Flash und
+   Puls vollständig.
 
 ### 13.8 BREAKING-Addendum „Juice" — Geltung, Herkunft, betroffene Module (PW-4.1)
 
@@ -1144,8 +1149,11 @@ Strahlen werden als Laser gerendert. Alle Werte sind normativ:
   Quelle, Kristall oder Filter) emittiert ein Punkt-Emitter Funken in
   Strahlfarbe: Emissionsrate 4 Funken/s, Lebensdauer 400 ms, Größe
   2 dp, Startgeschwindigkeit 60 dp/s radial (Richtungswinkel aus dem
-  Juice-PRNG, 13.13). Brett-Aus-Absorptionen (R09, R19) emittieren
-  NICHT (es gibt keinen sichtbaren Auftreffpunkt).
+  Juice-PRNG, 13.13). Brett-Aus-Absorptionen emittieren NICHT (es
+  gibt keinen sichtbaren Auftreffpunkt) — bewusste Ausnahme von
+  „Der Brettrand verhält sich wie eine Wand" (4.8): eine Wand-ZELLE
+  hat einen Auftreffpunkt und emittiert, der Brettrand nicht. Die
+  Ausnahme betrifft nur die Optik, nicht die trace-Logik.
 - **Barrierefreiheit unverändert:** Strahlmuster und Symbol-Chips
   (13.2) liegen ÜBER dem Kern und bleiben Default AN; der Laser-Look
   ersetzt KEINEN der Kanäle aus 13.1–13.5.
@@ -1156,9 +1164,9 @@ Strahlen werden als Laser gerendert. Alle Werte sind normativ:
   einzigen drei Funken-Emitter (je 4 Funken/s) — Spiegel und Prisma
   sind Durchgangs-, keine Endpunkte. Das Weiß-Segment Quelle→Prisma
   trägt einen weißen Halo. Gegenbeispiel Startzustand (m = 5): der
-  Strahl läuft ins Brett-Aus ⇒ 0 Emitter (R19).
+  Strahl läuft ins Brett-Aus ⇒ 0 Emitter (Brettrand, 4.8).
 
-#### 13.9 Aktions-Feedback (V2) — jede Aktion antwortet sichtbar
+### 13.9 Aktions-Feedback (V2) — jede Aktion antwortet sichtbar
 
 - **Dreh-Blitz (gültige Drehung):** Das getappte Element erhält ein
   weißes Overlay, Alpha 0,6 → 0 linear über 120 ms (parallel zur
@@ -1195,7 +1203,7 @@ Strahlen werden als Laser gerendert. Alle Werte sind normativ:
   Bursts bei t = 0 / 40 / 80 ms; SFX sfx_crystal_lit, sfx_combo_up1,
   sfx_combo_up2. Partikelzahlen: drei PRNG-Züge, je ∈ {8…12}.
 
-#### 13.10 Lösungs-Feuerwerk (V3)
+### 13.10 Lösungs-Feuerwerk (V3)
 
 Zeitachse ab Zug-Commit des lösenden Zugs (t = 0; die Spiellogik ist
 zu diesem Zeitpunkt fertig, R32 gilt ab sofort):
@@ -1208,8 +1216,10 @@ zu diesem Zeitpunkt fertig, R32 gilt ab sofort):
    Dauer exakt **80 ms** (linear auf 0). EINMALIG pro Lösung (13.7).
 3. **Partikel-Explosion:** bei t_fw vom zuletzt geborstenen Kristall:
    **F = min(120, 60 + 12·K) Partikel** (K = Kristallzahl des Levels)
-   — der Bereich 60–120 ist damit deterministisch und wächst mit der
-   Levelgröße. Eigenschaften: additiv, Startgeschwindigkeit
+   — die Formel liefert für alle zulässigen K ∈ {1…6} (harte Kappe
+   9.2) Werte in 72–120: deterministisch, mit der Levelgröße
+   wachsend, innerhalb der V3-Vorgabe „60–120 Partikel".
+   Eigenschaften: additiv, Startgeschwindigkeit
    120–320 dp/s (PRNG), Gravitation 480 dp/s², Lebensdauer 0,9–1,4 s
    (PRNG), Farben zyklisch durch die Soll-Farben aller Kristalle des
    Levels in Brett-Reihenfolge (r, dann q).
@@ -1224,13 +1234,24 @@ zu diesem Zeitpunkt fertig, R32 gilt ab sofort):
    Partikel-Restlaufzeit ≤ 1,4 s). R32 bleibt unberührt: Brett-Eingaben
    im Zustand Gelöst sind Invalid.
 
-**Nachrechnung der 600-ms-Frist (Worst Case):** t_fw = 160 ms (Kappe),
-3. Stern startet bei 160 + 120 + 2·150 = 580 ms ≤ 600 ms. Beispiel
-Level 7.3 (N = 3, K = 3, ★★★): t_fw = 80 ms, Flash 80–160 ms,
-F = 60 + 12·3 = 96 Partikel, Sterne bei 200 / 350 / 500 ms, Overlay
-interaktiv bei 600 ms.
+**Bewusste V3-Abweichung (abnahmebedürftig, Designentscheidung):**
+V3 sagt wörtlich „Sterne fliegen einzeln mit Bounce ein, DANACH erst
+Overlay-Buttons". Mit Stern-Starts bis 580 ms und 220 ms Bounce endet
+der 3. Stern im Worst Case aber erst bei 800 ms — „alle Sterne fertig"
+UND „Overlay ≤ 600 ms" sind gleichzeitig unerfüllbar. Normativ gilt:
+**Die 600-ms-Interaktivitätsfrist gewinnt.** Der 3. Stern kann beim
+Interaktiv-Werden der Buttons noch einfliegen; die Buttons erscheinen
+per Fade ab 500 ms und sind ab 600 ms bedienbar. Branko nimmt diese
+Abweichung mit dem Addendum explizit ab.
 
-#### 13.11 Audio-Verhalten (V5 + Assets aus docs/phase4-juice-update.md §0)
+**Nachrechnung der 600-ms-Frist (Worst Case):** t_fw = 160 ms (Kappe),
+3. Stern startet bei 160 + 120 + 2·150 = 580 ms ≤ 600 ms und endet
+bei 580 + 220 = 800 ms (siehe V3-Abweichung oben). Beispiel Level 7.3
+(N = 3, K = 3, ★★★): t_fw = 80 ms, Flash 80–160 ms, F = 60 + 12·3 =
+96 Partikel, Sterne starten bei 200 / 350 / 500 ms (Ende des
+3. Sterns: 720 ms), Overlay interaktiv bei 600 ms.
+
+### 13.11 Audio-Verhalten (V5 + Assets aus docs/phase4-juice-update.md §0)
 
 **Adaptive Musik (4 Stems, je 17,14 s Loop, 112 BPM):** Alle 4 Stems
 starten beim Betreten des Spiel-Screens SYNCHRON und loopen endlos;
@@ -1253,13 +1274,20 @@ Kristallzahl des Levels und L = aktuell erfüllte Kristalle laut trace:
 - **Synchronität ist Invariante:** Die 4 Stems sind zu KEINEM Zeitpunkt
   gegeneinander verschoben (Player-Architektur entscheidet der
   Architekt per ADR in PW-4.2; diese Eigenschaft ist normativ).
+- **Asset-Bilanz:** Von den 18 gelieferten OGGs referenziert dieses
+  Dokument 17 (4 Stems + 13 SFX). Das 18., music_demo_steigerung.ogg,
+  ist ein reines Anhör-Demo für Menschen, KEIN Laufzeit-Asset — keine
+  Regel dieses Dokuments nutzt es; Entfernung aus dem APK oder
+  Verbleib entscheidet PW-4.8 (APK-Größen-Budget).
 - **Beispiel (Level 7.3, K = 3):** Start: nur Ebene 1. Zug 2 erfüllt
   alle 3 Kristalle gleichzeitig: L springt 0 → 3, damit Ebene 2
   (L ≥ 1), Ebene 3 (6 ≥ 3) und Ebene 4 (3 ≥ 2) im selben Moment —
   alle drei faden parallel über 250 ms ein, gleichzeitig läuft das
   Ducking (R50).
 
-**SFX-Zuordnungstabelle (normativ, 12 Assets):**
+**SFX-Zuordnungstabelle (normativ, 13 Assets** — die Zählung „12" in
+docs/phase4-juice-update.md §0 ist ein dortiger Zählfehler; die Liste
+dort enthält 13 Dateien, die Zahl hier ist maßgeblich**):**
 
 | Ereignis | SFX |
 |---|---|
@@ -1286,7 +1314,7 @@ und respektiert (Verlust ⇒ R47); Stummschalter/Lautlos-Modus wird NIE
 umgangen (R48); keine Vibration ohne Opt-in (Haptik-Schalter 12.5
 bleibt eigenständig und Default-Verhalten unverändert).
 
-#### 13.12 Prozedurales Rendering & Reduce-Motion (V4, V5)
+### 13.12 Prozedurales Rendering & Reduce-Motion (V4, V5)
 
 - **Prozedural statt Sprites:** KEINE vorgerenderten Effekt-PNGs. Alle
   Effekte werden vektoriell/prozedural im Canvas gezeichnet
@@ -1304,7 +1332,7 @@ bleibt eigenständig und Default-Verhalten unverändert).
   - Audio ist von Reduce-Motion NICHT betroffen (rein visuelle
     Einstellung; Audio regeln die Schalter aus 13.11).
 
-#### 13.13 Determinismus des Juice-Layers (C2-Pflicht)
+### 13.13 Determinismus des Juice-Layers (C2-Pflicht)
 
 - **JuiceState:** Der gesamte Effekt-Zustand ist ein unveränderlicher
   Snapshot je Frame; `step(state, dt)` ist eine pure Funktion in :app.
