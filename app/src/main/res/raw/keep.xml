@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    aapt-Keep für die Phase-4-Audio-Assets (PW-4.0, docs/phase4-juice-update.md §0):
+    Die 18 OGGs werden erst in PW-4.5/PW-4.8 aus Code referenziert (SoundPool/
+    Stem-Player laden per R.raw-Id). Bis dahin meldet Lint UnusedResources
+    (Error via warningsAsErrors), und der Release-Ressourcen-Shrinker würde
+    sie entfernen. tools:keep deckt beides ab; Rückbau-Prüfung ist Teil von
+    PW-4.10 (Gate-Ticket). Issue: docs/backlog.md (Phase 4).
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/music_stem1_urig,@raw/music_stem2_kalimba,@raw/music_stem3_bass,@raw/music_stem4_modern,@raw/music_demo_steigerung,@raw/sfx_rotate_tick,@raw/sfx_rotate_invalid,@raw/sfx_beam_connect,@raw/sfx_crystal_lit,@raw/sfx_combo_up1,@raw/sfx_combo_up2,@raw/sfx_combo_up3,@raw/sfx_solve_explosion,@raw/sfx_star_1,@raw/sfx_star_2,@raw/sfx_star_3,@raw/sfx_laser_loop,@raw/sfx_ui_tap" />
