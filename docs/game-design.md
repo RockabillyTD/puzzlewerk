@@ -10,6 +10,13 @@
 > Nachträgliche Präzisierungen des gepinnten Implementierungsverhaltens
 > (PW-2.9, 2026-07-11) sind im Text mit „(präzisiert nach
 > Implementierung, PW-2.9)" markiert — sie ändern keine Regeln.
+> **BREAKING-Addendum „Juice" (PW-4.1, 2026-07-15):** §13.8–§13.13 und
+> R44–R50 setzen den bisherigen „ruhigen" Präsentationsstil außer Kraft
+> (Anordnung Branko, Phase-3-Gate; Quelle docs/phase4-juice-update.md).
+> Spiellogik (Züge, Scoring, Progression, :game) bleibt UNVERÄNDERT.
+> STATUS des Addendums: ABGENOMMEN durch Branko am 2026-07-16
+> (inkl. der sechs explizit vorgelegten Designentscheidungen und der
+> V3-Abweichung in 13.10). Normativ; Implementierung PW-4.2 ff. frei.
 
 ---
 
@@ -958,7 +965,9 @@ Home ──► Levelauswahl ──► Spiel (Kampagne) ──► Ergebnis-Overla
 
 ### 12.5 Einstellungen & Onboarding
 
-- Einstellungen: Sound an/aus, Haptik an/aus, **Farbsymbole an/aus
+- Einstellungen: Sound an/aus (ERSETZT durch zwei Schalter
+  Musik/Soundeffekte, siehe 13.11 — BREAKING, PW-4.1), Haptik an/aus,
+  **Farbsymbole an/aus
   (Default: AN)**, **Strahlmuster an/aus (Default: AN)** (beide siehe
   13), Sprache folgt System (de/en), Lizenzen/Impressum, „Fortschritt
   zurücksetzen" (doppelte Bestätigung; präzisiert als zwei getrennte
@@ -1067,8 +1076,279 @@ erheblichen Teil der Spielerschaft (Farbfehlsichtigkeit betrifft ca.
    entsprechend; R=4-Bretter nutzen Pinch-Zoom + Pan); NIRGENDS
    Zeitdruck (kein Timer, kein Zeitbonus, 7.2); Animationen
    respektieren die System-Einstellung „Animationen entfernen".
-7. **Fotosensitivität:** keine Blitz-/Flackereffekte; Strahlen
-   leuchten statisch, Erfolgs-Animationen sind sanfte Fades < 3 Hz.
+7. **Fotosensitivität (GEÄNDERT durch Addendum 13.8–13.13 — BREAKING,
+   PW-4.1):** Die alte Regel „Strahlen leuchten statisch, keine
+   Blitzeffekte" ist aufgehoben. Neue, weiterhin harte Grenze (Geist
+   von WCAG 2.3.1): KEIN Vollbild- oder großflächiges Blitzen mit
+   mehr als 3 Ereignissen pro Sekunde. Konkret: Der Laser-Puls liegt
+   fix bei 2,0 Hz (13.8a), der Lösungs-Flash ist ein EINMALIGES
+   großflächiges Ereignis von 80 ms pro Lösung (13.10) — niemals eine
+   Blitzfolge, nie mehr als 1 Vollbild-Flash pro Sekunde.
+   KLEINFLÄCHIGE, ortsverschiedene Effekte fallen ausdrücklich NICHT
+   unter diese Grenze: Kristall-Bursts der Kaskade (bis zu 5 in
+   160 ms, 13.9), Auftreff-Funken und Element-Blitze (auch bei
+   gepufferten Taps > 3/s, 12.3) sind lokal begrenzt und nie
+   bildschirmfüllend. Unter Reduce-Motion (13.12) entfallen Flash und
+   Puls vollständig.
+
+### 13.8 BREAKING-Addendum „Juice" — Geltung, Herkunft, betroffene Module (PW-4.1)
+
+Branko hat am Phase-3-Gate mehr Spektakel angeordnet (Richtung Zuma);
+die Vorgaben V1–V5 aus docs/phase4-juice-update.md werden hiermit
+normativ. Die Abschnitte 13.8–13.13 sind ab Abnahme durch Branko
+Bestandteil der einzigen Wahrheit.
+
+**BREAKING gegenüber dem bisherigen ruhigen Stil**, konkret gegenüber:
+
+- 13.7 (alt): „Strahlen leuchten statisch, keine Blitzeffekte" —
+  ersetzt durch die neue 3-Hz-Regel oben.
+- 12.3-Geist „kein Flackern / dezente Optik" — Aktions-Feedback wird
+  ausdrücklich sichtbar (13.9), die dort definierten ZUSTANDS-Anzeigen
+  (Symbole, Haken, Aura) bleiben unverändert bestehen.
+- 12.5 „Sound an/aus" (EIN Schalter) — ersetzt durch ZWEI Schalter
+  Musik / Soundeffekte (13.11).
+
+**Betroffene Module:**
+
+- **:app-Rendering:** BoardCanvas (Laser-Look 13.8a, Partikel-Layer),
+  GameScreen (Aktions-Feedback 13.9, Feuerwerk + Overlay-Choreografie
+  13.10), neuer Juice-Layer (JuiceState, 13.13), neuer Audio-Layer
+  (Stems + SFX, 13.11).
+- **Settings:** Einstellungs-Screen in :app UND SettingsRepository in
+  :data (neue Felder Musik/Soundeffekte, Envelope v1 additiv erweitert;
+  Migrationssemantik 13.11).
+
+**NICHT betroffen (Scope-Grenze):** :game und :core bleiben unberührt.
+Züge (6), Scoring/Par/Sterne (7), Progression (10, 11) ändern sich
+NICHT. Juice ist reine Präsentationsschicht; sie liest ausschließlich
+vorhandene Ergebnisse (`trace`, MoveResult). Fehlt der Präsentation ein
+Datum (z. B. „welche Kristalle sind in diesem Zug NEU erfüllt"), wird
+es als eigenes Mini-Ticket in :game nachgeliefert — nicht still hier
+hineindefiniert.
+
+**Reihenfolge (verbindlich):** Abnahme dieses Addendums durch Branko →
+erst danach ADRs (PW-4.2) und Implementierung (PW-4.3 ff.).
+
+#### 13.8a Laser-Look (V1)
+
+Strahlen werden als Laser gerendert. Alle Werte sind normativ:
+
+- **Kern:** Weiß #F0F0F3, Strichstärke 3 dp, volle Deckkraft. Der Kern
+  ist bei JEDER Strahlfarbe weiß (Lesbarkeit + „Laser"-Anmutung).
+- **Halo:** Strahlfarbe laut Palette 13.4, additiv gezeichnet
+  (BlendMode.Plus), Gesamtbreite 12 dp, Alpha radial von 55 % (am
+  Kern) auf 0 % (Außenkante) auslaufend. Sekundärfarben (Gelb, Magenta,
+  Cyan, Weiß) zeigen im Halo ihre MISCHFARBE — die physikalische
+  Lesbarkeit (3.2) bleibt: R- und G-Strahl, die sich zu Gelb mischen,
+  tun das erst am Kristall; jeder Strahl trägt seinen eigenen Halo.
+- **Puls:** Halo-Alpha oszilliert sinusförmig ±20 % relativ um seinen
+  Grundwert mit exakt 2,0 Hz (Periode 500 ms; bewusst unter der
+  3-Hz-Grenze aus 13.7). Alle Strahlen pulsieren phasensynchron;
+  Phasen-Nullpunkt ist das Betreten des Spiel-Screens (deterministisch,
+  kein Zufall). Der Kern pulsiert NICHT.
+- **Auftreff-Funken:** An jedem Strahl-Endpunkt (Absorption an Wand,
+  Quelle, Kristall oder Filter) emittiert ein Punkt-Emitter Funken in
+  Strahlfarbe: Emissionsrate 4 Funken/s, Lebensdauer 400 ms, Größe
+  2 dp, Startgeschwindigkeit 60 dp/s radial (Richtungswinkel aus dem
+  Juice-PRNG, 13.13). Brett-Aus-Absorptionen emittieren NICHT (es
+  gibt keinen sichtbaren Auftreffpunkt) — bewusste Ausnahme von
+  „Der Brettrand verhält sich wie eine Wand" (4.8): eine Wand-ZELLE
+  hat einen Auftreffpunkt und emittiert, der Brettrand nicht. Die
+  Ausnahme betrifft nur die Optik, nicht die trace-Logik.
+- **Barrierefreiheit unverändert:** Strahlmuster und Symbol-Chips
+  (13.2) liegen ÜBER dem Kern und bleiben Default AN; der Laser-Look
+  ersetzt KEINEN der Kanäle aus 13.1–13.5.
+- **Durchgerechnetes Beispiel (Level 7.3, Zug 2):** Nach dem Prisma
+  laufen drei Strahlen (Rot #E5484D, Grün #30A46C, Blau #3E63DD):
+  je 3-dp-Weißkern + 12-dp-Halo in Komponentenfarbe, alle drei
+  pulsieren synchron mit 2,0 Hz; an den drei Kristallen sitzen die
+  einzigen drei Funken-Emitter (je 4 Funken/s) — Spiegel und Prisma
+  sind Durchgangs-, keine Endpunkte. Das Weiß-Segment Quelle→Prisma
+  trägt einen weißen Halo. Gegenbeispiel Startzustand (m = 5): der
+  Strahl läuft ins Brett-Aus ⇒ 0 Emitter (Brettrand, 4.8).
+
+### 13.9 Aktions-Feedback (V2) — jede Aktion antwortet sichtbar
+
+- **Dreh-Blitz (gültige Drehung):** Das getappte Element erhält ein
+  weißes Overlay, Alpha 0,6 → 0 linear über 120 ms (parallel zur
+  150-ms-Drehanimation aus 12.3, deren Timing UNVERÄNDERT bleibt).
+  Zusätzlich genau 3 Funken (Lebensdauer 300 ms, Startgeschwindigkeit
+  90 dp/s, Abgangswinkel deterministisch 30°/150°/270° relativ zur
+  neuen Element-Orientierung). SFX: sfx_rotate_tick.
+- **Ungültiger Tap (R27, R32):** kurzes Wackeln wie bisher (12.3),
+  KEINE Partikel, SFX: sfx_rotate_invalid.
+- **Kristall-Burst (Kristall wird NEU erfüllt):** „Neu erfüllt" heißt:
+  im trace nach dem Zug erfüllt, im trace vor dem Zug nicht erfüllt
+  (nach Undo erneut möglich, R46). Effekt: radialer Glow-Burst
+  (Radius 0 → 28 dp, Alpha 0,8 → 0, Dauer 250 ms, additiv) plus
+  **P Partikel in der SOLL-Farbe des Kristalls, P = 8 + nextInt(5) ∈
+  {8, …, 12}**, gezogen aus dem Juice-PRNG (13.13) — der Bereich 8–12
+  ist damit deterministisch pro Partie. Partikel: Lebensdauer 600 ms,
+  Startgeschwindigkeit 80–160 dp/s (PRNG), leichte Gravitation
+  240 dp/s². SFX: sfx_crystal_lit.
+- **Combo-Kaskade (N ≥ 2 Kristalle in EINEM Zug neu erfüllt):** Die
+  Bursts kaskadieren mit exakt **40 ms Versatz** in deterministischer
+  Reihenfolge: aufsteigend nach Zellkoordinate (erst r, dann q).
+  Versatz-Kappe: ab dem 5. Burst starten alle restlichen gleichzeitig
+  (maximaler Kaskadenbeginn damit 160 ms — hält die Overlay-Frist in
+  13.10). SFX-Kette: Burst 1 = sfx_crystal_lit, Burst 2 =
+  sfx_combo_up1, Burst 3 = sfx_combo_up2, Burst ≥ 4 = sfx_combo_up3.
+- **Strahl-Ankunft ohne Erfüllung:** Empfängt durch einen Zug
+  mindestens ein Kristall erstmals Licht (received wechselt von 0 auf
+  ≠ 0), ohne dass irgendein Kristall neu erfüllt wird, ertönt
+  sfx_beam_connect (einmal pro Zug). Wird im selben Zug ein Kristall
+  erfüllt, entfällt sfx_beam_connect (sfx_crystal_lit gewinnt).
+- **Durchgerechnetes Beispiel (Level 7.3, Zug 2):** N = 3 Kristalle
+  werden gleichzeitig neu erfüllt. Reihenfolge nach (r, q):
+  (1,−2) [r=−2] → (2,−2) [r=−2, q größer] → (2,−1) [r=−1].
+  Bursts bei t = 0 / 40 / 80 ms; SFX sfx_crystal_lit, sfx_combo_up1,
+  sfx_combo_up2. Partikelzahlen: drei PRNG-Züge, je ∈ {8…12}.
+
+### 13.10 Lösungs-Feuerwerk (V3)
+
+Zeitachse ab Zug-Commit des lösenden Zugs (t = 0; die Spiellogik ist
+zu diesem Zeitpunkt fertig, R32 gilt ab sofort):
+
+1. **Kaskade:** Läuft die Combo-Kaskade des lösenden Zugs (13.9), so
+   startet das Feuerwerk mit dem LETZTEN Burst:
+   `t_fw = 40 · (min(N, 5) − 1) ms` (N = 1 ⇒ t_fw = 0; Kappe ⇒
+   t_fw ≤ 160 ms).
+2. **Screen-Flash:** bei t_fw ein Vollbild-Weiß additiv, Alpha 0,35,
+   Dauer exakt **80 ms** (linear auf 0). EINMALIG pro Lösung (13.7).
+3. **Partikel-Explosion:** bei t_fw vom zuletzt geborstenen Kristall:
+   **F = min(120, 60 + 12·K) Partikel** (K = Kristallzahl des Levels)
+   — die Formel liefert für alle zulässigen K ∈ {1…6} (harte Kappe
+   9.2) Werte in 72–120: deterministisch, mit der Levelgröße
+   wachsend, innerhalb der V3-Vorgabe „60–120 Partikel".
+   Eigenschaften: additiv, Startgeschwindigkeit
+   120–320 dp/s (PRNG), Gravitation 480 dp/s², Lebensdauer 0,9–1,4 s
+   (PRNG), Farben zyklisch durch die Soll-Farben aller Kristalle des
+   Levels in Brett-Reihenfolge (r, dann q).
+4. **Audio:** bei t_fw sfx_solve_explosion + Musik-Ducking (13.11).
+5. **Sterne:** fliegen EINZELN mit Bounce ein (Skalierung
+   0 → 1,15 → 1,0, Dauer 220 ms, Overshoot-Interpolation). Stern n
+   (n = 1…verdiente Sterne) startet bei `t_fw + 120 + (n−1)·150 ms`,
+   mit SFX sfx_star_n.
+6. **Overlay:** Die Buttons Weiter/Nochmal/Zurück (12.3) sind
+   spätestens bei **t = 600 ms sichtbar UND interaktiv** — auch wenn
+   Partikel noch fliegen (das Feuerwerk läuft hinter dem Overlay aus,
+   Partikel-Restlaufzeit ≤ 1,4 s). R32 bleibt unberührt: Brett-Eingaben
+   im Zustand Gelöst sind Invalid.
+
+**Bewusste V3-Abweichung (abnahmebedürftig, Designentscheidung):**
+V3 sagt wörtlich „Sterne fliegen einzeln mit Bounce ein, DANACH erst
+Overlay-Buttons". Mit Stern-Starts bis 580 ms und 220 ms Bounce endet
+der 3. Stern im Worst Case aber erst bei 800 ms — „alle Sterne fertig"
+UND „Overlay ≤ 600 ms" sind gleichzeitig unerfüllbar. Normativ gilt:
+**Die 600-ms-Interaktivitätsfrist gewinnt.** Der 3. Stern kann beim
+Interaktiv-Werden der Buttons noch einfliegen; die Buttons erscheinen
+per Fade ab 500 ms und sind ab 600 ms bedienbar. Branko nimmt diese
+Abweichung mit dem Addendum explizit ab.
+
+**Nachrechnung der 600-ms-Frist (Worst Case):** t_fw = 160 ms (Kappe),
+3. Stern startet bei 160 + 120 + 2·150 = 580 ms ≤ 600 ms und endet
+bei 580 + 220 = 800 ms (siehe V3-Abweichung oben). Beispiel Level 7.3
+(N = 3, K = 3, ★★★): t_fw = 80 ms, Flash 80–160 ms, F = 60 + 12·3 =
+96 Partikel, Sterne starten bei 200 / 350 / 500 ms (Ende des
+3. Sterns: 720 ms), Overlay interaktiv bei 600 ms.
+
+### 13.11 Audio-Verhalten (V5 + Assets aus docs/phase4-juice-update.md §0)
+
+**Adaptive Musik (4 Stems, je 17,14 s Loop, 112 BPM):** Alle 4 Stems
+starten beim Betreten des Spiel-Screens SYNCHRON und loopen endlos;
+gesteuert wird ausschließlich die Lautstärke je Ebene. Mit K =
+Kristallzahl des Levels und L = aktuell erfüllte Kristalle laut trace:
+
+| Ebene | Stem | Lautstärke 100 % wenn | sonst |
+|---|---|---|---|
+| 1 | music_stem1_urig | immer | — |
+| 2 | music_stem2_kalimba | L ≥ 1 | 0 % |
+| 3 | music_stem3_bass | 2·L ≥ K (ab 50 %) | 0 % |
+| 4 | music_stem4_modern | L ≥ max(1, K − 1) (letzter fehlender Kristall) | 0 % |
+
+- **Keine Hysterese:** Die Lautstärke folgt IMMER dem aktuellen trace —
+  auch abwärts nach Undo/Reset (R46). Deterministisch, kein Gedächtnis.
+- **Fades:** Jeder Lautstärkewechsel läuft linear über 250 ms, nie hart.
+- **Ducking beim Lösen:** ab t_fw (13.10) alle aktiven Ebenen in 50 ms
+  auf 20 %, 500 ms halten, in 250 ms zurück auf Sollwert. Duck-Faktor
+  multipliziert sich mit den Ebenen-Lautstärken.
+- **Synchronität ist Invariante:** Die 4 Stems sind zu KEINEM Zeitpunkt
+  gegeneinander verschoben (Player-Architektur entscheidet der
+  Architekt per ADR in PW-4.2; diese Eigenschaft ist normativ).
+- **Asset-Bilanz:** Von den 18 gelieferten OGGs referenziert dieses
+  Dokument 17 (4 Stems + 13 SFX). Das 18., music_demo_steigerung.ogg,
+  ist ein reines Anhör-Demo für Menschen, KEIN Laufzeit-Asset — keine
+  Regel dieses Dokuments nutzt es; Entfernung aus dem APK oder
+  Verbleib entscheidet PW-4.8 (APK-Größen-Budget).
+- **Beispiel (Level 7.3, K = 3):** Start: nur Ebene 1. Zug 2 erfüllt
+  alle 3 Kristalle gleichzeitig: L springt 0 → 3, damit Ebene 2
+  (L ≥ 1), Ebene 3 (6 ≥ 3) und Ebene 4 (3 ≥ 2) im selben Moment —
+  alle drei faden parallel über 250 ms ein, gleichzeitig läuft das
+  Ducking (R50).
+
+**SFX-Zuordnungstabelle (normativ, 13 Assets** — die Zählung „12" in
+docs/phase4-juice-update.md §0 ist ein dortiger Zählfehler; die Liste
+dort enthält 13 Dateien, die Zahl hier ist maßgeblich**):**
+
+| Ereignis | SFX |
+|---|---|
+| Gültige Drehung (13.9) | sfx_rotate_tick |
+| Ungültiger Tap (R27, R32) | sfx_rotate_invalid |
+| Zug bringt erstmals Licht auf ≥ 1 Kristall, ohne neue Erfüllung (13.9) | sfx_beam_connect |
+| Kristall neu erfüllt — 1. Burst (13.9) | sfx_crystal_lit |
+| Combo-Burst 2 / 3 / ≥ 4 (13.9) | sfx_combo_up1 / _up2 / _up3 |
+| Lösung, bei t_fw (13.10) | sfx_solve_explosion |
+| Stern n im Ergebnis-Overlay (13.10) | sfx_star_1 / _2 / _3 |
+| Solange ≥ 1 Strahlsegment sichtbar: leiser Loop, Lautstärke 20 % | sfx_laser_loop |
+| UI-Tap (Buttons, Navigation, Overlay) | sfx_ui_tap |
+
+**Einstellungen (BREAKING gegenüber 12.5):** Der bisherige Schalter
+„Sound an/aus" wird durch ZWEI Schalter ersetzt: **„Musik"** (Stems)
+und **„Soundeffekte"** (alle SFX inkl. sfx_laser_loop), beide Default
+AN. Migration des gespeicherten Werts: alter Wert AUS ⇒ beide AUS;
+alter Wert AN (oder Feld fehlt) ⇒ beide AN. Schalter AUS bedeutet:
+die zugehörigen Player werden gar nicht gestartet (nicht nur stumm
+geschaltet — Akku, R48).
+
+**Respekt-Grenzen (V5, Ethik-Klausel):** Audio-Focus wird angefordert
+und respektiert (Verlust ⇒ R47); Stummschalter/Lautlos-Modus wird NIE
+umgangen (R48); keine Vibration ohne Opt-in (Haptik-Schalter 12.5
+bleibt eigenständig und Default-Verhalten unverändert).
+
+### 13.12 Prozedurales Rendering & Reduce-Motion (V4, V5)
+
+- **Prozedural statt Sprites:** KEINE vorgerenderten Effekt-PNGs. Alle
+  Effekte werden vektoriell/prozedural im Canvas gezeichnet
+  (auflösungsunabhängig, APK klein). Ab API 33 optional AGSL-Shader
+  (RuntimeShader) für Glow, darunter Fallback auf Radial-Gradients —
+  gleiche Optik, andere Technik (Entscheidung: ADR PW-4.2).
+- **Reduce-Motion** (Systemeinstellung „Animationen entfernen", 13.6):
+  - Partikelzahl ALLER Systeme = 0 (Auftreff-Funken, Dreh-Funken,
+    Kristall-Bursts, Feuerwerk) — R44.
+  - Screen-Flash → sanfter Fade: Alpha 0 → 0,15 → 0 über 400 ms.
+  - Laser-Puls AUS: Halo statisch auf seinem Grundwert (55 % → 0 %).
+  - Kristall-Glow-Burst → einfacher Fade der Leuchtaura (13.3), 250 ms.
+  - Sterne erscheinen ohne Bounce (Fade 150 ms), gleiche Zeitpunkte.
+  - Overlay-Frist (≤ 600 ms) und alle Logik-Timings unverändert.
+  - Audio ist von Reduce-Motion NICHT betroffen (rein visuelle
+    Einstellung; Audio regeln die Schalter aus 13.11).
+
+### 13.13 Determinismus des Juice-Layers (C2-Pflicht)
+
+- **JuiceState:** Der gesamte Effekt-Zustand ist ein unveränderlicher
+  Snapshot je Frame; `step(state, dt)` ist eine pure Funktion in :app.
+  Zeichnen liest nur den Snapshot (ein Canvas-Layer, BlendMode.Plus,
+  keine Allokationen im Draw-Pfad — Leitplanke aus
+  docs/phase4-juice-update.md §2).
+- **PRNG:** Alle Zufallswerte (Partikelzahl P, Winkel, Geschwindigkeit,
+  Lebensdauer, Farbe-Index) kommen aus einer SplitMix64-Instanz
+  (ADR-003), geseedet mit `juiceSeed = mix(levelSeed, zugNummer,
+  emitterIndex)`; die konkrete mix-Funktion definiert der Architekt
+  (PW-4.2). Normativ ist: gleiche Partie (Seed + Zugfolge) + gleiche
+  dt-Folge ⇒ bit-identische Partikelzustände. `step` mit fester
+  dt-Folge ist die Testoberfläche des test-engineers.
+- **Kein Rückfluss:** Der Juice-PRNG ist strikt vom Spiel-PRNG (8)
+  getrennt; kein Effekt liest oder verändert Spiellogik-Zustand.
 
 ---
 
@@ -1216,6 +1496,49 @@ definierte Sollverhalten.
 - **R43** Level-Datei verletzt Schema (Portal ohne Zwilling, Zelle
   außerhalb des Bretts, doppelt belegte Zelle, Farbe 0, Par < 1) ⇒
   definierter Ladefehler (sealed Result), NIE Crash (S4, 16.2).
+
+**Juice & Audio (Phase-4-Addendum 13.8–13.13, PW-4.1)**
+
+- **R44** Reduce-Motion aktiv ⇒ Partikelzahl ALLER Emitter = 0
+  (Funken, Bursts, Feuerwerk), Screen-Flash wird zum Fade
+  (0 → 0,15 → 0 über 400 ms), Laser-Puls statisch (13.12);
+  Kaskaden-Zeitpunkte, Overlay-Frist (≤ 600 ms) und Audio unverändert.
+  Kein Codepfad darf bei Partikelzahl 0 crashen oder dividieren
+  (leere Pools sind gültiger Zustand).
+- **R45** Combo mit N gleichzeitig neu erfüllten Kristallen ⇒ Bursts
+  in deterministischer Reihenfolge (aufsteigend r, dann q), Versatz
+  exakt 40 ms, Kappe ab dem 5. Burst (alle weiteren gleichzeitig bei
+  160 ms); SFX-Kette sfx_crystal_lit → combo_up1 → combo_up2 → nur
+  noch combo_up3 (13.9). Die Overlay-Frist 600 ms hält auch im
+  Worst Case (Nachrechnung 13.10: 580 ms).
+- **R46** Undo/Reset nach erfüllten Kristallen ⇒ Stem-Ebenen folgen
+  dem AKTUELLEN trace auch abwärts (Fade 250 ms, keine Hysterese);
+  ein durch Undo entleuchteter und später erneut erfüllter Kristall
+  gilt wieder als „neu erfüllt" (Burst + sfx_crystal_lit erneut,
+  deterministisch aus dem Juice-PRNG des neuen Zugs).
+- **R47** Audio-Fokus-Verlust (Anruf, andere App, Kopfhörer getrennt)
+  ⇒ alle 4 Stems pausieren GEMEINSAM, keine neuen SFX; bei
+  Fokus-Rückkehr gemeinsamer Wiedereinstieg — die Stems sind zu keinem
+  Zeitpunkt gegeneinander verschoben (13.11). Spiellogik und visuelles
+  Feedback laufen unbeeinflusst weiter.
+- **R48** Stummschalter/Lautlos-Modus ⇒ wird respektiert, nie über
+  Stream-Tricks umgangen; Schalter Musik bzw. Soundeffekte AUS ⇒
+  zugehörige Player werden NICHT gestartet (nicht nur stummgeschaltet);
+  visuelles Feedback bleibt in allen Fällen vollständig (Audio ist nie
+  der einzige Kanal — Geist von 13).
+- **R49** Level-Neustart („Nochmal"), „Weiter" oder Zurück-Navigation
+  während laufendem Feuerwerk ⇒ Partikel-Layer und Flash werden SOFORT
+  verworfen (kein Effekt-Überhang auf dem nächsten Brett), bereits
+  spielende SFX dürfen ausklingen, Stem-Ebenen springen per 250-ms-Fade
+  auf den Stand des neuen Zustands (frisches Level: nur Ebene 1).
+  Score/Sterne wurden beim Lösen committed und ändern sich NICHT
+  (Scoring 7 unberührt).
+- **R50** Kleine Level (K ≤ 2) ⇒ mehrere Stem-Ebenen aktivieren im
+  selben Zug (K = 2: Ebenen 2–4 bei L = 1; K = 1: Ebenen 2–4 erst mit
+  der Lösung, gleichzeitig mit dem Ducking). Zulässig: alle Fades
+  laufen parallel, Duck-Faktor multipliziert sich mit den
+  Ebenen-Lautstärken (13.11); kein Sonderfall-Code, der K = 1 anders
+  behandelt.
 
 ---
 
