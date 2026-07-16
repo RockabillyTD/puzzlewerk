@@ -384,6 +384,23 @@
       Test-Fixture-Datei im Package `de.puzzlewerk.app.ui.game`
       konsolidieren (zusammen mit der Test-Source-Set-Vereinheitlichung
       aus den PR-#28-NITs erledigen).
+- [ ] ui-entwickler/release-engineer (PW-4.0, Security-Audit MINOR-1):
+      `app/src/main/res/raw/keep.xml` (tools:keep für die 18 Phase-4-
+      OGGs) zurückbauen bzw. auf die dann noch unreferenzierten Assets
+      eindampfen, sobald PW-4.5/PW-4.8 die R.raw-Referenzen liefern;
+      finale Prüfung inkl. Release-Shrinker gehört zu PW-4.10.
+- [ ] release-engineer (PW-4.0, Security-Audit MINOR-2): Der
+      Reproduzierbarkeits-Anspruch der Audio-Assets gilt nur für die
+      Synthese (Seed 42), nicht für den Vorbis-Encode (ffmpeg/libvorbis-
+      versionsabhängig, kein Bit-Determinismus); zudem hartkodierter
+      Linux-Out-Pfad in tools/audio/synth.py. Bei Gelegenheit: ffmpeg/
+      libvorbis-Version in docs/phase4-juice-update.md §0 pinnen oder
+      Anspruch auf „inhaltlich reproduzierbar" präzisieren, OUT relativ.
+- [ ] game-designer/orchestrator (PW-4.0/4.1): phase4-juice-update.md §0
+      zählt „SFX (12)", geliefert und normativ sind 13 (Zählfehler dort;
+      maßgeblich ist die 13er-Tabelle in game-design.md §13.11).
+      music_demo_steigerung.ogg ist reines Anhör-Demo — Verbleib im APK
+      entscheidet PW-4.8 (Größenbudget PW-4.10).
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
