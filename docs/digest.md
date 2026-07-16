@@ -5,17 +5,18 @@
 > Agenten lesen NUR dieses Dokument + ihr Rollen-Journal —
 > status.md/backlog.md liest nur der Orchestrator.
 
-## Phase & nächstes Gate (Stand 2026-07-14, Zyklus 15)
-- Phase 3 (Spielbarer Prototyp): alle Tickets inkl. QS-Pass gemergt
-  (PR #29 zuletzt). Kampagnenpfad Ende-zu-Ende spielbar.
-- **Nächstes Gate: menschliche Abnahme durch Branko** — Debug-APK
-  (app/build/outputs/apk/debug/app-debug.apk, tree-identisch zu
-  main@f8dd279) spielen, Checkliste docs/phase3-gate-checklist.md.
-- Phase 4 „Juice-Update" ist geplant (docs/phase4-10-punkte-plan.md,
-  10 Punkte PW-4.1–4.10) und startet NACH dem Gate. Voraussetzungen
-  noch offen: docs/phase4-juice-update.md fehlt im Repo, die 18
-  OGG-Assets fehlen unter app/src/main/res/raw/.
-- Ab Phase 4 gilt das Schrittbudget- und Kontextregime aus
+## Phase & nächstes Gate (Stand 2026-07-15, Zyklus 17)
+- Phase 3 abgenommen: Gate-Feedback Branko = „zu langweilig, Richtung
+  Zuma" → Phase 4 „Juice-Update" läuft (docs/phase4-10-punkte-plan.md,
+  PW-4.1–4.10; Feedback-Vorlage: docs/phase4-juice-update.md).
+- Erledigt, auf Branches (PRs ausstehend): PW-4.0
+  build/pw-4.0-juice-paket (Juice-Doc + 18 OGGs in :app res/raw +
+  keep.xml + tools/audio/synth.py; Gate-Kette grün, SECURITY-APPROVE)
+  und PW-4.1 docs/pw-4.1-juice-addendum (BREAKING-Addendum §13.7–13.13
+  + R44–R50 in game-design.md; Review MERGEABLE, Befunde gepatcht).
+- **Nächstes Gate: Abnahme des Juice-Addendums durch Branko** —
+  erst danach startet Punkt 2 (PW-4.2 ADRs Audio/VFX).
+- Es gilt das Schrittbudget- und Kontextregime aus
   docs/schichtplan-kontextbudget.md (Budgetzeile in jedem Ticket).
 
 ## ADR-Index (docs/decisions/)
