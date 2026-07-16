@@ -14,8 +14,9 @@
 > R44–R50 setzen den bisherigen „ruhigen" Präsentationsstil außer Kraft
 > (Anordnung Branko, Phase-3-Gate; Quelle docs/phase4-juice-update.md).
 > Spiellogik (Züge, Scoring, Progression, :game) bleibt UNVERÄNDERT.
-> STATUS des Addendums: ENTWURF — wartet auf Abnahme durch Branko;
-> Implementierung (PW-4.2 ff.) startet erst danach.
+> STATUS des Addendums: ABGENOMMEN durch Branko am 2026-07-16
+> (inkl. der sechs explizit vorgelegten Designentscheidungen und der
+> V3-Abweichung in 13.10). Normativ; Implementierung PW-4.2 ff. frei.
 
 ---
 
