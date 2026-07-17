@@ -9,13 +9,15 @@
 - Phase 3 abgenommen: Gate-Feedback Branko = „zu langweilig, Richtung
   Zuma" → Phase 4 „Juice-Update" läuft (docs/phase4-10-punkte-plan.md,
   PW-4.1–4.10; Feedback-Vorlage: docs/phase4-juice-update.md).
-- Erledigt, auf Branches (PRs ausstehend): PW-4.0
-  build/pw-4.0-juice-paket (Juice-Doc + 18 OGGs in :app res/raw +
-  keep.xml + tools/audio/synth.py; Gate-Kette grün, SECURITY-APPROVE)
-  und PW-4.1 docs/pw-4.1-juice-addendum (BREAKING-Addendum §13.7–13.13
-  + R44–R50 in game-design.md; Review MERGEABLE, Befunde gepatcht).
-- **Nächstes Gate: Abnahme des Juice-Addendums durch Branko** —
-  erst danach startet Punkt 2 (PW-4.2 ADRs Audio/VFX).
+- Gemergt: PR #30 PW-4.0 (Juice-Doc + 18 OGGs in :app res/raw +
+  keep.xml + synth.py) und PR #31 PW-4.1 (BREAKING-Addendum
+  §13.7–13.13 + R44–R50, **ABGENOMMEN durch Branko 2026-07-16** inkl.
+  V3-Abweichung und aller vorgelegten Designentscheidungen).
+- In Arbeit: PW-4.2 (architekt) — ADR Audio-Architektur, ADR
+  VFX-Layer, Ereignisdaten-Delta für :game (Punkt 2 des Plans).
+- **Nächstes Gate: menschliche Abnahme nach Punkt 10** (Gate-Artefakt
+  + Spieltest); Reihenfolge bis dahin: 2 → 3 → 4 → (5, 8 parallel)
+  → 6 → 7 → 9 → 10.
 - Es gilt das Schrittbudget- und Kontextregime aus
   docs/schichtplan-kontextbudget.md (Budgetzeile in jedem Ticket).
 

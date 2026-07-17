@@ -4,7 +4,7 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
-## PW-4.1 — BREAKING-Addendum „Juice" §13/§15 (Branch docs/pw-4.1-juice-addendum, 2026-07-15, wartet auf Abnahme)
+## PW-4.1 — BREAKING-Addendum „Juice" §13/§15 (PR #31, gemergt 2026-07-16, ABGENOMMEN durch Branko inkl. aller 6 Entscheidungen)
 - Gebaut: V1–V5 aus docs/phase4-juice-update.md normativ als §13.7
   (neu gefasst)/§13.8–13.13 + Randfälle R44–R50; §12.5-Sound-Schalter
   als ERSETZT markiert (→ 13.11, Musik/SFX getrennt, Default AN).
@@ -18,9 +18,10 @@
 - Learning: Zahlen aus Vorlagen nachzählen statt übernehmen; bei
   Zeitbudgets immer START- und ENDzeiten nachrechnen; harte Grenzen
   gegen die eigenen neuen Effekte gegenprüfen.
-- Offen: Abnahme Branko (Entscheidungsliste im Abschlussbericht:
-  Kaskaden-Kappe ab 5. Burst, F = 60+12·K, Ebene-4-Bedingung
-  max(1, K−1), 3 Dreh-Funken fix, V3-Abweichung, Brettrand-Emitter).
+- Abnahme: Branko 2026-07-16 — alle 6 vorgelegten Entscheidungen
+  (Kaskaden-Kappe ab 5. Burst, F = 60+12·K, Ebene-4-Bedingung
+  max(1, K−1), 3 Dreh-Funken fix, V3-Abweichung, Brettrand-Emitter)
+  abgenommen; Status-Flip (ABGENOMMEN) vor dem Merge kodifiziert.
 - Schritte: 16 von 60+20 (Erstlauf 10, Review-Runde 6).
 
 ## PW-3.8 — §11.3/§12.5-Präzisierung (PR #16, gemergt 2026-07-12)
@@ -53,6 +54,5 @@
 - Schritte: n. a.
 
 ## Offen für diese Rolle
-- PW-4.1: Abnahme des Addendums durch Branko abwarten; danach ggf.
-  Nacharbeiten aus der Abnahme. Bis dahin keine weiteren
-  Design-Tickets in Phase 4 (Punkt 2 startet erst nach Abnahme).
+- (nichts — nächstes Design-Ticket erst bei Eskalation aus
+  PW-4.2 ff. oder neuem Gate-Feedback)
