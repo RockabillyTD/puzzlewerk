@@ -288,24 +288,32 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
       git-Credential-Manager gepusht, die beiden PRs (PW-4.0, PW-4.1
       als Stack) konnten nicht automatisch erstellt werden.
 
+## Erledigt (Zyklus 18, 2026-07-16/17) — Punkt 1 gemergt + abgenommen, Punkt 2 gestartet
+- [x] gh-CLI-Auth wiederhergestellt (Geräte-Flow über die GitHub-API;
+      GCM-Token war abgelaufen und die PowerShell-Pipe verfälschte die
+      Token-Übergabe — Datei-Übergabe an `gh auth login --with-token`
+      funktioniert; als Merkregel notiert).
+- [x] **PR #30 (PW-4.0) gemergt:** Juice-Paket auf main (Doc, 18 OGGs,
+      synth.py, keep.xml); CI quality-gates grün.
+- [x] **PR #31 (PW-4.1) gemergt:** BREAKING-Addendum §13.7–13.13 +
+      R44–R50. **ABGENOMMEN durch Branko am 2026-07-16** inkl. der
+      sechs explizit vorgelegten Entscheidungen (Kaskaden-Kappe,
+      Feuerwerk-Formel, Ebene-4-Bedingung, 3 Dreh-Funken,
+      V3-Abweichung, Brettrand-Emitter); Status-Flip im Dokument vor
+      Merge kodifiziert. PW-4.1-Worktree entfernt.
+- [x] PW-4.2 (architekt) gestartet: Worktree C:\0\worktrees\pw-4.2,
+      Branch docs/pw-4.2-adr-audio-vfx; Ticket-Prompt aus dem
+      10-Punkte-Plan wörtlich + Rollen-Codex + Kontext-Reihenfolge.
+
 ## In Arbeit (Phase 4)
-- PW-4.0 + PW-4.1: Branches gepusht, warten auf PR-Erstellung
-  (gh-Auth) + CI + Abnahme des Addendums durch Branko.
+- PW-4.2 (architekt): ADR Audio-Architektur, ADR VFX-Layer,
+  Ereignisdaten-Delta für :game — läuft.
 
 ## Nächste Schritte
-1. **Branko:** `gh auth login` ausführen (oder PRs von Hand öffnen:
-   build/pw-4.0-juice-paket → main, docs/pw-4.1-juice-addendum →
-   build/pw-4.0-juice-paket als Stack bzw. nach dessen Merge → main).
-2. **Menschliche Abnahme (Branko): Juice-Addendum PW-4.1** — Diff von
-   docs/game-design.md lesen; explizit mit abzunehmen laut
-   game-designer: Kaskaden-Kappe ab 5. Burst, Feuerwerk-Formel
-   F = min(120, 60+12·K), Stem-Ebene-4-Bedingung L ≥ max(1, K−1),
-   3 Dreh-Funken fix, V3-Abweichung (600-ms-Frist schlägt „Sterne
-   zuerst"), Brettrand ohne Auftreff-Funken. Optional zum Anhören:
-   music_demo_steigerung (68-s-Demo der Stem-Steigerung).
-3. Nach Abnahme + Merges: Punkt 2 (PW-4.2, architekt — ADRs
-   Audio-Architektur + VFX-Layer), dann 3 → 4 → (5, 8 parallel) →
-   6 → 7 → 9 → 10 gemäß Plan.
-4. Offene Backlog-Punkte unverändert (PW-3.7-QS-Funde, Wave-2-Reste,
+1. PW-4.2 abschließen: Review, CI, Merge.
+2. Danach gemäß Plan: 3 (Ereignisdaten :game) → 4 (JuiceState-Kern)
+   → (5 Laser, 8 Audio-Engine parallel, isolation:worktree) → 6 → 7
+   → 9 (QS) → 10 (Gates + Artefakt) → menschliches Gate Branko.
+3. Offene Backlog-Punkte unverändert (PW-3.7-QS-Funde, Wave-2-Reste,
    Infra) + neu: keep.xml-Rückbau, Encode-Reproduzierbarkeit,
    SFX-Zählfehler-Notiz/Demo-Asset-Entscheidung (PW-4.8).
