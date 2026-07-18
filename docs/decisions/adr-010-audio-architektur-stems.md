@@ -94,7 +94,8 @@ verworfen: „ausreichend" gilt dort nur für die Loop-Länge, nicht für
 die (im Addendum später verschärfte) Nie-Versatz-Invariante und den
 R47-Wiedereinstieg.
 
-Verbindliche Eckpunkte der Umsetzung (PW-4.6):
+Verbindliche Eckpunkte der Umsetzung (PW-4.8, Audio-Engine-Punkt des
+10-Punkte-Plans):
 
 - **Schichtung für Testbarkeit:** Der Mixer-Kern (Mischformel, Rampen,
   Duck-Envelope, Loop-Cursor) ist eine pure, allokationsfreie Funktion
@@ -106,13 +107,15 @@ Verbindliche Eckpunkte der Umsetzung (PW-4.6):
 - **AudioAttributes:** `USAGE_GAME` + `CONTENT_TYPE_MUSIC` für den
   Track, `CONTENT_TYPE_SONIFICATION` für SoundPool-SFX; niemals
   Alarm-/Ring-Streams (R48, Lautlos-Modus wird respektiert).
-- **Audio-Fokus:** `AudioFocusRequest(AUDIOFOCUS_GAIN)` beim Start der
-  Stems; jeder Verlust (auch transient, inkl. „Kopfhörer getrennt" via
+- **Audio-Fokus:** `AudioFocusRequest(AUDIOFOCUS_GAIN)` wird erst beim
+  Start der STEMS angefordert — im SFX-only-Betrieb (`musicEnabled ==
+  false`) wird KEIN Fokus angefordert, kurze SFX dürfen fremde Musik
+  nicht verdrängen; jeder Verlust (auch transient, inkl. „Kopfhörer getrennt" via
   ACTION_AUDIO_BECOMING_NOISY) pausiert den Mixer-Track und unterdrückt
   neue SFX; Fokus-Rückkehr setzt den Track an exakt derselben
   Cursor-Position fort (R47). Kein eigenes Ducking fremder Apps.
 - **Speicherbudget:** 4 Stems à 17,14 s dekodiert (44,1 kHz, 16 Bit,
-  stereo) ≈ 12 MB Heap; bei Mono-Downmix ≈ 6 MB. PW-4.6 misst und darf
+  stereo) ≈ 12 MB Heap; bei Mono-Downmix ≈ 6 MB. PW-4.8 misst und darf
   auf Mono downmixen, WENN die Stems ohnehin mono-artig sind (Hörtest
   gegen music_demo_steigerung.ogg); die Entscheidung ist dort zu
   dokumentieren. 12 MB sind auf der minSdk-26-Geräteklasse vertretbar.
@@ -129,14 +132,15 @@ PR, ohne Implementierung; Sichtbarkeit `internal` — sie wird nur
 innerhalb von :app konsumiert, C6). Kurzfassung des Vertrags:
 
 - `enterGame(musicEnabled, sfxEnabled)` — Betreten des Spiel-Screens:
-  fordert Audio-Fokus an und startet die 4 Stems synchron ab Sample 0.
-  `musicEnabled == false` ⇒ Mixer/AudioTrack wird NICHT erzeugt (R48);
+  fordert (nur bei aktiver Musik) den Audio-Fokus an und startet die
+  4 Stems synchron ab Sample 0. `musicEnabled == false` ⇒
+  Mixer/AudioTrack wird NICHT erzeugt, kein Fokus-Request (R48);
   `sfxEnabled == false` ⇒ SFX-Aufrufe sind No-ops.
 - `exitGame()` — R49: Stems stoppen, laufende SFX dürfen ausklingen.
 - `setStemMix(StemMix)` — Ziel-Lautstärken (0..1) je Ebene; die Engine
   fadet linear über 250 ms (§13.11). Werte kommen aus der puren
   Zuordnung Erfüllungsstand → Ebenen (Tabelle §13.11; implementiert
-  und getestet in PW-4.6 als `StemMix.forProgress(fulfilled, total)`).
+  und getestet in PW-4.8 als `StemMix.forProgress(fulfilled, total)`).
 - `duckForSolve()` — startet die Duck-Envelope 50 ms → 20 %, 500 ms
   halten, 250 ms zurück; multipliziert sich mit den Ebenen-Lautstärken.
 - `playSfx(SoundEffect)` — einer der 12 Einmal-Effekte (Enum);
@@ -151,7 +155,7 @@ innerhalb von :app konsumiert, C6). Kurzfassung des Vertrags:
 - `release()` — gibt alle Audio-Ressourcen frei (App-Ende/Container).
 
 **Fake für Tests:** `FakeAudioEngine` (Test-Quellset :app, geliefert
-mit PW-4.6, benutzt ab PW-4.4/4.7) implementiert das Interface rein
+mit PW-4.8, genutzt dort und im QS-Pass PW-4.9) implementiert das Interface rein
 aufzeichnend: Listen der `playSfx`-Aufrufe, Historie der `StemMix`-
 Sollwerte, Duck-Zähler, aktueller Laser-Loop-Zustand, manuell
 emittierbare `issues`. Damit sind ViewModel-/Choreografie-Tests
@@ -172,10 +176,12 @@ Robolectric-Audio möglich.
   klein, pur und golden-testbar.
 - (−) ≈ 12 MB (stereo) bzw. ≈ 6 MB (mono) Heap für dekodiertes PCM,
   dauerhaft während des Spiel-Screens; Messung und ggf. Mono-Downmix
-  in PW-4.6.
+  in PW-4.8.
 - (−) MediaCodec-Dekodierung ist gerätevariabel ⇒ Dekodier-Fehler sind
   als `AssetUnavailable`/`EngineUnavailable` erstklassige, getestete
   Pfade (nie Crash).
-- Folgearbeit: PW-4.6 implementiert Engine + Fake + `StemMix.forProgress`
-  + Settings-Schalter (Migration §13.11); PW-4.7 testet R45–R48/R50
+- Folgearbeit: PW-4.8 implementiert Engine + Fake + `StemMix.forProgress`
+  + Settings-Schalter (Migration §13.11); PW-4.9 testet R45–R48/R50
   gegen den Fake und einen Robolectric-Smoke der Adapter.
+  (Ticket-Nummern: 10-Punkte-Plan docs/phase4-10-punkte-plan.md — das
+  ältere Schema aus docs/phase4-juice-update.md §3 gilt nicht mehr.)

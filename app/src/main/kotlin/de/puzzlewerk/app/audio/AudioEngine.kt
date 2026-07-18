@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
  * eigenen AudioTrack-Mixer plus SoundPool-SFX. Vertragsgrundlage ist das
  * Juice-Addendum docs/game-design.md §13.11 mit R46–R49.
  *
- * Harte Invarianten der Implementierung (PW-4.6):
+ * Harte Invarianten der Implementierung (PW-4.8):
  * - Die 4 Stems sind zu KEINEM Zeitpunkt gegeneinander verschoben (§13.11) —
  *   auch nicht nach Pause/Resume durch Audio-Fokus-Wechsel (R47).
  * - Fehler sind Werte auf [issues], niemals Exceptions Richtung Aufrufer (C3);
@@ -25,8 +25,10 @@ internal interface AudioEngine {
     val issues: Flow<AudioIssue>
 
     /**
-     * Betreten des Spiel-Screens: fordert den Audio-Fokus an und startet alle
-     * 4 Stems synchron ab Sample 0 (Loop endlos, §13.11). Initiale Lautstärken:
+     * Betreten des Spiel-Screens: fordert — NUR bei [musicEnabled] — den
+     * Audio-Fokus (GAIN) an und startet alle 4 Stems synchron ab Sample 0
+     * (Loop endlos, §13.11). Im SFX-only-Betrieb wird KEIN Fokus angefordert:
+     * kurze SFX dürfen fremde Musik nicht verdrängen. Initiale Lautstärken:
      * Ebene 1 = 100 %, Ebenen 2–4 laut erstem [setStemMix]-Aufruf.
      *
      * [musicEnabled] == `false` ⇒ Mixer/AudioTrack wird NICHT erzeugt (R48:
@@ -80,9 +82,14 @@ internal interface AudioEngine {
  * Ziel-Lautstärken (0..1) der 4 Musik-Ebenen (§13.11). Die pure Zuordnung
  * Erfüllungsstand → Mix (mit L = erfüllte, K = alle Kristalle: Ebene 1 immer
  * 100 %; Ebene 2 bei L ≥ 1; Ebene 3 bei 2·L ≥ K; Ebene 4 bei
- * L ≥ max(1, K − 1); sonst jeweils 0 %) wird in PW-4.6 als
+ * L ≥ max(1, K − 1); sonst jeweils 0 %) wird in PW-4.8 als
  * `StemMix.forProgress(fulfilled, crystalTotal)` implementiert und direkt
  * gegen die Tabelle plus R50 (K ≤ 2) getestet.
+ *
+ * @property stem1Urig Ebene 1 (music_stem1_urig) — Grundebene, immer 1,0.
+ * @property stem2Kalimba Ebene 2 (music_stem2_kalimba) — 1,0 ab L ≥ 1.
+ * @property stem3Bass Ebene 3 (music_stem3_bass) — 1,0 ab 2·L ≥ K.
+ * @property stem4Modern Ebene 4 (music_stem4_modern) — 1,0 ab L ≥ max(1, K − 1).
  */
 internal data class StemMix(
     val stem1Urig: Float,

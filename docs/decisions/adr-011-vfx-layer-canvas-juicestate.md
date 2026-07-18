@@ -53,7 +53,8 @@ Randbedingungen:
    definiert — der Shader dürfte gar nicht anders aussehen.
 2. **Canvas-only: RadialGradient + `BlendMode.Plus`, ein Pfad für
    API 26+.** Ein Renderpfad, eine Optik, auf jedem Gerät identisch
-   und per Robolectric-Screenshot/Golden testbar. Performance-Profil:
+   und im JVM-Gate zumindest strukturell absicherbar (Render-Smoke +
+   JuiceState-Goldens; Grenzen s. Konsequenzen). Performance-Profil:
    Kostentreiber ist additiver Overdraw und Partikelzahl (≤ 120 + Funken
    — Kappen sind normativ); mit gecachten Gradient-Shadern pro Farbe,
    einem einzigen `saveLayer` und allokationsfreiem Draw-Pfad
@@ -68,7 +69,7 @@ gerendert, identisch auf API 26–36. AGSL wird NICHT eingeführt.
 
 Absicherung statt Zweitpfad: Das Zeichnen ist strikt vom Zustand
 getrennt (`JuiceRenderer` liest NUR den `JuiceState`-Snapshot). Sollte
-die Frame-Budget-Messung in PW-4.7 auf dem Referenzgerät p95 < 55 fps
+die Frame-Budget-Messung in PW-4.9 auf dem Referenzgerät p95 < 55 fps
 zeigen, kann ein Folge-ADR einen AGSL-Pfad HINTER dieser Naht
 nachrüsten, ohne Zustand, Events oder Tests anzufassen. Bis dahin gilt:
 ein Pfad ist der beste Paritätstest.
@@ -77,7 +78,8 @@ ein Pfad ist der beste Paritätstest.
 
 Kompilierfähige Deklarationen liegen in
 `app/src/main/kotlin/de/puzzlewerk/app/ui/juice/` (dieser PR, ohne
-Implementierung; Implementierung: PW-4.4/4.5). Eckpunkte:
+Implementierung; Implementierung: PW-4.4 (Kern ohne Rendering),
+Rendering/Choreografie: PW-4.5–4.7). Eckpunkte:
 
 - **Snapshot:** `JuiceState` ist unveränderlich und enthält alles, was
   der Renderer braucht: Zeit seit Screen-Betreten (Puls-Phase §13.8a,
@@ -114,8 +116,12 @@ Implementierung; Implementierung: PW-4.4/4.5). Eckpunkte:
   | Kristall-Burst (§13.9) | `1000 + k`, k = Position in der sortierten `newlyFulfilled`-Liste (ADR-012) | auslösender Zug |
   | Feuerwerk (§13.10) | `2000` | lösender Zug |
 
-  Dreh-Funken (§13.9) ziehen KEINEN Zufall — Winkel 30°/150°/270°
-  relativ zur neuen Orientierung, Betrag und Lebensdauer sind fix.
+  Die Namensräume kollidieren strukturell nicht: Endpunkt-Indizes
+  bleiben < 1000 (Board.MAX_RADIUS = 5 ⇒ höchstens 91 Zellen, die Zahl
+  absorbierter Strahlen liegt weit darunter) und k ≤ 5 (K ≤ 6, harte
+  Kappe §9.2). Dreh-Funken (§13.9) ziehen KEINEN Zufall — Winkel
+  30°/150°/270° relativ zur neuen Orientierung, Betrag und Lebensdauer
+  sind fix.
 - **Ereignisse (`JuiceEvent`, sealed):** vom GameScreen/ViewModel aus
   `MoveResult` + `JuiceDelta` (ADR-012) übersetzt; Positionen bereits
   in dp-Brettkoordinaten gemappt (der Kern kennt keine Hex-Geometrie),
@@ -134,9 +140,13 @@ Implementierung; Implementierung: PW-4.4/4.5). Eckpunkte:
   - `EndpointsChanged(zugNummer, endpoints)` — ersetzt die Menge der
     kontinuierlichen Funken-Emitter nach jedem Zug (4 Funken/s je
     Emitter, §13.8a).
-  - `Solved(zugNummer, kristallzahl, letzterBurstIndex, paletteArgb)` —
-    Feuerwerk-Zeitachse §13.10: t_fw-Berechnung, Flash 80 ms,
-    F = min(120, 60 + 12·K) Partikel, Farben zyklisch.
+  - `Solved(zugNummer, kristallzahl, paletteArgb)` — Feuerwerk-
+    Zeitachse §13.10: t_fw-Berechnung, Flash 80 ms, F = min(120,
+    60 + 12·K) Partikel, Farben zyklisch. Den Ursprung (zuletzt
+    geborstener Kristall) leitet der Stepper aus der `CrystalBursts`-
+    Kaskade DESSELBEN Zugs ab — ein lösender Zug erfüllt immer ≥ 1
+    Kristall neu, das Ereignispaar tritt also stets gemeinsam auf
+    (kein eigenes Index-Feld; deckungsgleich mit `JuiceEvent.Solved`).
   - `Dismissed` — R49: Partikel-Layer und Flash werden SOFORT
     verworfen („Nochmal"/„Weiter"/Zurück).
 - **Abgrenzung (bewusst NICHT im JuiceState):** Stern-Einflug samt
@@ -155,11 +165,14 @@ Implementierung; Implementierung: PW-4.4/4.5). Eckpunkte:
 ## Konsequenzen
 
 - (+) Ein einziger, auf JEDEM unterstützten Gerät identischer
-  Renderpfad; Golden-/Screenshot-Tests im bestehenden JVM-Gate decken
-  die tatsächliche Auslieferungs-Optik ab.
+  Renderpfad. Im bestehenden JVM-Gate abgesichert werden: strukturelle
+  Render-Smoke-Tests (zeichnet ohne Crash, auch bei 0 Partikeln) und
+  deterministische JuiceState-Goldens; Pixel-/Screenshot-Vergleiche
+  erfordern eigenes Tooling und damit ein eigenes ADR (C8, Auslassung
+  aus ADR-009) — die Optik nimmt Branko am Gate visuell ab.
 - (+) Determinismus-Pflicht §13.13 ist als Vertrag fixiert (Seed-
-  Funktion, Emitter-Indizes, Spawn-only-PRNG) — PW-4.4/4.5/4.7 können
-  parallel gegen dieselben Deklarationen arbeiten.
+  Funktion, Emitter-Indizes, Spawn-only-PRNG) — die Punkte PW-4.4–4.7
+  und PW-4.9 arbeiten gegen dieselben Deklarationen.
 - (+) Kein API-33-Sonderpfad, keine Shader-Kompilierung, keine
   Treiber-Varianz; R44/R49 sind reine Zustandslogik und damit trivial
   testbar.
@@ -168,12 +181,24 @@ Implementierung; Implementierung: PW-4.4/4.5). Eckpunkte:
   bewertet das Ergebnis am Gate ohnehin visuell.
 - (−) Additiver Overdraw bleibt der Performance-Risikopunkt;
   Gegenmaßnahmen (Shader-Cache, ein Layer, SoA-Snapshot, Partikel-
-  Kappen) sind oben verbindlich; Messpflicht in PW-4.7 mit
+  Kappen) sind oben verbindlich; Messpflicht in PW-4.9 mit
   Eskalationskriterium p95 < 55 fps → Folge-ADR (AGSL hinter der
   Renderer-Naht).
 - (−) `JuiceState`-Snapshots werden pro Frame neu erzeugt (Immutability
   §13.13 schlägt Pooling im Step-Pfad); Allokationsfreiheit gilt
   verbindlich NUR für den Draw-Pfad. Bewusster Trade-off.
+- **Plan-Überholung (10-Punkte-Plan, Punkt 5):** Der Prompt in
+  docs/phase4-10-punkte-plan.md verlangt wörtlich „AGSL-Glow ab API 33,
+  Radial-Gradient-Fallback darunter" und „Robolectric-Screenshots
+  beider Pfade". Diese Vorgaben sind durch dieses ADR ÜBERHOLT: §13.12
+  des Design-Dokuments delegiert die Technikentscheidung ausdrücklich
+  an dieses ADR, und die Entscheidung lautet EIN Pfad, Canvas-only.
+  Der Orchestrator passt den Punkt-5-Prompt beim Delegieren an
+  (PW-4.5 implementiert nur den Canvas-Pfad; „beide Pfade"-Tests
+  entfallen).
 - Folgearbeit: PW-4.3 liefert die Ereignisdaten (ADR-012); PW-4.4
-  implementiert Stepper + Renderer inkl. Determinismus-Tests; PW-4.5
-  Feuerwerk/Sterne; PW-4.7 misst das Frame-Budget.
+  implementiert den Stepper-Kern inkl. Determinismus-Tests (ohne
+  Rendering); PW-4.5 Laser-Rendering; PW-4.6 Aktions-Feedback-
+  Verdrahtung; PW-4.7 Feuerwerk/Sterne; PW-4.9 misst das Frame-Budget.
+  (Ticket-Nummern: 10-Punkte-Plan — das ältere Schema aus
+  docs/phase4-juice-update.md §3 gilt nicht mehr.)

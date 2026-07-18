@@ -25,8 +25,9 @@ den Ist-Stand und spezifiziert das Delta, das PW-4.3 implementiert.
   `segments` in normativer, reproduzierbarer Reihenfolge (§5.2).
 - `Element.Crystal(required: LightColor)` über `state.currentBoard()`
   (Soll-Farben, K = Kristallzahl abzählbar).
-- `CrystalFill.classify(required, received)` — pure
-  Erfüllungs-Klassifikation (DARK/PARTIAL/FULFILLED/OVERSATURATED).
+- Top-Level-Funktion `crystalFill(required, received)` (Package
+  `de.puzzlewerk.game.color`) — pure Erfüllungs-Klassifikation
+  (DARK/PARTIAL/FULFILLED/OVERSATURATED).
 
 **Was der Juice-Layer zusätzlich braucht** (Bedarf aus §13.8a–13.11):
 
@@ -38,19 +39,23 @@ den Ist-Stand und spezifiziert das Delta, das PW-4.3 implementiert.
 3. **L und K für die Stem-Tabelle** (§13.11): L = aktuell erfüllte
    Kristalle, K = Kristallzahl des Levels.
 4. **Strahl-Endpunkte** (§13.8a: Funken-Emitter an jeder On-Board-
-   Absorption; Brett-Aus emittiert NICHT): aus `segments` NICHT
-   zuverlässig ableitbar — bei kreuzenden/mehrfachen Strahlen ist einer
-   Kante nicht anzusehen, ob der Strahl in `to` endet oder (ggf. mit
-   Farb-/Richtungswechsel an Splitter/Prisma/Filter/Portal)
-   weiterläuft. Nur der Tracer weiß, wo ein Strahl absorbiert wurde.
+   Absorption; Brett-Aus emittiert NICHT): aus `TraceResult` zwar
+   konstruktiv ableitbar — je Segment-Zielzelle die lokalen
+   Absorptionsregeln anwenden (Wand/Quelle/Kristall absorbieren immer,
+   Filter genau bei nicht passierender Farbe, vgl. DefaultTracer) —,
+   aber NICHT ohne diese Absorptions-/Filtersemantik in :app zu
+   duplizieren: Spielregel-Nachbau außerhalb des 90-%-Branch-Gates von
+   :game und ein zweiter Ort, der bei jeder Element-Erweiterung
+   mitzupflegen wäre. Genau das verbietet §13.8.
 
 ## Optionen
 
 1. **:app rechnet alles selbst** (hält den Vorher-trace, vergleicht,
    klassifiziert via `CrystalFill`). Verletzt die §13.8-Anweisung,
    dupliziert Erfüllungs-/Sortier-Semantik außerhalb des
-   90-%-Coverage-Gates von :game — und scheitert an Bedarf 4
-   (Endpunkte sind aus `TraceResult` prinzipiell nicht ableitbar).
+   90-%-Coverage-Gates von :game — und müsste für Bedarf 4 zusätzlich
+   die Absorptions-/Filterregeln des Tracers nachbauen (s. Kontext:
+   ableitbar nur um den Preis der Semantik-Duplikation).
 2. **`MoveResult.Applied` um ein Delta-Feld erweitern.** Die Engine
    müsste den Vorher-trace kennen: entweder je Zug ZWEIMAL tracen
    (Vorher-Brett erneut) oder `GameState` um den trace erweitern —
@@ -171,7 +176,9 @@ auf und übersetzt in `JuiceEvent`s (ADR-011) bzw. `StemMix`/SFX
   NICHT ändern (Prüfkriterium im PW-4.3-Review).
 - (−) :app trägt die Verantwortung, den Vorher-trace korrekt
   mitzuführen (bei Undo/Reset/„Nochmal" der jeweils aktuelle Stand,
-  R46/R49) — Choreografie-Tests in PW-4.4/4.7 decken das ab.
+  R46/R49) — Choreografie-Tests in PW-4.6 und im QS-Pass PW-4.9
+  decken das ab (Ticket-Nummern: 10-Punkte-Plan).
 - Folgearbeit: PW-4.3 implementiert a) + b) mit Tests (inkl.
   §13.8a-/§13.9-Beispiele Level 7.3 und R50-Fälle K ≤ 2); erst danach
-  starten PW-4.4/4.6 gegen die realen Daten.
+  arbeiten die abhängigen Punkte gegen reale Daten (PW-4.6
+  Feedback-Verdrahtung, PW-4.8 Stem-Steuerung).

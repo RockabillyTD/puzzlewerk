@@ -16,7 +16,8 @@ import de.puzzlewerk.core.RandomSource
  * - Kein Rückfluss: liest und verändert keinerlei Spiellogik-Zustand
  *   (strikte Trennung vom Spiel-PRNG, §13.13).
  *
- * Implementierung: PW-4.4 (Partikel/Laser) und PW-4.5 (Feuerwerk).
+ * Implementierung: PW-4.4 (Kern ohne Rendering); Rendering/Choreografie:
+ * PW-4.5–4.7 (Ticket-Nummern laut 10-Punkte-Plan).
  */
 internal fun interface JuiceStepper {
     /**
