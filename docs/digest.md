@@ -13,8 +13,12 @@
   keep.xml + synth.py) und PR #31 PW-4.1 (BREAKING-Addendum
   §13.7–13.13 + R44–R50, **ABGENOMMEN durch Branko 2026-07-16** inkl.
   V3-Abweichung und aller vorgelegten Designentscheidungen).
-- In Arbeit: PW-4.2 (architekt) — ADR Audio-Architektur, ADR
-  VFX-Layer, Ereignisdaten-Delta für :game (Punkt 2 des Plans).
+- Gemergt: PR #32 PW-4.2 — ADR-010 (AudioTrack-Mixer für Stems),
+  ADR-011 (Canvas-only-VFX, überholt die Punkt-5-Planprosa „AGSL"),
+  ADR-012 (TraceResult.endpoints + juiceDelta) + AudioEngine-/
+  JuiceState-Deklarationen in :app.
+- In Arbeit: PW-4.3 (entwickler) — endpoints + juiceDelta in :game
+  nach ADR-012; Auflage: Golden-segments unverändert.
 - **Nächstes Gate: menschliche Abnahme nach Punkt 10** (Gate-Artefakt
   + Spieltest); Reihenfolge bis dahin: 2 → 3 → 4 → (5, 8 parallel)
   → 6 → 7 → 9 → 10.
@@ -37,6 +41,12 @@
   Navigation-Compose-Dependency).
 - ADR-009 UI-Test-Stack: Robolectric + Compose-Test, android-all
   offline gepinnt (S6); Kover-Gates :app/:data ≥ 70 %.
+- ADR-010 Audio: AudioTrack-Mixer für 4 Stems (PCM vorab dekodiert,
+  sample-exakter Loop), SoundPool für SFX; AudioEngine-Interface.
+- ADR-011 VFX: Canvas-only (kein AGSL), JuiceState + pure step();
+  Seed-Kette mix64; Rückfalltür p95 < 55 fps ⇒ Folge-ADR.
+- ADR-012 Ereignisdaten: TraceResult.endpoints (im Tracer) +
+  juiceDelta(before, after, board) — Delta-Spez für PW-4.3.
 
 ## Modul-Landkarte
 - :core — Basistypen, RandomSource/WallClock-Abstraktionen (pure JVM).
