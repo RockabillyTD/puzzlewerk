@@ -34,7 +34,7 @@ class BoardRenderSpecTest {
         segments: List<Segment>,
         elements: Map<HexCoord, Element> = emptyMap(),
     ): BoardRenderSpec {
-        val trace = TraceResult(segments = segments, received = emptyMap(), solved = false)
+        val trace = TraceResult(segments = segments, received = emptyMap(), solved = false, endpoints = emptyList())
         val state = boardUiState(Board(radius = 2, elements = elements), trace)
         return buildBoardRenderSpec(state, geometry, colors)
     }

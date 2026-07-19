@@ -19,7 +19,10 @@ class BoardUiStateTest {
     private fun stateWithReceived(received: LightColor?): BoardUiState {
         val board = Board(radius = 2, elements = mapOf(crystalCell to Element.Crystal(LightColor.YELLOW)))
         val receivedMap = if (received == null) emptyMap() else mapOf(crystalCell to received)
-        return boardUiState(board, TraceResult(segments = emptyList(), received = receivedMap, solved = false))
+        return boardUiState(
+            board,
+            TraceResult(segments = emptyList(), received = receivedMap, solved = false, endpoints = emptyList()),
+        )
     }
 
     private fun crystalOf(state: BoardUiState): CrystalCellState =
@@ -67,7 +70,11 @@ class BoardUiStateTest {
                         HexCoord(0, 0) to Element.Mirror(Orientation(5)),
                     ),
             )
-        val state = boardUiState(board, TraceResult(segments = emptyList(), received = emptyMap(), solved = false))
+        val state =
+            boardUiState(
+                board,
+                TraceResult(segments = emptyList(), received = emptyMap(), solved = false, endpoints = emptyList()),
+            )
         assertNull(state.cells.first { it.coord == HexCoord(0, 0) }.crystal)
         assertNull(state.cells.first { it.coord == HexCoord(-2, 0) }.crystal)
     }

@@ -26,7 +26,8 @@ class EngineApiTest {
             seed = 1L,
         )
 
-    private val emptyTrace = TraceResult(segments = emptyList(), received = emptyMap(), solved = false)
+    private val emptyTrace =
+        TraceResult(segments = emptyList(), received = emptyMap(), solved = false, endpoints = emptyList())
 
     // Minimale Fake-Engine, die nur den API-Vertrag der Typen demonstriert.
     private val engine =
