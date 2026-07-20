@@ -29,6 +29,11 @@ package de.puzzlewerk.app.ui.juice
  *   Kaskade (§13.9: 40-ms-Versatz, Kappe ab dem 5.) sowie das geplante
  *   Feuerwerk (§13.10, Start bei t_fw).
  * @property particles Alle lebenden Partikel als Structure-of-Arrays.
+ * @property flashRemainingMillis PW-4.4-Erweiterung (dokumentierte Abweichung
+ *   von der PW-4.2-Deklaration): Restlaufzeit des Flash-Fensters. [flashAlpha]
+ *   ist eine reine Projektion daraus (§13.10-Kurve bzw. Reduce-Motion-Dreieck)
+ *   und deshalb NICHT eindeutig invertierbar — die Kurve braucht einen eigenen
+ *   Zeitzähler, den der pure Stepper zwischen Frames tragen muss. 0 = kein Flash.
  */
 internal data class JuiceState(
     val elapsedMillis: Long,
@@ -39,7 +44,13 @@ internal data class JuiceState(
     val emitters: List<SparkEmitter>,
     val pendingBursts: List<ScheduledBurst>,
     val particles: ParticleSnapshot,
-)
+    val flashRemainingMillis: Long,
+) {
+    internal companion object {
+        /** Neutraler Startzustand vor dem ersten [JuiceEvent.ScreenEntered]. */
+        val EMPTY = JuiceState(0L, false, 0L, 1f, 0f, emptyList(), emptyList(), ParticleSnapshot.EMPTY, 0L)
+    }
+}
 
 /**
  * Lebende Partikel als Structure-of-Arrays — der Renderer iteriert
@@ -56,6 +67,18 @@ internal data class JuiceState(
  * @property sizeDp Durchmesser in dp (Funken: 2 dp, §13.8a).
  * @property alpha Deckkraft 0..1 (Lebensdauer-Ausblendung).
  * @property colorArgb ARGB-Farbe (Palette §13.4, bereits aufgelöst).
+ * @property vxDp PW-4.4-Simulationsfeld: Geschwindigkeit x in dp/s.
+ * @property vyDp PW-4.4-Simulationsfeld: Geschwindigkeit y in dp/s.
+ * @property gravityDpPerSec2 PW-4.4-Simulationsfeld: Gravitation in dp/s²
+ *   (Funken 0, Kristall-Burst 240, Feuerwerk 480 — §13.9/§13.10).
+ * @property alphaFadePerMillis PW-4.4-Simulationsfeld: linearer Alpha-Abbau je
+ *   ms (= 1/Lebensdauer); der Partikel stirbt, sobald [alpha] ≤ 0 fällt.
+ *
+ * ABWEICHUNG (dokumentiert, PW-4.4): Die vier Simulationsfelder ergänzen die
+ * PW-4.2-Deklaration. Die pure [JuiceStepper.step]-Integration MUSS Geschwindigkeit,
+ * Gravitation und Restlebensdauer zwischen Frames tragen; die render-orientierte
+ * Deklaration konnte das nicht. Der Renderer (PW-4.5) liest weiterhin nur
+ * count/xDp/yDp/sizeDp/alpha/colorArgb — die Simulationsfelder sind für ihn unsichtbar.
  */
 internal data class ParticleSnapshot(
     val count: Int,
@@ -64,7 +87,18 @@ internal data class ParticleSnapshot(
     val sizeDp: FloatArray,
     val alpha: FloatArray,
     val colorArgb: IntArray,
-)
+    val vxDp: FloatArray,
+    val vyDp: FloatArray,
+    val gravityDpPerSec2: FloatArray,
+    val alphaFadePerMillis: FloatArray,
+) {
+    internal companion object {
+        private val E = FloatArray(0)
+
+        /** Leerer Pool (0 Partikel) — gültiger Zustand (R44). */
+        val EMPTY = ParticleSnapshot(0, E, E, E, E, IntArray(0), E, E, E, E)
+    }
+}
 
 /**
  * Kontinuierlicher Punkt-Emitter an einem Strahl-Endpunkt (§13.8a:
