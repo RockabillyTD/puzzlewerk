@@ -17,8 +17,10 @@
   ADR-011 (Canvas-only-VFX, überholt die Punkt-5-Planprosa „AGSL"),
   ADR-012 (TraceResult.endpoints + juiceDelta) + AudioEngine-/
   JuiceState-Deklarationen in :app.
-- In Arbeit: PW-4.3 (entwickler) — endpoints + juiceDelta in :game
-  nach ADR-012; Auflage: Golden-segments unverändert.
+- Gemergt: PR #33 PW-4.3 — TraceResult.endpoints (im Tracer) +
+  juiceDelta() in :game (Ereignisdaten für den Juice-Layer).
+- In Arbeit: PW-4.4 (ui-entwickler) — JuiceState-Partikelkern +
+  pure step() in :app (ohne Rendering), gegen die ADR-011-Interfaces.
 - **Nächstes Gate: menschliche Abnahme nach Punkt 10** (Gate-Artefakt
   + Spieltest); Reihenfolge bis dahin: 2 → 3 → 4 → (5, 8 parallel)
   → 6 → 7 → 9 → 10.
