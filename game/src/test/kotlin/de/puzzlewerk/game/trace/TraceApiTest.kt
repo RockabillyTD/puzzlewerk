@@ -20,6 +20,7 @@ class TraceApiTest {
                 segments = listOf(segment),
                 received = mapOf(HexCoord(1, 0) to LightColor.RED),
                 solved = true,
+                endpoints = listOf(BeamEndpoint(HexCoord(1, 0), LightColor.RED)),
             )
 
         result shouldBe result.copy()
@@ -28,7 +29,7 @@ class TraceApiTest {
 
     @Test
     fun `fehlender received-Eintrag bedeutet dunkler Kristall (Paragraf 5_4)`() {
-        val result = TraceResult(segments = emptyList(), received = emptyMap(), solved = false)
+        val result = TraceResult(segments = emptyList(), received = emptyMap(), solved = false, endpoints = emptyList())
 
         result.received shouldNotContainKey HexCoord(0, 0)
         result.received[HexCoord(0, 0)] shouldBe null
@@ -45,7 +46,7 @@ class TraceApiTest {
 
     @Test
     fun `Tracer ist als fun interface implementierbar`() {
-        val empty = TraceResult(emptyList(), emptyMap(), solved = false)
+        val empty = TraceResult(emptyList(), emptyMap(), solved = false, endpoints = emptyList())
         val tracer = Tracer { _ -> empty }
 
         tracer.trace(Board(radius = 2, elements = emptyMap())) shouldBe empty

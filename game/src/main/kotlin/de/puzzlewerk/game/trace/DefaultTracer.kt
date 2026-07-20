@@ -35,6 +35,7 @@ private class TraceRun(
     private val visited = HashSet<BeamState>()
     private val segments = mutableListOf<Segment>()
     private val received = mutableMapOf<HexCoord, LightColor>()
+    private val endpoints = mutableListOf<BeamEndpoint>()
     private var steps = 0
 
     fun execute(): TraceResult {
@@ -49,7 +50,7 @@ private class TraceRun(
             }
             advance(beam)
         }
-        return TraceResult(segments.toList(), received.toMap(), isSolved())
+        return TraceResult(segments.toList(), received.toMap(), isSolved(), endpoints.toList())
     }
 
     /** Quellen in deterministischer Reihenfolge aufsteigend nach (q, dann r) (§5.2). */
@@ -73,8 +74,8 @@ private class TraceRun(
     ) {
         when (val element = board[next]) {
             null -> queue.add(BeamState(next, beam.direction, beam.color))
-            is Element.Wall -> Unit // absorbiert (§4.8)
-            is Element.Source -> Unit // Gehäuse ist opak (R01)
+            is Element.Wall -> absorb(next, beam.color) // absorbiert (§4.8)
+            is Element.Source -> absorb(next, beam.color) // Gehäuse ist opak (R01)
             is Element.Crystal -> collectAtCrystal(next, beam.color)
             is Element.Rotatable -> enqueueReflection(next, element, beam)
             is Element.Prism -> enqueueDispersion(next, beam)
@@ -83,12 +84,25 @@ private class TraceRun(
         }
     }
 
-    /** Kristall sammelt per OR und absorbiert den Strahl (§4.7). */
+    /**
+     * On-Board-Absorption: registriert den Strahl-Endpunkt (§13.8a, ADR-012).
+     * Brett-Aus-Absorptionen laufen NICHT hierüber (siehe [advance]) und
+     * erzeugen bewusst keinen Eintrag.
+     */
+    private fun absorb(
+        cell: HexCoord,
+        color: LightColor,
+    ) {
+        endpoints += BeamEndpoint(cell, color)
+    }
+
+    /** Kristall sammelt per OR und absorbiert den Strahl (§4.7, Endpunkt §13.8a). */
     private fun collectAtCrystal(
         cell: HexCoord,
         color: LightColor,
     ) {
         received[cell] = received[cell]?.mixedWith(color) ?: color
+        absorb(cell, color)
     }
 
     /** Spiegel §4.2 und Splitter §4.3: `d_out = (m − d_in) mod 6`, Parallelfall ohne Kopie (R05). */
@@ -125,14 +139,18 @@ private class TraceRun(
         }
     }
 
-    /** Filter §4.5: `c ∧ f`; Absorption bei leerem Schnitt (R11) liefert [LightColor.filteredBy] als null. */
+    /** Filter §4.5: `c ∧ f`; leerer Schnitt (R11) absorbiert mit Endpunkt in Auftreff-Farbe (§13.8a). */
     private fun enqueueFiltered(
         cell: HexCoord,
         filter: LightColor,
         beam: BeamState,
     ) {
-        val filtered = beam.color.filteredBy(filter) ?: return
-        queue.add(BeamState(cell, beam.direction, filtered))
+        val filtered = beam.color.filteredBy(filter)
+        if (filtered == null) {
+            absorb(cell, beam.color)
+        } else {
+            queue.add(BeamState(cell, beam.direction, filtered))
+        }
     }
 
     /** Zwillingszelle des Portals (§4.6); Existenz garantiert die Vorbedingung §16.2/3. */

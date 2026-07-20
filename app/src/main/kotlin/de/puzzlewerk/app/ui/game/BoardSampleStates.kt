@@ -6,6 +6,7 @@ import de.puzzlewerk.game.board.HexCoord
 import de.puzzlewerk.game.board.Orientation
 import de.puzzlewerk.game.color.LightColor
 import de.puzzlewerk.game.element.Element
+import de.puzzlewerk.game.trace.BeamEndpoint
 import de.puzzlewerk.game.trace.Segment
 import de.puzzlewerk.game.trace.TraceResult
 
@@ -44,6 +45,8 @@ internal object BoardSampleStates {
                         ),
                     received = emptyMap(),
                     solved = false,
+                    // Strahl läuft ins Brett-Aus ⇒ keine Endpunkte (§13.8a).
+                    endpoints = emptyList(),
                 ),
         )
 
@@ -66,6 +69,8 @@ internal object BoardSampleStates {
                             ),
                     received = exampleCrystals,
                     solved = true,
+                    // §13.8a-Beispiel: genau drei Endpunkte an den Kristallen.
+                    endpoints = exampleCrystals.map { (cell, color) -> BeamEndpoint(cell, color) },
                 ),
         )
 
@@ -117,6 +122,8 @@ internal object BoardSampleStates {
                             HexCoord(0, 2) to LightColor.YELLOW,
                         ),
                     solved = false,
+                    // Physikalisch inkonsistenter Schaufenster-Zustand: bewusst ohne Endpunkte.
+                    endpoints = emptyList(),
                 ),
         )
 
