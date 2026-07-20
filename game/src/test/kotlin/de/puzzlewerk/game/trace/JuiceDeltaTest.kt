@@ -86,6 +86,35 @@ class JuiceDeltaTest {
     }
 
     @Test
+    fun `Kaskadenordnung ist r-dann-q, nicht q-dann-r (deterministischer Diskriminanztest 13_9)`() {
+        // A und B unterscheiden die beiden Sortierschluessel: A.q < B.q, aber A.r > B.r.
+        val a = HexCoord(q = 1, r = 1)
+        val b = HexCoord(q = 2, r = 0)
+        val board =
+            Board(
+                radius = 2,
+                elements =
+                    mapOf(
+                        a to Element.Crystal(LightColor.RED),
+                        b to Element.Crystal(LightColor.GREEN),
+                    ),
+            )
+        val before = TraceResult(segments = emptyList(), received = emptyMap(), solved = false, endpoints = emptyList())
+        val after =
+            TraceResult(
+                segments = emptyList(),
+                received = mapOf(a to LightColor.RED, b to LightColor.GREEN),
+                solved = true,
+                endpoints = emptyList(),
+            )
+
+        val delta = juiceDelta(before = before, after = after, board = board)
+
+        // compareBy(r, q): B (r=0) vor A (r=1). compareBy(q, r) wuerde A (q=1) zuerst liefern.
+        delta.newlyFulfilled shouldBe listOf(b, a)
+    }
+
+    @Test
     fun `Kristall geht durch Drehung AUS - zaehlt nicht als neu, L folgt abwaerts`() {
         val delta = juiceDelta(before = trace(solvedBoard), after = trace(darkBoard), board = darkBoard)
 
