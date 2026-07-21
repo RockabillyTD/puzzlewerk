@@ -4,6 +4,25 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.4 — JuiceState-Partikelkern (PR #34, gemergt 2026-07-21)
+- Gebaut: DefaultJuiceStepper (pure step() nach ADR-011), ParticleBuffer
+  (SoA-Pool, MAX 512, Silent-Drop), JuiceRandom (mix64-Seed-Kette,
+  spawn-only), JuiceState-Snapshot-Erweiterung; 16 JVM-Tests
+  (Determinismus über alle Spawn-Pfade, Kapazitäts-Property 400 Frames,
+  R44-Matrix, Kaskaden-Timing 40 ms, F-Formel 72/96/120 gepinnt).
+- Review MERGEABLE: §13-Zahlen komplett nachgerechnet; Größen-Ausnahme
+  513 Zeilen genehmigt (kohärente Testeinheit). 1 MAJOR = Kontrakt-
+  Lücke aus ADR-011 (Glow-Burst fehlt im Snapshot) → Entscheidung:
+  JuiceState-Erweiterung in PW-4.6. Security-APPROVE; LOW: emitSparks
+  ohne dt-Kappe → dt-Clamp im Aufrufer (PW-4.5). MINORs im Backlog.
+- Learning: Stream-Alignment Planung↔Spawn (P-Zug beim Spawn
+  überspringen) ist DIE Determinismus-Falle des Seed-Ketten-Musters —
+  im Handover dokumentiert. Achtung: Quellpfad ist app/src/main/kotlin/
+  (nicht java/).
+- NEU ab diesem Ticket: Handover-Regime — jeder Agent hängt am
+  Ticket-Ende Kontext + Aufgaben des Nächsten an docs/handover.md an.
+- Schritte: Implementierung Zyklus 20 (n. dok.) + Abschluss 20/50.
+
 ## PW-3.7 — Integration + E2E-Smoke (PR #28, gemergt 2026-07-14)
 - Gebaut: E2E-Smoke (Home→Levelauswahl→Level 1 lösen per echtem
   Pixel-Tap durch den pointerInput-Pfad→Overlay→Weiter→Folgelevel +

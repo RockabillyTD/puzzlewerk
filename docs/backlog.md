@@ -401,6 +401,33 @@
       maßgeblich ist die 13er-Tabelle in game-design.md §13.11).
       music_demo_steigerung.ogg ist reines Anhör-Demo — Verbleib im APK
       entscheidet PW-4.8 (Größenbudget PW-4.10).
+- [ ] ui-entwickler (PW-4.4, Review-MAJOR → Orchestrator-Entscheidung
+      2026-07-21): §13.9-Glow-Burst (Radius 0→28 dp, Alpha 0,8→0,
+      250 ms) hat keine Repräsentation im JuiceState-Snapshot — die
+      Lücke steckt schon in der ADR-011-Feldliste. Entscheidung: der
+      Glow lebt DATENSEITIG im JuiceState (deterministisch, testbar);
+      PW-4.6 erweitert den Snapshot um Glow-Einträge (Origin,
+      elapsedMillis, 250-ms-Lebensdauer) und dokumentiert das
+      ADR-011-Delta im PR.
+- [ ] ui-entwickler (PW-4.4, Security-LOW): emitSparks skaliert
+      unbegrenzt mit dtMillis (due = elapsed/250 ungekappt) — nach
+      App-Background droht ein Frame-Hänger. dt-Clamp im Aufrufer
+      (PW-4.5, withFrameNanos-Pfad) einziehen; alternativ due-Kappe
+      im Stepper.
+- [ ] ui-entwickler (PW-4.4, Review-MINOR): JuiceEvent.Solved ohne
+      CrystalBursts im selben Frame ⇒ Feuerwerk still bei (0,0);
+      CascadeInfo.moveNumber wird nie gelesen. Kontrakt-KDoc an
+      Solved („nach CrystalBursts desselben Frames") oder Abgleich —
+      spätestens in PW-4.6/4.7 klären.
+- [ ] test-engineer (PW-4.4, Review-MINOR): ungepinnte §13-Konstanten
+      (CRYSTAL/FIREWORK-Speed, Gravitation, Lebensdauern,
+      CRYSTAL_P_SPAN) sind mutations-blind — Bounds-/Golden-Test über
+      vx²+vy² und Lebensdauern in PW-4.9.
+- [ ] ui-entwickler (PW-4.4, Review-MINOR): step-Pfad alloziert je
+      Aufruf einen frischen ParticleBuffer (~1 MB/s Garbage bei
+      60 fps; ADR-011 deckt das als Trade-off) — Buffer ließe sich
+      als Stepper-Instanzfeld wiederverwenden; PW-4.9 misst das
+      Frame-Budget.
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)

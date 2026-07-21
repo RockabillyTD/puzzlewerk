@@ -5,7 +5,7 @@
 > Agenten lesen NUR dieses Dokument + ihr Rollen-Journal —
 > status.md/backlog.md liest nur der Orchestrator.
 
-## Phase & nächstes Gate (Stand 2026-07-15, Zyklus 17)
+## Phase & nächstes Gate (Stand 2026-07-21, Zyklus 21)
 - Phase 3 abgenommen: Gate-Feedback Branko = „zu langweilig, Richtung
   Zuma" → Phase 4 „Juice-Update" läuft (docs/phase4-10-punkte-plan.md,
   PW-4.1–4.10; Feedback-Vorlage: docs/phase4-juice-update.md).
@@ -19,8 +19,15 @@
   JuiceState-Deklarationen in :app.
 - Gemergt: PR #33 PW-4.3 — TraceResult.endpoints (im Tracer) +
   juiceDelta() in :game (Ereignisdaten für den Juice-Layer).
-- In Arbeit: PW-4.4 (ui-entwickler) — JuiceState-Partikelkern +
-  pure step() in :app (ohne Rendering), gegen die ADR-011-Interfaces.
+- Gemergt: PR #34 PW-4.4 — JuiceState-Partikelkern (DefaultJuiceStepper,
+  ParticleBuffer MAX 512, mix64-Seed-Kette), deterministisch, 16 Tests.
+- In Arbeit: PW-4.8 (AudioEngine nach ADR-010) ∥ PW-4.5 (Laser-
+  Rendering Canvas-only nach ADR-011) — beide ui-entwickler, disjunkt.
+- NEU: Handover-Regime — jeder Agent hängt am Ticket-Ende an
+  docs/handover.md an: (a) Kontext, (b) Aufgaben des nächsten Agenten.
+  Nachfolger lesen den eigenen Handover-Abschnitt ihres Vorgängers.
+- Entscheidung 2026-07-21: §13.9-Glow-Burst lebt datenseitig im
+  JuiceState — Snapshot-Erweiterung kommt in PW-4.6 (ADR-011-Delta).
 - **Nächstes Gate: menschliche Abnahme nach Punkt 10** (Gate-Artefakt
   + Spieltest); Reihenfolge bis dahin: 2 → 3 → 4 → (5, 8 parallel)
   → 6 → 7 → 9 → 10.
@@ -78,8 +85,8 @@
     Custom-Detekt-Regel, ringIndex, KDoc-Referenzen.
 
 ## Letzte 5 Merges
-- PR #29 PW-3.7-QS: 14 QS-Tests gegen §12/§13, 3 Befunde → Backlog.
-- PR #28 PW-3.7: E2E-Smoke + Gate-Checkliste + ViewModel-Key-Fix.
-- PR #27 PW-3.10: :data:lintDebug in Gate-Kette + CI (NewApi-Blindfleck).
-- PR #26 PW-3.5b: interaktiver Spiel-Screen (Eingabe, Overlay, DI).
-- PR #25 PW-3.6: Levelauswahl (ViewModel, Grid, Root-Verdrahtung).
+- PR #34 PW-4.4: JuiceState-Kern + Stepper (513 Z., Ausnahme genehmigt).
+- PR #33 PW-4.3: TraceResult.endpoints + juiceDelta() in :game.
+- PR #32 PW-4.2: ADR-010/011/012 + AudioEngine-/JuiceState-Deklarationen.
+- PR #31 PW-4.1: BREAKING-Addendum §13.7–13.13 + R44–R50 (abgenommen).
+- PR #30 PW-4.0: Juice-Doc + 18 OGGs + keep.xml + synth.py.
