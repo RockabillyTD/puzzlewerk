@@ -58,6 +58,7 @@ class DefaultJuiceStepperTest {
         assertEquals(a.flashAlpha, b.flashAlpha, 0f)
         assertEquals(a.emitters, b.emitters)
         assertEquals(a.pendingBursts, b.pendingBursts)
+        assertEquals(a.glows, b.glows)
         val pa = a.particles
         val pb = b.particles
         assertTrue("Partikel-Szenario muss nicht-leer sein", pa.count > 0)
@@ -180,6 +181,26 @@ class DefaultJuiceStepperTest {
         assertEquals(FIREWORK_EMITTER_INDEX_EXPECTED, firework.emitterIndex)
     }
 
+    /**
+     * MAJOR-2a (Korrekturrunde): Negativtest zum Solved-Kontrakt — faellt der
+     * `takeIf { it.moveNumber == event.moveNumber }`-Filter in `onSolved`,
+     * uebernaehme das Feuerwerk Kaskade UND t_fw des FREMDEN Zugs (t_fw 80 ms,
+     * Ursprung (9,9), bleibt geplant) und dieser Test wird rot.
+     */
+    @Test
+    fun `Solved mit fremder zugNummer ignoriert die Kaskade und faellt auf t_fw 0 zurueck`() {
+        val s =
+            enter(seed = 8L).step(
+                0L,
+                JuiceEvent.CrystalBursts(2, listOf(origin(1f, 1f), origin(5f, 5f), origin(9f, 9f))),
+                JuiceEvent.Solved(3, crystalCount = 3, paletteArgb = listOf(0xFFFFFFFF.toInt())),
+            )
+        // t_fw = 0: das Feuerwerk feuerte SOFORT am Rueckfall-Ursprung (0,0)
+        // und triggerte den Flash; mit fremder Kaskade laege es noch bei 80 ms.
+        assertTrue(s.pendingBursts.none { it.kind == BurstKind.FIREWORK })
+        assertEquals(0.35f, s.flashAlpha, 1e-4f)
+    }
+
     @Test
     fun `Feuerwerks-Partikelzahl folgt F = min(120, 60 + 12K)`() {
         fun fireworkCount(k: Int): Int {
@@ -195,6 +216,45 @@ class DefaultJuiceStepperTest {
         assertEquals(72, fireworkCount(1))
         assertEquals(96, fireworkCount(3))
         assertEquals(120, fireworkCount(6)) // 60 + 72 = 132 → gekappt auf 120
+    }
+
+    // --- Glow-Burst (§13.9, PW-4.6 / ADR-011-Delta) -------------------------
+
+    @Test
+    fun `Kristall-Burst erzeugt beim Feuern einen Glow der in 250 ms auslaeuft`() {
+        val blue = 0xFF3E63DD.toInt()
+        var s = enter(seed = 3L).step(0L, JuiceEvent.CrystalBursts(1, listOf(origin(4f, 6f, argb = blue))))
+        val fresh = s.glows.single()
+        assertEquals(4f, fresh.xDp, 0f)
+        assertEquals(6f, fresh.yDp, 0f)
+        assertEquals(0xFF3E63DD.toInt(), fresh.colorArgb)
+        assertEquals(0f, fresh.radiusDp, 0f) // Radius startet bei 0 (§13.9)
+        assertEquals(0.8f, fresh.alpha, 1e-4f) // Alpha startet bei 0,8 (§13.9)
+        s = s.step(125L)
+        val mid = s.glows.single()
+        assertEquals(14f, mid.radiusDp, 1e-3f) // Halbzeit: 28 dp · 0,5
+        assertEquals(0.4f, mid.alpha, 1e-3f) // Halbzeit: 0,8 · 0,5
+        s = s.step(125L)
+        assertTrue("Glow läuft nach 250 ms aus", s.glows.isEmpty())
+    }
+
+    @Test
+    fun `Glows entstehen erst beim Feuern des jeweiligen Kaskaden-Bursts`() {
+        var s = enter(seed = 7L).step(0L, JuiceEvent.CrystalBursts(1, List(3) { origin(it.toFloat(), 0f) }))
+        assertEquals(1, s.glows.size) // nur Burst 1 (Offset 0) hat gefeuert
+        s = s.step(40L)
+        assertEquals(2, s.glows.size) // Burst 2 nach 40 ms (§13.9)
+    }
+
+    @Test
+    fun `Reduce-Motion erzeugt keinen Glow (R44 in Verbindung mit Paragraf 13_12)`() {
+        var s =
+            enter(seed = 5L, reduceMotion = true)
+                .step(0L, JuiceEvent.CrystalBursts(1, listOf(origin(0f, 0f))))
+        repeat(10) {
+            assertTrue("kein Glow unter Reduce-Motion", s.glows.isEmpty())
+            s = s.step(40L)
+        }
     }
 
     // --- Halo-Puls ----------------------------------------------------------
@@ -260,6 +320,7 @@ class DefaultJuiceStepperTest {
         s = s.step(0L, JuiceEvent.Dismissed)
         assertEquals(0, s.particles.count)
         assertTrue(s.pendingBursts.isEmpty())
+        assertTrue(s.glows.isEmpty())
         assertEquals(0f, s.flashAlpha, 0f)
     }
 

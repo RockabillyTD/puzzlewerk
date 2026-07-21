@@ -1,10 +1,12 @@
 package de.puzzlewerk.app.ui.game
 
 import app.cash.turbine.test
+import de.puzzlewerk.app.audio.FakeAudioEngine
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.data.DataResult
 import de.puzzlewerk.data.PersistenceFailure
 import de.puzzlewerk.data.progress.FakeProgressRepository
+import de.puzzlewerk.data.settings.FakeSettingsRepository
 import de.puzzlewerk.game.board.HexCoord
 import de.puzzlewerk.game.engine.GameEngine
 import de.puzzlewerk.game.engine.defaultGameEngine
@@ -69,6 +71,7 @@ class GameViewModelTest {
             generator = generator,
             scoreCalculator = scoreCalculator,
             progressRepository = repository,
+            audio = GameAudioChoreographer(FakeAudioEngine(), FakeSettingsRepository()),
             dispatcher = dispatcher,
         )
 

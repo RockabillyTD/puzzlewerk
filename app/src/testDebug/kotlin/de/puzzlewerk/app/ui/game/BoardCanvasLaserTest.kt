@@ -69,6 +69,7 @@ class BoardCanvasLaserTest {
             pendingBursts = emptyList(),
             particles = particles,
             flashRemainingMillis = 0L,
+            glows = emptyList(),
         )
 
     @Test

@@ -11,11 +11,13 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import de.puzzlewerk.app.R
+import de.puzzlewerk.app.audio.FakeAudioEngine
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.app.ui.navigation.Screen
 import de.puzzlewerk.app.ui.theme.PuzzlewerkTheme
 import de.puzzlewerk.data.PersistenceFailure
 import de.puzzlewerk.data.progress.FakeProgressRepository
+import de.puzzlewerk.data.settings.FakeSettingsRepository
 import de.puzzlewerk.game.board.Board
 import de.puzzlewerk.game.board.Direction
 import de.puzzlewerk.game.board.HexCoord
@@ -82,6 +84,7 @@ class GameRouteQsTest {
                         generator = fakeGenerator,
                         scoreCalculator = DefaultScoreCalculator,
                         progressRepository = repository,
+                        audio = GameAudioChoreographer(FakeAudioEngine(), FakeSettingsRepository()),
                         // Wie E2eSmokeTest: Main-Looper wird vom Compose-Test getaktet.
                         dispatcher = Dispatchers.Main,
                     )

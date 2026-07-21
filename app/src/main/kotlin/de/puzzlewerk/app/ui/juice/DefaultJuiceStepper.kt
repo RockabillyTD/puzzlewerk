@@ -90,7 +90,18 @@ private class Frame(state: JuiceState, val factory: JuiceRandomFactory) {
     val emitters: MutableList<SparkEmitter> = state.emitters.toMutableList()
     val pending: MutableList<ScheduledBurst> = state.pendingBursts.toMutableList()
     val buffer: ParticleBuffer = ParticleBuffer().apply { load(state.particles) }
+    val glows: MutableList<GlowBurst> = state.glows.toMutableList()
     var cascade: CascadeInfo? = null
+
+    /** Glow-Bursts altern lassen und Tote (≥ 250 ms, §13.9) entfernen. */
+    fun ageGlows(dtMillis: Long) {
+        if (glows.isEmpty()) return
+        val iterator = glows.listIterator()
+        while (iterator.hasNext()) {
+            val aged = iterator.next().let { it.copy(ageMillis = it.ageMillis + dtMillis) }
+            if (aged.ageMillis >= GLOW_LIFETIME_MILLIS) iterator.remove() else iterator.set(aged)
+        }
+    }
 
     fun setEmitters(
         moveNumber: Int,
@@ -116,10 +127,15 @@ private class Frame(state: JuiceState, val factory: JuiceRandomFactory) {
             pendingBursts = pending.toList(),
             particles = buffer.toSnapshot(),
             flashRemainingMillis = flashRemaining,
+            glows = glows.toList(),
         )
 }
 
-/** Ursprung des Feuerwerks: letzter Kristall-Burst der Kaskade DESSELBEN Zugs (§13.10). */
+/**
+ * Ursprung des Feuerwerks: letzter Kristall-Burst der Kaskade DESSELBEN Zugs
+ * (§13.10). Frame-lokal — [moveNumber] verankert die Zuordnung: `onSolved`
+ * akzeptiert nur die Kaskade des eigenen Zugs (Kontrakt an [JuiceEvent.Solved]).
+ */
 private class CascadeInfo(val moveNumber: Int, val count: Int, val lastX: Float, val lastY: Float)
 
 /**
@@ -137,6 +153,7 @@ internal class DefaultJuiceStepper(
     ): JuiceState {
         val frame = Frame(state, factory)
         frame.buffer.integrate(dtMillis)
+        frame.ageGlows(dtMillis)
         frame.flashRemaining = maxOf(0L, frame.flashRemaining - dtMillis)
         events.forEach { applyEvent(frame, it) }
         val prev = frame.elapsed
@@ -171,6 +188,7 @@ internal class DefaultJuiceStepper(
     ) {
         frame.buffer.clear()
         frame.pending.clear()
+        frame.glows.clear()
         frame.flashRemaining = 0L
         frame.elapsed = 0L // Puls-Nullpunkt (§13.8a)
         frame.reduceMotion = event.reduceMotion
@@ -183,6 +201,7 @@ internal class DefaultJuiceStepper(
         frame.buffer.clear()
         frame.pending.clear()
         frame.emitters.clear()
+        frame.glows.clear()
         frame.flashRemaining = 0L
     }
 
@@ -233,7 +252,9 @@ internal class DefaultJuiceStepper(
         frame: Frame,
         event: JuiceEvent.Solved,
     ) {
-        val cascade = frame.cascade
+        // Nur die Kaskade DESSELBEN Zugs verankert das Feuerwerk (Kontrakt an
+        // JuiceEvent.Solved: CrystalBursts + Solved im selben Frame, gleiche zugNummer).
+        val cascade = frame.cascade?.takeIf { it.moveNumber == event.moveNumber }
         val count = cascade?.count ?: 1
         val particleCount =
             if (frame.reduceMotion) 0 else min(FIREWORK_CAP, FIREWORK_BASE + FIREWORK_PER_K * event.crystalCount)
@@ -260,12 +281,29 @@ internal class DefaultJuiceStepper(
         for (burst in frame.pending) {
             when {
                 burst.startAtMillis > newElapsed -> remaining.add(burst)
-                burst.kind == BurstKind.CRYSTAL -> spawnCrystal(frame, burst)
+                burst.kind == BurstKind.CRYSTAL -> {
+                    spawnGlow(frame, burst)
+                    spawnCrystal(frame, burst)
+                }
                 else -> spawnFirework(frame, burst)
             }
         }
         frame.pending.clear()
         frame.pending.addAll(remaining)
+    }
+
+    /**
+     * §13.9-Glow beim Feuern eines Kristall-Bursts (PW-4.6, ADR-011-Delta).
+     * Unter Reduce-Motion entsteht KEIN Glow-Eintrag: §13.12 ersetzt den
+     * Glow-Blitz durch den einfachen Fade der 13.3-Leuchtaura, die in der
+     * Kristall-Render-Schicht lebt — der Juice-Layer fügt keine Bewegung hinzu.
+     */
+    private fun spawnGlow(
+        frame: Frame,
+        burst: ScheduledBurst,
+    ) {
+        if (frame.reduceMotion) return
+        frame.glows.add(GlowBurst(burst.xDp, burst.yDp, burst.colorsArgb.first(), ageMillis = 0L))
     }
 
     private fun spawnCrystal(

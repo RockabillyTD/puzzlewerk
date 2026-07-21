@@ -142,6 +142,42 @@ class JuiceFrameDriverTest {
         )
     }
 
+    // --- Burst über die Queue (PW-4.6: ViewModel ist Produzent) -------------
+
+    @Test
+    fun `CrystalBursts ueber die Queue erzeugen Partikel und veroeffentlichten Glow`() {
+        startDriver()
+        queue.offer(JuiceEvent.ScreenEntered(levelSeed = 7L, reduceMotion = false, endpoints = emptyList()))
+        queue.offer(JuiceEvent.CrystalBursts(1, listOf(BurstOrigin(10f, 10f, RED))))
+        composeRule.mainClock.advanceTimeBy(BURST_PROBE_MILLIS)
+        val state = juice.value
+        assertTrue("Burst spawnt Partikel (P = 8..12, §13.9)", state.particles.count > 0)
+        // Publikations-Filter rendersDifferently MUSS Glow-Frames schreiben (PW-4.5-Warnung).
+        assertTrue("Glow ist im veröffentlichten Snapshot sichtbar", state.glows.isNotEmpty())
+    }
+
+    @Test
+    fun `Reduce-Motion Burst erzeugt 0 Partikel und keinen Glow`() {
+        startDriver()
+        queue.offer(JuiceEvent.ScreenEntered(levelSeed = 7L, reduceMotion = true, endpoints = emptyList()))
+        queue.offer(JuiceEvent.CrystalBursts(1, listOf(BurstOrigin(10f, 10f, RED))))
+        composeRule.mainClock.advanceTimeBy(BURST_PROBE_MILLIS)
+        assertEquals(0, juice.value.particles.count)
+        assertTrue(juice.value.glows.isEmpty())
+    }
+
+    // --- Kapazitätsgrenze der Queue (PW-4.5-Security-MINOR-2) ---------------
+
+    @Test
+    fun `JuiceEventQueue verwirft ueber der Kapazitaet still und leert per drain`() {
+        val bounded = JuiceEventQueue()
+        repeat(MAX_PENDING_JUICE_EVENTS + 10) { bounded.offer(JuiceEvent.Dismissed) }
+        assertEquals(MAX_PENDING_JUICE_EVENTS, bounded.drain().size)
+        assertEquals("drain leert vollständig", 0, bounded.drain().size)
+        bounded.offer(JuiceEvent.Dismissed) // nach dem Leeren nimmt sie wieder an
+        assertEquals(1, bounded.drain().size)
+    }
+
     // --- Reduce-Motion (R44/§13.7) ------------------------------------------
 
     @Test
@@ -181,6 +217,9 @@ class JuiceFrameDriverTest {
 
         /** Deutlich länger als die 400-ms-Funken-Lebensdauer (§13.8a). */
         private const val SETTLE_MILLIS = 1_000L
+
+        /** ~3 Frames nach dem Burst: Partikel (600 ms) und Glow (250 ms) leben noch. */
+        private const val BURST_PROBE_MILLIS = 48L
 
         /** Echte Frame-Dauern in Nanosekunden (Review MAJOR-1: KEINE glatten 16 ms). */
         private const val NANOS_60_HZ = 16_666_667L

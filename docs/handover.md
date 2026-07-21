@@ -314,3 +314,138 @@ test-engineer (PW-4.9), Einstiegspunkte:
   (einmal je Prozess, beim ersten `enterGame` mit aktiven Effekten).
 - ADR-010 hat jetzt ein datiertes Addendum zu `setHostVisible`
   (Orchestrator-Auflage); Größen-Ausnahme 868 Zeilen genehmigt.
+
+## PW-4.6 — ui-entwickler → ui-entwickler (PW-4.7) (2026-07-21)
+
+### Kontext
+
+Gebaut: die komplette Aktions-Feedback-Verdrahtung (§13.9/§13.11) — Events
+aus :game fließen jetzt bis in Partikel, Glow und Ton.
+
+- **Event-Fluss (V2, PW-4.6):** `GameViewModel.onApplied(applied, move)` ruft
+  `juiceDelta(lastTrace, trace, board)` (:game, ADR-012) und emittiert EIN
+  `JuiceFeedback` je Ereignis über einen zweiten Channel
+  (`viewModel.juiceFeedback` — getrennt von `effects`, weil Channels nur
+  einen Konsumenten je Element haben). Typen + UI-Mapping liegen in
+  `ui/game/GameJuiceFeedback.kt`: `BoardEntered(levelSeed, endpoints)` beim
+  Partie-Start (`move == null`), `MoveApplied(moveNumber, rotatedCell,
+  newlyFulfilled, endpoints, solved)` je Zug, `EffectsDismissed` (R49).
+  `GameBoard` (GameScreen.kt) ist jetzt ein `BoxWithConstraints`, baut per
+  `remember` ein `JuiceEventMapping` (BoardGeometry.fit mit denselben
+  Constraints wie der BoardCanvas + Density + BoardColors) und collectet
+  das Feedback → `offerJuiceEvents(queue, feedback, mapping)` → Queue →
+  Treiber (`rememberJuiceFrameState`) → Stepper → Renderer.
+- **Solved-Kontrakt (kodifiziert als KDoc an `JuiceEvent.Solved`):** Solved
+  wird im SELBEN Frame NACH `CrystalBursts` desselben Zugs eingereiht —
+  `offerJuiceEvents` legt beide in einem Rutsch ab (ein `drain()` = ein
+  Frame). Der Stepper verankert das jetzt hart: `CascadeInfo.moveNumber`
+  (vorher tot) filtert Kaskaden fremder Züge (`takeIf { it.moveNumber ==
+  event.moveNumber }`). Test: `GameJuiceFeedbackTest`.
+- **Glow (§13.9, ADR-011-Feldlisten-Delta):** `JuiceState.glows:
+  List<GlowBurst>` (xDp, yDp, colorArgb, ageMillis; Projektionen `radiusDp`
+  0→28 dp, `alpha` 0,8→0 über `GLOW_LIFETIME_MILLIS` = 250 ms). Entsteht im
+  Stepper BEIM FEUERN eines CRYSTAL-Bursts (`spawnGlow`, Kaskade = zeitlich
+  gestaffelte Glows), altert in `Frame.ageGlows`, stirbt bei ≥ 250 ms;
+  ScreenEntered/Dismissed räumen. Reduce-Motion ⇒ KEIN Glow-Eintrag
+  (§13.12 ersetzt den Blitz durch den Aura-Fade der 13.3-Schicht — der ist
+  dort HEUTE NICHT animiert; bewusste Lücke, s. Aufgaben). Gerendert in
+  `drawJuiceEffects` als 3-Stufen-Kreis-Treppe (0,27/0,33/0,40 des
+  Glow-Alphas, Radien 1/0,66/0,33) — Canvas-Näherung ANALOG zur
+  abgenommenen Halo-Treppe statt RadialGradient-Brush, weil frische
+  Brushes je Frame den allokationsfreien Draw-Pfad (ADR-011) verletzen
+  würden. `rendersDifferently` veröffentlicht Glow-Frames (PW-4.5-Warnung
+  eingelöst; Robolectric-Test im JuiceFrameDriverTest).
+- **Audio-Verdrahtung (§13.11):** `GameAudioChoreographer` (ui/game) kapselt
+  alle Engine-Aufrufe; das ViewModel hält ihn als 6. Konstruktor-Parameter
+  (LongParameterList-Grenze!). `enter()` liest die Settings-Schalter
+  (`settings.first()`) und ruft `enterGame`; `exit()` ⇒ `exitGame`.
+  Lebenszyklus: `DisposableEffect(viewModel)` in GameRoute ruft
+  `onScreenEntered`/`onScreenLeft` — NICHT `onCleared` (das partie-
+  geschlüsselte ViewModel leakt bounded und würde nie/zu spät exiten); die
+  Slot-Dispose-Reihenfolge garantiert exit(alt) VOR enter(neu) bei
+  „Weiter". Je Applied: `rotate_tick` (nur Move.Rotate), SFX-Kette
+  lit/up1/up2/up3 über `comboSize`, `beam_connect` (nur ohne neue
+  Erfüllung), bei Lösung `solve_explosion` + `duckForSolve`,
+  `setStemMix(StemMix.forProgress(L, K))` nur bei Mix-Änderung (R46 auch
+  abwärts), `setLaserLoopActive(segments.isNotEmpty())` nur bei Wechsel.
+  Ungültig ⇒ `rotate_invalid`. „Nochmal" ⇒ exit + enter + Dismissed +
+  BoardEntered (R49). AppContainer: `settingsRepository` ist übergangsweise
+  `FakeSettingsRepository` (Defaults AN, analog InMemoryProgressRepository,
+  bis Settings-Screen Punkt 9); die Engine kommt als Lazy-Provider
+  `{ audioEngineInstance }` (Container-JVM-Tests ohne Application ⇒ No-op).
+- **Dreh-Blitz:** `rememberRotateFlash` (GameRotationAnimation.kt) blendet
+  ein weißes Element-Overlay 0,6→0/120 ms (BoardCanvas-Param `flash`,
+  additiv, Radius 0,7·cellSize); `JuiceEvent.RotateFlash` liefert dazu die
+  3 deterministischen Funken aus dem Stepper. Beide nur bei
+  `animationsEnabled` (reduce-motion-fest). Wackeln unverändert Compose.
+- **Queue-Härtung (PW-4.5-Security-MINOR-2):** `JuiceEventQueue.offer`
+  droppt still ab `MAX_PENDING_JUICE_EVENTS` = 64 (Politik wie
+  ParticleBuffer; Begründung als KDoc: wächst nur bei stehendem
+  Frame-Loop, Effekte sind nie tragender Kanal).
+- **Stolpersteine:** (1) `viewModel.effects`/`juiceFeedback` sind Channels —
+  jeder neue Konsument braucht einen EIGENEN Channel, nie doppelt
+  collecten. (2) SFX feuern beim Zug-Commit, NICHT mit 40-ms-Kaskadenversatz
+  (bewusste Vereinfachung: Versatz ist visuelle Stepper-Zeit; bei Bedarf in
+  PW-4.7 mit Test-Clock-Delays nachrüsten). (3) `sfx_ui_tap` (Buttons/
+  Overlay) und `sfx_star_n` sind NOCH UNVERDRAHTET. (4) detekt-Grenzen:
+  Konstruktoren ab 7 Nicht-Default-Parametern, Funktionen ab 6 — deshalb
+  Choreograph-Objekt und `JuiceEventMapping`-Bündel.
+
+### Aufgaben für den nächsten Agenten
+
+- **PW-4.7 — Lösungs-Feuerwerk + Sterne-Choreografie (§13.10):** Feuerwerk-
+  Daten (Solved-Event, t_fw, F-Partikel) laufen bereits bis in den Stepper;
+  es fehlen die Screen-Seite: Sterne fliegen einzeln mit Bounce ein
+  (Compose, Start `t_fw + 120 + (n−1)·150 ms`, SFX `sfx_star_n` je Stern —
+  Choreograph erweitern), Overlay-Fade ab 500 ms, **Buttons sichtbar UND
+  interaktiv ≤ 600 ms** (abgenommene V3-Abweichung; Worst Case
+  nachgerechnet in §13.10).
+- **ÜBERNOMMENE Auflage aus PW-4.5 (MINOR-2, weiter offen):** §13.10
+  verlangt einen VOLLBILD-Flash; das Weiß-Rect füllt weiterhin nur den
+  BoardCanvas. Entweder als Overlay im GameScreen-Root hochziehen (dasselbe
+  `State<JuiceState>`, nur `flashAlpha`, Draw-Phase-Read) ODER die
+  Brett-only-Abweichung Branko explizit zur Abnahme vorlegen.
+- **Solved-Event-Kontrakt einhalten:** Neue Produzenten MÜSSEN Solved im
+  selben Frame nach CrystalBursts einreihen (KDoc an `JuiceEvent.Solved`;
+  Referenzpfad `offerJuiceEvents`).
+- **Abbruch-Kanten R49:** „Nochmal"/„Weiter"/Zurück während laufender
+  Stern-/Feuerwerk-Choreografie müssen sauber abbrechen — Juice-Seite ist
+  über `EffectsDismissed`/Composition-Teardown abgedeckt, die neuen
+  Compose-Stern-Animationen und Stern-SFX brauchen eigene Abbruchpfade
+  (kein SFX nach Dismiss).
+- **Klein, falls Zeit:** §13.12-Aura-Fade unter Reduce-Motion (250 ms Fade
+  der 13.3-Leuchtaura beim Erfüllungswechsel, Kristall-Render-Schicht) ist
+  noch nicht animiert — nachziehen oder als Abweichung zur Abnahme geben;
+  `sfx_ui_tap` bei Buttons/Overlay-Aktionen verdrahten.
+
+### Nachtrag Korrekturrunde 2026-07-21 (Review PR #37)
+
+- MAJOR-1 behoben: `onScreenEntered()` sendet bei laufender Partie ein
+  `BoardEntered(levelSeed, endpoints)` NACH (Recreation/Wiedereintritt:
+  ViewModel überlebt, Queue+JuiceState sind frisch — ohne Nachsendung
+  keine Endpunkt-Funken, levelSeed 0, falscher Puls-Nullpunkt).
+  BEWUSSTE, DOKUMENTIERTE ABWEICHUNG: Die Audio-Session startet bei
+  Recreation per exit+enter neu (Stems ab Sample 0) — Session-Erhalt
+  wäre ein eigenes Ticket; Produktentscheidung (Portrait-Lock vs.
+  configChanges vs. Session-Erhalt) liegt als Backlog-Notiz (Technik)
+  für die Gate-Vorlage an Branko/game-designer.
+- MAJOR-2 behoben — die frühere Behauptung, Solved-Kontrakt und
+  Stem-/Laser-Dedup seien testabgedeckt, stimmte nur für den
+  Positivpfad. Jetzt mutationsfest (Probe: Filter/Dedup entfernt ⇒ rot):
+  `Solved mit fremder zugNummer …` (DefaultJuiceStepperTest) und
+  `Gleicher Fortschritt sendet setStemMix und setLaserLoopActive nicht
+  erneut` (GameViewModelJuiceAudioTest; FakeAudioEngine hat dafür neu
+  `laserLoopHistory`).
+- MINOR-2: Dreh-Blitz hängt jetzt am SEMANTISCHEN Signal
+  `GameUiState.rotatedCell` (nur `Move.Rotate`; Undo/Reset ⇒ null) —
+  `rememberRotateFlash(board, rotatedCell, animationsEnabled)` nutzt
+  keine Board-Diff-Heuristik mehr.
+- MINOR-3: Compose-Dreh-Blitz gepinnt (Peak exakt 0,6, Ende nach
+  120 ms, RM ⇒ nichts) in `GameRotationAnimationFlashTest`. MERKE für
+  PW-4.9: Bei pausierter Testuhr unter Robolectric braucht state-write-
+  getriebene Recomposition `runOnIdle { write }` UND je Frame
+  `advanceTimeByFrame()` + `waitForIdle()` im Wechsel — jede Zutat
+  allein tut NICHTS (drei Anläufe gekostet).
+- NIT-3 (R31): gelöst GELADENER Startzustand löst weder
+  solve_explosion noch Duck aus (`solvedByMove = justSolved &&
+  move != null`).

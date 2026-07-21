@@ -5,8 +5,12 @@ import androidx.lifecycle.viewModelScope
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.data.WriteResult
 import de.puzzlewerk.data.progress.ProgressRepository
+import de.puzzlewerk.game.board.Board
+import de.puzzlewerk.game.board.HexCoord
+import de.puzzlewerk.game.color.LightColor
 import de.puzzlewerk.game.daily.dailySeed
 import de.puzzlewerk.game.daily.dailyTier
+import de.puzzlewerk.game.element.Element
 import de.puzzlewerk.game.engine.GameEngine
 import de.puzzlewerk.game.engine.GameState
 import de.puzzlewerk.game.engine.InvalidMoveReason
@@ -17,6 +21,9 @@ import de.puzzlewerk.game.level.LevelDefinition
 import de.puzzlewerk.game.level.campaignSeed
 import de.puzzlewerk.game.level.campaignTier
 import de.puzzlewerk.game.score.ScoreCalculator
+import de.puzzlewerk.game.trace.JuiceDelta
+import de.puzzlewerk.game.trace.TraceResult
+import de.puzzlewerk.game.trace.juiceDelta
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -31,6 +38,9 @@ import kotlinx.coroutines.withContext
 
 /** Ab dieser Zugzahl verlangt Reset eine Bestätigung (Design §12.3). */
 private const val RESET_CONFIRM_THRESHOLD = 5
+
+/** Grad je Orientierungsstufe (§12.3: 30°-Stufen; Bezugssystem der Dreh-Funken §13.9). */
+private const val DEGREES_PER_ORIENTATION_STEP = 30f
 
 /**
  * ViewModel des Spiel-Screens (§12.3, Kampagne UND Daily identisch). Übersetzt
@@ -53,6 +63,7 @@ internal class GameViewModel(
     private val generator: LevelGenerator,
     private val scoreCalculator: ScoreCalculator,
     private val progressRepository: ProgressRepository,
+    private val audio: GameAudioChoreographer,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(GameUiState())
@@ -65,14 +76,52 @@ internal class GameViewModel(
     /** Einmal-Ereignisse (Haptik/Ton/Fehler); die Senke liegt im Screen (PW-3.5b). */
     val effects: Flow<GameEffect> = effectChannel.receiveAsFlow()
 
+    private val juiceChannel = Channel<JuiceFeedback>(Channel.BUFFERED)
+
+    /**
+     * Juice-Ereignisdaten je Zug (PW-4.6): Senke ist der GameScreen, der sie
+     * mit Brett-Geometrie in [de.puzzlewerk.app.ui.juice.JuiceEvent]s mappt
+     * ([offerJuiceEvents]) und der JuiceEventQueue übergibt.
+     */
+    val juiceFeedback: Flow<JuiceFeedback> = juiceChannel.receiveAsFlow()
+
     /** Kanonischer Domänen-Cursor; `null`, solange das Level noch generiert wird. */
     private var gameState: GameState? = null
+
+    /** trace des Vor-Zugs für `juiceDelta` (ADR-012); `null` = Partie-Start (R46/R49). */
+    private var lastTrace: TraceResult? = null
 
     init {
         viewModelScope.launch {
             val applied = withContext(dispatcher) { engine.newGame(generateLevel()) }
             onApplied(applied)
         }
+    }
+
+    /**
+     * Betreten des Spiel-Screens (GameRoute): startet die Audio-Session mit den
+     * Settings (§13.11). Läuft bereits eine Partie (Wiedereintritt/Activity-
+     * Recreation — das ViewModel überlebt, Queue und JuiceState sind aber
+     * frisch), wird sie als [JuiceFeedback.BoardEntered] NACHGESENDET: sonst
+     * fehlten Endpunkt-Funken bis zum nächsten Zug, `levelSeed` bliebe 0
+     * (ADR-011-Seed-Vertrag) und der Puls-Nullpunkt wäre falsch
+     * (Korrekturrunde PW-4.6, MAJOR-1).
+     */
+    fun onScreenEntered() {
+        viewModelScope.launch { audio.enter() }
+        val running = gameState ?: return // Erst-Eintritt: BoardEntered kommt mit newGame
+        val trace = lastTrace ?: return
+        juiceChannel.trySend(JuiceFeedback.BoardEntered(running.level.seed, trace.endpoints))
+    }
+
+    /**
+     * Verlassen des Spiel-Screens — „Weiter", Zurück oder Screen-Wechsel (R49).
+     * Aufruf aus dem GameRoute-DisposableEffect, NICHT aus `onCleared`: das
+     * partie-geschlüsselte ViewModel überlebt den Screen (bounded Leak,
+     * Backlog PW-3.7) und würde `exitGame` sonst nie bzw. zu spät senden.
+     */
+    fun onScreenLeft() {
+        audio.exit()
     }
 
     /** Einziger Eingang für Nutzerabsichten (MVI). */
@@ -95,6 +144,12 @@ internal class GameViewModel(
      */
     private fun onReplay() {
         val level = gameState?.level ?: return // noch im Ladezustand: wirkungslos
+        // R49: laufende Effekte sofort verwerfen; Audio-Session neu starten
+        // (AudioEngine-Vertrag: „Nochmal" verlässt und betritt die Partie).
+        lastTrace = null
+        juiceChannel.trySend(JuiceFeedback.EffectsDismissed)
+        audio.exit()
+        viewModelScope.launch { audio.enter() }
         onApplied(engine.newGame(level))
     }
 
@@ -112,16 +167,60 @@ internal class GameViewModel(
     private fun applyMove(move: Move) {
         val current = gameState ?: return // noch im Ladezustand: Eingaben wirkungslos
         when (val result = engine.applyMove(current, move)) {
-            is MoveResult.Applied -> onApplied(result)
+            is MoveResult.Applied -> onApplied(result, move)
             is MoveResult.Invalid -> onInvalid(result.reason)
         }
     }
 
-    private fun onApplied(applied: MoveResult.Applied) {
+    /**
+     * Zentrale Senke jedes `Applied` (PW-4.6): UiState rendern, Ereignisdaten
+     * aus `juiceDelta` (:game, ADR-012) als [JuiceFeedback] emittieren und die
+     * Audio-Choreografie treiben. [move] `null` = Partie-Start (`newGame`).
+     */
+    private fun onApplied(
+        applied: MoveResult.Applied,
+        move: Move? = null,
+    ) {
         val justSolved = applied.state.solved && gameState?.solved != true
+        // R31 (NIT-3 der Korrekturrunde): Ein bereits gelöst GELADENER
+        // Startzustand ist kein lösender ZUG — kein solve_explosion, kein Duck.
+        val solvedByMove = justSolved && move != null
+        val board = applied.state.currentBoard()
+        val delta = juiceDelta(lastTrace, applied.trace, board)
+        lastTrace = applied.trace
         gameState = applied.state
-        mutableState.value = renderState(applied)
+        mutableState.value = renderState(applied, move)
+        juiceChannel.trySend(juiceFeedbackFor(applied, board, delta, move, solvedByMove))
+        audio.onApplied(
+            delta = delta,
+            validRotation = move is Move.Rotate,
+            justSolved = solvedByMove,
+            beamsVisible = applied.trace.segments.isNotEmpty(),
+        )
         if (justSolved) persistIfCampaign(applied.state)
+    }
+
+    /** Übersetzt ein `Applied` in das [JuiceFeedback] des Zugs bzw. den Partie-Start. */
+    private fun juiceFeedbackFor(
+        applied: MoveResult.Applied,
+        board: Board,
+        delta: JuiceDelta,
+        move: Move?,
+        justSolved: Boolean,
+    ): JuiceFeedback {
+        if (move == null) return JuiceFeedback.BoardEntered(applied.state.level.seed, applied.trace.endpoints)
+        val rotatedCell = (move as? Move.Rotate)?.cell
+        return JuiceFeedback.MoveApplied(
+            moveNumber = applied.state.moveCount,
+            rotatedCell = rotatedCell,
+            rotatedOrientationDegrees = orientationDegrees(board, rotatedCell),
+            newlyFulfilled =
+                delta.newlyFulfilled.mapNotNull { cell ->
+                    (board[cell] as? Element.Crystal)?.let { CrystalBurstData(cell, it.required) }
+                },
+            endpoints = applied.trace.endpoints,
+            solved = if (justSolved) SolvedData(delta.crystalTotal, crystalPalette(board)) else null,
+        )
     }
 
     private fun onInvalid(reason: InvalidMoveReason) {
@@ -133,6 +232,7 @@ internal class GameViewModel(
             return
         }
         effectChannel.trySend(GameEffect.InvalidMove)
+        audio.onInvalidMove() // §13.11: sfx_rotate_invalid; Wackeln bleibt Compose (§12.3)
     }
 
     private fun onReset() {
@@ -159,7 +259,10 @@ internal class GameViewModel(
     }
 
     /** Übersetzt `MoveResult.Applied` → render-fertigen UiState (Board aus `.trace`, §12.3). */
-    private fun renderState(applied: MoveResult.Applied): GameUiState {
+    private fun renderState(
+        applied: MoveResult.Applied,
+        move: Move?,
+    ): GameUiState {
         val current = applied.state
         return GameUiState(
             isLoading = false,
@@ -169,6 +272,9 @@ internal class GameViewModel(
             canUndo = current.moveCount > 0 && !current.solved,
             pendingResetConfirm = false,
             result = if (current.solved) gameResultFor(current) else null,
+            // Semantisches Dreh-Blitz-Signal (MINOR-2): nur eine GÜLTIGE Drehung
+            // blitzt (§13.9) — Undo/Reset/Partie-Start liefern null.
+            rotatedCell = (move as? Move.Rotate)?.cell,
         )
     }
 
@@ -192,3 +298,18 @@ internal class GameViewModel(
         }
     }
 }
+
+/** Neue Orientierung der gedrehten Zelle in Grad (Bezugssystem der Dreh-Funken, §13.9). */
+private fun orientationDegrees(
+    board: Board,
+    cell: HexCoord?,
+): Float =
+    cell
+        ?.let { (board[it] as? Element.Rotatable)?.orientation?.steps }
+        ?.times(DEGREES_PER_ORIENTATION_STEP) ?: 0f
+
+/** Soll-Farben ALLER Kristalle in Brett-Reihenfolge (r, dann q) — Feuerwerkspalette §13.10. */
+private fun crystalPalette(board: Board): List<LightColor> =
+    board.elements.entries
+        .sortedWith(compareBy({ it.key.r }, { it.key.q }))
+        .mapNotNull { (it.value as? Element.Crystal)?.required }

@@ -2,6 +2,7 @@ package de.puzzlewerk.app.ui.game
 
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -84,6 +85,48 @@ internal fun rememberRotationSpin(
     // Versatz: bei progress 0 steht das Element eine Stufe (−30°) vor dem Ziel,
     // bei 1 exakt am Ziel (offset 0). ORIENTATION_STEP_RAD = 30° in Bogenmaß.
     return BoardSpin(cell = cell, angleOffsetRad = -(1f - progress.value) * ORIENTATION_STEP_RAD)
+}
+
+/** Dauer des Dreh-Blitzes (§13.9: weißes Element-Overlay, 120 ms). */
+private const val ROTATE_FLASH_MILLIS = 120
+
+/** Start-Alpha des Dreh-Blitzes (§13.9: 0,6 → 0 linear). */
+private const val ROTATE_FLASH_PEAK_ALPHA = 0.6f
+
+/** Aktiver Dreh-Blitz für den [BoardCanvas]: weißes Overlay auf [cell] mit [alpha]. */
+internal data class BoardFlash(
+    val cell: HexCoord,
+    val alpha: Float,
+)
+
+/**
+ * Treibt den Dreh-Blitz (§13.9) parallel zur 150-ms-Drehanimation, deren
+ * Timing unverändert bleibt: weißes Element-Overlay 0,6 → 0 linear über
+ * 120 ms auf [rotatedCell] — dem SEMANTISCHEN Signal aus dem ViewModel
+ * (`GameUiState.rotatedCell`): nur eine gültige Drehung blitzt, Undo/Reset
+ * liefern `null` (Korrekturrunde MINOR-2; keine Board-Diff-Heuristik).
+ * [board] dient nur als Neustart-Schlüssel für Folge-Taps auf dieselbe Zelle.
+ * Reduce-motion-fest: [animationsEnabled] `false` ⇒ kein Blitz (§13.6/§13.12 —
+ * kein zusätzlicher Lichtreiz, das Element steht sofort still).
+ */
+@Composable
+internal fun rememberRotateFlash(
+    board: BoardUiState?,
+    rotatedCell: HexCoord?,
+    animationsEnabled: Boolean,
+): BoardFlash? {
+    val alpha = remember { Animatable(0f) }
+    var flashCell by remember { mutableStateOf<HexCoord?>(null) }
+    LaunchedEffect(board, rotatedCell, animationsEnabled) {
+        if (board == null || rotatedCell == null || !animationsEnabled) return@LaunchedEffect
+        flashCell = rotatedCell
+        alpha.snapTo(ROTATE_FLASH_PEAK_ALPHA)
+        alpha.animateTo(0f, tween(durationMillis = ROTATE_FLASH_MILLIS, easing = LinearEasing))
+        flashCell = null
+    }
+    val cell = flashCell ?: return null
+    if (!animationsEnabled) return null
+    return BoardFlash(cell = cell, alpha = alpha.value)
 }
 
 /**
