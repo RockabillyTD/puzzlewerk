@@ -81,6 +81,22 @@ internal class GameAudioChoreographer(
         }
     }
 
+    /**
+     * Stern [star] (1..3) fliegt ins Ergebnis-Overlay ein: sfx_star_n
+     * (§13.10 Nr. 5, §13.11-Tabelle). Der Zeitpunkt (`t_fw + 120 +
+     * (n−1)·150 ms`) kommt aus der Compose-Stern-Animation (PW-4.7), nicht
+     * aus einer eigenen Uhr — der Choreograph bleibt zustandsfrei je Stern.
+     */
+    fun onStarShown(star: Int) {
+        val effect =
+            when {
+                star <= 1 -> SoundEffect.STAR_1
+                star == 2 -> SoundEffect.STAR_2
+                else -> SoundEffect.STAR_3
+            }
+        engine()?.playSfx(effect)
+    }
+
     /** SFX des k-ten Kaskaden-Bursts (§13.9): lit, up1, up2, ab dem 4. up3. */
     private fun comboSfx(index: Int): SoundEffect =
         when (index) {

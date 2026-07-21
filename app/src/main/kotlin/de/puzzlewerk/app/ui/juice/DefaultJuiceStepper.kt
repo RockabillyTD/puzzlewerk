@@ -63,6 +63,14 @@ private val DEG_TO_RAD: Float = (PI / 180.0).toFloat()
 /** t = Kaskadenversatz des k-ten Bursts (§13.9): 40 ms je Burst, Kappe ab dem 5. */
 private fun cascadeOffset(index: Int): Long = min(index, CASCADE_CAP_INDEX).toLong() * CASCADE_STEP_MS
 
+/**
+ * t_fw des Lösungs-Feuerwerks (§13.10): Kaskadenversatz des LETZTEN Bursts,
+ * `t_fw = 40 · (min(N, 5) − 1) ms` mit N = [cascadeSize] (N = 1 ⇒ 0; Kappe
+ * ⇒ ≤ 160 ms). Einzige Formel-Quelle — Stepper (Flash/Partikel) UND die
+ * Compose-Stern-Choreografie (PW-4.7, GameViewModel) rechnen hierüber.
+ */
+internal fun fireworkStartMillis(cascadeSize: Int): Long = cascadeOffset((cascadeSize - 1).coerceAtLeast(0))
+
 /** Halo-Grundalpha-Faktor: 1 ± 0,2 sin(2π·2 Hz·t), phasensynchron ab t = 0; 1,0 unter Reduce-Motion. */
 private fun haloPulseFactor(
     elapsedMillis: Long,
@@ -261,7 +269,7 @@ internal class DefaultJuiceStepper(
         // startAtMillis = frame.elapsed + t_fw (t_fw = Kaskadenversatz des letzten Bursts).
         frame.pending.add(
             ScheduledBurst(
-                startAtMillis = frame.elapsed + cascadeOffset(count - 1),
+                startAtMillis = frame.elapsed + fireworkStartMillis(count),
                 kind = BurstKind.FIREWORK,
                 xDp = cascade?.lastX ?: 0f,
                 yDp = cascade?.lastY ?: 0f,

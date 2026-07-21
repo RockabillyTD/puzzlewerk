@@ -24,9 +24,6 @@ private const val HALO_ALPHA_INNER = 0.23f
 /** Kern-Weiß #F0F0F3 (§13.8a: der Kern ist bei JEDER Strahlfarbe weiß). */
 private val CORE_COLOR = Color(0xFFF0F0F3)
 
-/** Vollbild-Flash (§13.10): additives Weiß, Alpha liefert der JuiceState. */
-private val FLASH_COLOR = Color.White
-
 // Glow-Burst §13.9 als 3-Stufen-Treppe konzentrischer Kreise (Canvas-Näherung
 // des radialen Verlaufs, analog zur abgenommenen Halo-Treppe aus PW-4.5 —
 // allokationsfreier Draw-Pfad statt frischer RadialGradient-Brushes je Frame).
@@ -103,9 +100,11 @@ private fun DrawScope.haloLine(
 }
 
 /**
- * Glow-, Partikel- und Flash-Layer aus dem [JuiceState]-Snapshot (§13.9
- * Glow-Bursts + Burst-Partikel, §13.8a Auftreff-Funken, §13.10
- * Feuerwerk/Flash) — additiv über allen Brett-Schichten.
+ * Glow- und Partikel-Layer aus dem [JuiceState]-Snapshot (§13.9 Glow-Bursts +
+ * Burst-Partikel, §13.8a Auftreff-Funken, §13.10 Feuerwerk) — additiv über
+ * allen Brett-Schichten. Der Screen-Flash (§13.10: VOLLBILD) wird seit PW-4.7
+ * NICHT mehr hier gezeichnet, sondern im GameScreen-Root ([SolveFlashOverlay])
+ * — die Auflage MINOR-2 aus PW-4.5 (Brett-only-Flash) ist damit eingelöst.
  *
  * Koordinaten-Vertrag (für PW-4.6): `xDp`/`yDp` sind dp relativ zur LINKEN
  * OBEREN Ecke des BoardCanvas; gezeichnet wird mit `dp.toPx()` derselben
@@ -136,9 +135,6 @@ internal fun DrawScope.drawJuiceEffects(juice: JuiceState) {
             alpha = particles.alpha[i].coerceIn(0f, 1f),
             blendMode = BlendMode.Plus,
         )
-    }
-    if (juice.flashAlpha > 0f) {
-        drawRect(color = FLASH_COLOR, alpha = juice.flashAlpha.coerceIn(0f, 1f), blendMode = BlendMode.Plus)
     }
 }
 

@@ -22,15 +22,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -43,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.puzzlewerk.app.R
 import de.puzzlewerk.app.ui.juice.JuiceEvent
 import de.puzzlewerk.app.ui.juice.JuiceEventQueue
+import de.puzzlewerk.app.ui.juice.JuiceState
 import de.puzzlewerk.app.ui.juice.rememberJuiceFrameState
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.app.ui.navigation.Screen
@@ -168,6 +174,10 @@ private suspend fun shakeOnce(shake: Animatable<Float, *>) {
  * preview-fähig. Zustände: Laden, Spielend, Gelöst (Ergebnis-Overlay); einen
  * Verloren-Zustand gibt es nicht (§6.3). Undo/Reset sind unter dem Overlay
  * inaktiv und der Board-Tap ist abgeschaltet.
+ *
+ * Juice-Treiber auf SCREEN-Ebene (PW-4.7, Auflage MINOR-2 aus PW-4.5): Queue
+ * und Frame-State leben hier, damit der §13.10-Flash als [SolveFlashOverlay]
+ * das VOLLE Fenster überzieht (Kopfzeile, Brett UND Ergebnis-Overlay).
  */
 @Composable
 internal fun GameScreen(
@@ -178,33 +188,82 @@ internal fun GameScreen(
     modifier: Modifier = Modifier,
     juiceFeedback: Flow<JuiceFeedback>? = null,
 ) {
+    val juiceEvents = remember { JuiceEventQueue() }
+    val juice = rememberJuiceFrameState(events = juiceEvents)
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             GameHeader(state = state, onIntent = onIntent, onNavigateBack = onNavigateBack)
             GameBoard(
                 state = state,
                 onIntent = onIntent,
+                juiceEvents = juiceEvents,
+                juice = juice,
                 modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp),
                 juiceFeedback = juiceFeedback,
             )
         }
-        if (state.pendingResetConfirm) {
-            ResetConfirmDialog(
-                onConfirm = { onIntent(GameIntent.ConfirmReset) },
-                onDismiss = { onIntent(GameIntent.DismissReset) },
-            )
-        }
-        state.result?.let { result ->
-            GameResultOverlay(
-                result = result,
-                onNext = onNavigateNext,
-                onReplay = { onIntent(GameIntent.Replay) },
-                onBack = onNavigateBack,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        GameScreenDialogs(
+            state = state,
+            onIntent = onIntent,
+            onNavigateBack = onNavigateBack,
+            onNavigateNext = onNavigateNext,
+        )
+        // Zuoberst (§13.10: Vollbild ÜBER TopBar/Buttons); ohne pointerInput —
+        // Eingaben laufen ungehindert durch (R32 sperrt das gelöste Brett selbst).
+        SolveFlashOverlay(juice = juice, modifier = Modifier.matchParentSize())
     }
 }
+
+/** Dialog- und Overlay-Schicht des Spiel-Screens: Reset-Bestätigung (§12.3) + Ergebnis-Overlay (§13.10). */
+@Composable
+private fun GameScreenDialogs(
+    state: GameUiState,
+    onIntent: (GameIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+    onNavigateNext: (() -> Unit)?,
+) {
+    if (state.pendingResetConfirm) {
+        ResetConfirmDialog(
+            onConfirm = { onIntent(GameIntent.ConfirmReset) },
+            onDismiss = { onIntent(GameIntent.DismissReset) },
+        )
+    }
+    state.result?.let { result ->
+        GameResultOverlay(
+            result = result,
+            onNext = onNavigateNext,
+            onReplay = { onIntent(GameIntent.Replay) },
+            onBack = onNavigateBack,
+            modifier = Modifier.fillMaxSize(),
+            onStarShown = { star -> onIntent(GameIntent.StarShown(star)) },
+        )
+    }
+}
+
+/**
+ * Vollbild-Screen-Flash (§13.10 Nr. 2; Reduce-Motion: §13.12-Fade — beide
+ * Kurven liefert der Stepper als [de.puzzlewerk.app.ui.juice.JuiceState.flashAlpha]).
+ * Liest [juice] AUSSCHLIESSLICH in der Draw-Phase: ein Flash-Frame zeichnet
+ * nur neu, rekomponiert nie (Handover-Empfehlung PW-4.6).
+ */
+@Composable
+private fun SolveFlashOverlay(
+    juice: State<JuiceState>,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier.testTag(SOLVE_FLASH_TEST_TAG).drawBehind {
+                val alpha = juice.value.flashAlpha
+                if (alpha > 0f) {
+                    drawRect(color = Color.White, alpha = alpha.coerceIn(0f, 1f), blendMode = BlendMode.Plus)
+                }
+            },
+    )
+}
+
+/** Struktur-Anker des Vollbild-Flashs (Screen-Ebene, Test PW-4.7). */
+internal const val SOLVE_FLASH_TEST_TAG = "solveFlash"
 
 /**
  * Brettbereich: Ladeindikator oder [BoardCanvas] mit Tap-Eingabe, Dreh-Animation
@@ -221,6 +280,8 @@ internal fun GameScreen(
 private fun GameBoard(
     state: GameUiState,
     onIntent: (GameIntent) -> Unit,
+    juiceEvents: JuiceEventQueue,
+    juice: State<JuiceState>,
     modifier: Modifier = Modifier,
     animationsEnabled: Boolean = rememberAnimationsEnabled(),
     juiceFeedback: Flow<JuiceFeedback>? = null,
@@ -230,7 +291,6 @@ private fun GameBoard(
         if (state.isLoading || board == null) {
             LoadingBoard()
         } else {
-            val juiceEvents = remember { JuiceEventQueue() }
             JuiceFeedbackBridge(
                 feedback = juiceFeedback,
                 queue = juiceEvents,
@@ -246,7 +306,7 @@ private fun GameBoard(
                 state = board,
                 modifier = Modifier.fillMaxSize(),
                 spin = rememberRotationSpin(board, animationsEnabled),
-                juice = rememberJuiceFrameState(events = juiceEvents),
+                juice = juice,
                 flash = rememberRotateFlash(board, state.rotatedCell, animationsEnabled),
                 // Gelöst sperrt den Tap; zusätzlich blockt das Overlay Taps darüber.
                 onCellTap = if (state.result != null) null else { coord -> onIntent(GameIntent.TapCell(coord)) },

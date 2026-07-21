@@ -2,6 +2,7 @@ package de.puzzlewerk.app.ui.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.puzzlewerk.app.ui.juice.fireworkStartMillis
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.data.WriteResult
 import de.puzzlewerk.data.progress.ProgressRepository
@@ -133,6 +134,9 @@ internal class GameViewModel(
             GameIntent.ConfirmReset -> onConfirmReset()
             GameIntent.DismissReset -> mutableState.update { it.copy(pendingResetConfirm = false) }
             GameIntent.Replay -> onReplay()
+            // §13.10 Nr. 5/§13.11: sfx_star_n beim Einflug. Der result-Guard fängt
+            // nachlaufende Meldungen eines bereits abgebauten Overlays ab (R49).
+            is GameIntent.StarShown -> if (mutableState.value.result != null) audio.onStarShown(intent.star)
         }
     }
 
@@ -189,7 +193,7 @@ internal class GameViewModel(
         val delta = juiceDelta(lastTrace, applied.trace, board)
         lastTrace = applied.trace
         gameState = applied.state
-        mutableState.value = renderState(applied, move)
+        mutableState.value = renderState(applied, move, delta)
         juiceChannel.trySend(juiceFeedbackFor(applied, board, delta, move, solvedByMove))
         audio.onApplied(
             delta = delta,
@@ -262,6 +266,7 @@ internal class GameViewModel(
     private fun renderState(
         applied: MoveResult.Applied,
         move: Move?,
+        delta: JuiceDelta,
     ): GameUiState {
         val current = applied.state
         return GameUiState(
@@ -271,20 +276,27 @@ internal class GameViewModel(
             par = current.level.par,
             canUndo = current.moveCount > 0 && !current.solved,
             pendingResetConfirm = false,
-            result = if (current.solved) gameResultFor(current) else null,
+            result = if (current.solved) gameResultFor(current, move, delta) else null,
             // Semantisches Dreh-Blitz-Signal (MINOR-2): nur eine GÜLTIGE Drehung
             // blitzt (§13.9) — Undo/Reset/Partie-Start liefern null.
             rotatedCell = (move as? Move.Rotate)?.cell,
         )
     }
 
-    private fun gameResultFor(current: GameState): GameResult {
+    private fun gameResultFor(
+        current: GameState,
+        move: Move?,
+        delta: JuiceDelta,
+    ): GameResult {
         val score = scoreCalculator.scoreFor(current.moveCount, current.level.par)
         return GameResult(
             points = score.points,
             stars = score.stars,
             moves = current.moveCount,
             par = current.level.par,
+            // t_fw der §13.10-Zeitachse aus der Kaskadenlänge des LÖSENDEN Zugs;
+            // R31 (gelöst geladen, move == null) hat keine Kaskade ⇒ t_fw = 0.
+            fireworkStartMillis = if (move != null) fireworkStartMillis(delta.comboSize) else 0L,
         )
     }
 
