@@ -401,6 +401,13 @@
       maßgeblich ist die 13er-Tabelle in game-design.md §13.11).
       music_demo_steigerung.ogg ist reines Anhör-Demo — Verbleib im APK
       entscheidet PW-4.8 (Größenbudget PW-4.10).
+- [ ] release-engineer (PW-4.8, offene Entscheidung für PW-4.10):
+      music_demo_steigerung.ogg (652 KiB, größtes Audio-Asset) wird von
+      der AudioEngine bewusst NICHT geladen (§13.11: kein Laufzeit-
+      Asset) und ist im Code unreferenziert — nur keep.xml hält es im
+      APK. In PW-4.10 entscheiden: aus res/raw + keep.xml entfernen
+      (spart ~652 KiB APK) oder als Anhör-Referenz behalten; hängt am
+      APK-Größenbudget des Gate-Artefakts.
 
 ## Produkt
 - (leer — Ideen des game-designers landen hier)
