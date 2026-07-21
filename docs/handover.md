@@ -528,3 +528,103 @@ angefasst; Stepper nur minimal (Formel-Extraktion, s. u.).
   Session-Token-Races) gegen die reale Choreographen-Verdrahtung.
 - **Bounds-Tests ungepinnter Konstanten** aus dem Backlog-Hinweis im
   PW-4.4-Abschnitt dieses Dokuments (Speed-/Lebensdauer-Spannen etc.).
+
+## PW-4.9 — test-engineer → release-engineer (PW-4.10) (2026-07-21)
+
+### Kontext
+
+Unabhängiger QS-Pass über die Punkte 3–8 (Juice + Audio) gegen §13.7–13.13
+und §15 (R44–R50). **Verdikt: PASS** — der Kern hält Determinismus,
+Kapazität, Reduce-Motion und die Audio-Kanten; 2 echte Bugs gefunden
+(dokumentiert, NICHT gefixt, als @Ignore-Regressionstests eingecheckt).
+
+Neue Tests (7 QS-Dateien NEBEN den Entwickler-Tests, keine Duplikate):
+
+- **JuiceDeterminismQsTest** — 1000-Frame-Property (§13.13): gleiche Seeds
+  + gleiche Event-Folge (ALLE Event-Typen inkl. Mid-Session-RM und
+  Dismissed) ⇒ bit-identische JuiceState-FOLGE inkl. Glow/Emitter/Bursts;
+  anderer levelSeed ⇒ andere Partikel bei identischer Zeitachse.
+- **JuiceCapacityQsTest** — legaler §13-Worst-Case (K = 6 + Feuerwerk 120 +
+  Emitter + Dreh-Funken, Peak ≥ 171) und Sättigungs-Missbrauch: Kappe 512
+  wird exakt erreicht, NIE überschritten; Dismissed räumt die Sättigung.
+- **JuiceParticleBoundsQsTest** (delegierte Review-MINORs): Speeds über
+  sqrt(vx²+vy²) — Kristall 80–160, Feuerwerk 120–320, Dreh-Funken exakt 90
+  mit Winkeln 30/150/270, Endpunkt-Funken exakt 60; Gravitation 240/480/0;
+  Lebensdauern 600/900–1400/300/400 ms über alphaFadePerMillis; P ∈ {8…12}
+  trifft beide Ränder (300 Seeds); Feuerwerks-Farbzyklus.
+- **JuiceReduceMotionMatrixQsTest** — jeder Stepper-Effektpfad einzeln
+  unter R44 (Dreh-Funken, Endpunkt-Emitter, Kaskaden-Plan, t_fw identisch),
+  Mid-Session-Umschaltung BEIDE Richtungen (Puls-Phase bleibt auf der
+  Gesamtzeitachse; Bestand läuft natürlich aus) + IST-Pin: RM-Umschaltung
+  MITTEN im 80-ms-Flash wechselt hart auf die Dreieckskurve (Alpha 0,175 →
+  0,03; definiert, crashtfrei — §13 regelt die Kante nicht, Gate-Bewertung).
+- **StemMixerCoreQsTest** — Schwellen-Property ALLER K ∈ 1..50 beidseitig
+  (inkl. K = 50: 48 % aus / 50 % an; K = 49), Duck WÄHREND laufendem Fade
+  (Sample = Ton·Fade·Duck, R50), Duck-Retrigger in der Attack-Phase und
+  Fade-Retarget mid-fade — beide klickfrei.
+- **DefaultAudioEngineQsTest** — Settings-Matrix Musik×SFX (R48) inkl.
+  Partie-Wechsel, Fokus-Verlust MITTEN im Stem-Fade (Fortsetzung
+  bit-identisch zur ununterbrochenen Referenz — Fade UND Cursor frieren
+  gemeinsam ein, R47), Re-Enter während pump-Backoff, Doppel-exitGame,
+  Fokus-Callback invalidierter Session (IST-Pin + BUG-1-Repro).
+- **GameOverlayFireworkQsTest** — IST-Pin der Recreation-Kante (Overlay
+  spielt die Stern-Choreografie ERNEUT, Reihenfolge 1-2-3, kein Crash) +
+  BUG-2-Repro.
+- **JuiceStepFrameBudgetQsTest** — Frame-Budget-Smoke: step() bei 512
+  Partikeln + Kaskade/Feuerwerk-Events, **gemessen median 54 µs / p95 83 µs**
+  (Gate-Schwelle großzügig: Median < 4 ms auf dem CI-Runner);
+  Allokations-Messwert (kein Gate): **~44 KiB je step()** unter Volllast —
+  dominiert von der Snapshot-Kopie (9 Arrays × 512) im Step-Pfad, laut
+  ADR-011 zulässig (Allokationsfreiheit gilt nur für den Draw-Pfad).
+
+**Gefundene Bugs (Fix = Entwickler-Ticket, Tests liegen @Ignore bei):**
+
+1. **BUG-PW4.9-1** (DefaultAudioEngine): Ein VERSPÄTETER
+   Fokus-Verlust-Callback nach `exitGame` setzt das engine-globale
+   `focusLost` wieder auf `true`, obwohl keine Session existiert und
+   `abandon()` gerufen war ⇒ Menü-/UI-SFX stumm bis zum nächsten
+   `enterGame` — die MINOR-1-Regression (PW-4.8) über die
+   Callback-Schiene. Repro: `DefaultAudioEngineQsTest.Fokus-Callback einer
+   invalidierten Session darf Menue-SFX nicht stummschalten` (erwartet
+   [UI_TAP], ist []). Fix-Idee: Callback gegen Session-Token prüfen.
+2. **BUG-PW4.9-2** (rememberStarAppearance): `animationsEnabled` ist
+   LaunchedEffect-Key — der System-RM-Toggle bei offenem Overlay startet
+   den Einflug neu, `onShown` feuert ein ZWEITES Mal ⇒ doppeltes
+   sfx_star_n (§13.11: genau eine Meldung; §13.12: Audio von RM
+   unberührt). Repro: `GameOverlayFireworkQsTest.RM-Toggle mit offenem
+   Overlay darf den Stern-SFX nicht wiederholen` (shownCount 2 statt 1).
+   Fix-Idee: Meldung einmalig pro Composition halten (z. B.
+   `remember { mutableStateOf(shown) }`-Guard), nur die Kurve umschalten.
+
+**Ungetestete Restrisiken:** (a) Android-Adapter real (MediaCodec-Decode,
+AudioTrack-Underruns, SoundPool-Latenz) — nur JVM-Fakes, der im
+PW-4.8-Handover angeregte Robolectric-Konstruktions-Smoke fehlt weiter;
+(b) echte p95-fps auf Gerät (ADR-011-Rückfalltür) — JVM-Microbenchmark
+ersetzt kein Geräte-Profiling; (c) Stem-Synchronität auf echter Hardware
+(per Konstruktion bewiesen, nicht gemessen); (d) Pixel-/Screenshot-Ebene
+der Halo-/Glow-Treppen (bewusst Gate-Abnahme durch Branko).
+
+### Aufgaben für den nächsten Agenten
+
+PW-4.10 (release-engineer):
+
+- **Gate-Kette auf main** nach dem Merge dieses PRs (ktlintCheck detekt
+  test koverVerify :app:lintDebug :data:lintDebug :app:assembleDebug).
+- **APK-Größenbudget** mit OGG-Anteil ausweisen (18 OGGs in res/raw;
+  Entscheidung music_demo_steigerung.ogg entfernen/behalten dokumentieren,
+  §13.11-Asset-Bilanz).
+- **Shrinker-/keep.xml-Prüfung**: res/raw-SFX/Stems überleben
+  Ressourcen-Shrinking (keep.xml aus PW-4.0), Release-Build baut.
+- **docs/phase4-gate-checklist.md** mit ALLEN abnahmepflichtigen Deltas
+  aus den Handover-Abschnitten: Halo-Treppe (PW-4.5) + Glow-Treppe
+  (PW-4.6) als Canvas-Näherungen; SFX-Timing ohne 40-ms-Kaskadenversatz +
+  solve_explosion bei Zug-Commit statt t_fw (PW-4.6/4.7);
+  Rotation-/Recreation-Stem-Neustart + Portrait-Lock-Produktfrage
+  (PW-4.7-Korrekturrunde); 800-ms-Stern-Ende > 600-ms-Frist (abgenommene
+  V3-Abweichung); §13.12-Aura-Fade nicht animiert; sfx_ui_tap
+  unverdrahtet; RM-Konstanten (Flash-Dreieck 0,15/400 ms, Sterne-Fade
+  150 ms); NEU aus PW-4.9: Recreation-Sterne-Replay (IST-Pin),
+  RM-Umschaltung mitten im Flash (IST-Pin), BUG-PW4.9-1 und BUG-PW4.9-2
+  als offene Entwickler-Tickets in die Vorlage.
+- **Debug-APK-Artefakt** fürs Gate bauen und ablegen; **versionName 0.4.0**
+  setzen.
