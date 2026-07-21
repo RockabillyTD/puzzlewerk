@@ -4,6 +4,26 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.10 — Phase-4-Gate-Vorbereitung (PR #41, gemergt 2026-07-21)
+- Gebaut: volle Gate-Kette auf main grün (inkl. assembleRelease);
+  APK-Größenbudget dokumentiert (Phase 3 ~10,4 MB → 11,17 MB Gate-
+  Stand, OGG-Anteil 684 632 B nach Demo-Entfernung — Korridor
+  +1–1,5 MB gehalten); music_demo_steigerung.ogg (652 KiB,
+  unreferenziert, via synth.py reproduzierbar) entfernt; keep.xml
+  komplett entfernt — Shrinker-Beweis: resources.txt zeigt 17/17
+  raw-Assets reachable, Release-APK enthält 17/17 (vom Reviewer
+  unabhängig nachgebaut und nachgezählt); versionName 0.4.0 /
+  versionCode 2; docs/phase4-gate-checklist.md (Spieltest-Punkte +
+  Abnahme-Deltas D1–D10 + Produktfrage Portrait-Lock).
+- Gate-Artefakt: app-debug.apk 11 173 577 B, SHA-256 ac2384…5efb959,
+  Tree-Hash-verifiziert (S6, byte-identisch reproduziert). Kein
+  Signing, kein Tag (erst nach Freigabe).
+- Review: MERGEABLE; Security-APPROVE (Hashes unabhängig
+  nachgerechnet, kein Signing-Material, S8 intakt).
+- Learning: Shrinker-Nachweis über mapping/release/resources.txt
+  ist der belastbare Ersatz für pauschale keep.xml-Versicherungen.
+- Schritte: ~22/70.
+
 ## PW-3.10 — :data:lintDebug in Gate-Kette + CI (PR #27, gemergt 2026-07-14)
 - Gebaut: :data:lintDebug in die verbindliche Gate-Kette und CI
   aufgenommen — schließt den NewApi-Blindfleck, der den

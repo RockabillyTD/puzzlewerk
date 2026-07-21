@@ -473,12 +473,34 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
 - [x] PW-4.10 (release-engineer) gestartet: Worktree
       C:\0\worktrees\pw-4.10, Branch build/pw-4.10-gate.
 
-## In Arbeit (Phase 4)
-- PW-4.10 (release-engineer): Gates, Größenbudget, Gate-Artefakt.
+## Erledigt (Zyklus 26, 2026-07-21) — Punkt 10 gemergt, PHASE 4 KOMPLETT
+- [x] **PR #41 (PW-4.10) gemergt:** Gate-Vorbereitung — volle
+      Gate-Kette auf main grün (inkl. assembleRelease);
+      music_demo_steigerung.ogg (652 KiB, unreferenziert) entfernt;
+      keep.xml entfernt mit Shrinker-Beweis (resources.txt: 17/17
+      raw-Assets reachable; Reviewer baute das Release-APK unabhängig
+      und zählte 17/17 OGGs nach); versionName 0.4.0 / versionCode 2;
+      docs/phase4-gate-checklist.md (Spieltest-Punkte, Abnahme-Deltas
+      D1–D10, Produktfrage Portrait-Lock). Gate-Artefakt:
+      app-debug.apk 11 173 577 B (Phase 3: ~10,4 MB; OGG-Anteil
+      684 632 B — Budget-Korridor gehalten), SHA-256 ac2384…5efb959,
+      Tree-Hash-verifiziert (S6). code-reviewer: MERGEABLE;
+      security-auditor: SECURITY-APPROVE (Hashes unabhängig
+      nachgerechnet). CI grün. Kein Tag, kein Signing (erst nach
+      Freigabe).
+- [x] Handover-Kette Phase 4 abgeschlossen: PW-4.4 → 4.5 → 4.8 →
+      4.6 → 4.7 → 4.9 → 4.10 → Branko (docs/handover.md).
+
+## Aktueller Stand
+**Phase 4 „Juice-Update" ist vollständig umgesetzt (PW-4.0–4.10,
+PRs #30–#41) und wartet auf das MENSCHLICHE GATE.**
 
 ## Nächste Schritte
-1. PW-4.10: Review, CI, Merge → **menschliches Gate Branko**
-   (Spieltest nach phase4-gate-checklist.md; Gate-Vorlage enthält
-   die Abnahme-Deltas und die Produktfrage Portrait-Lock).
-2. Nach dem Gate: Backlog-Priorisierung (PW-3.7-QS-Funde, Settings-
-   Verdrahtung DataStore + enter-Race-Auflage, Wave-2-Reste, Infra).
+1. **Branko:** Spieltest auf dem Gerät nach
+   docs/phase4-gate-checklist.md (APK: app/build/outputs/apk/debug/
+   app-debug.apk, SHA-256 ac2384…5efb959); Entscheidungen: Abnahme-
+   Deltas D1–D10 einzeln, Produktfrage Portrait-Lock/configChanges/
+   Session-Erhalt.
+2. Nach dem Gate: Orchestrator priorisiert Backlog für Phase 5
+   (Settings-Screen + DataStore-Verdrahtung inkl. enter-Race-Auflage,
+   PW-3.7-QS-Funde, Wave-2-Reste, Infra: gitleaks/CVE-Scan/Renovate).
