@@ -417,3 +417,35 @@ aus :game fließen jetzt bis in Partikel, Glow und Ton.
   der 13.3-Leuchtaura beim Erfüllungswechsel, Kristall-Render-Schicht) ist
   noch nicht animiert — nachziehen oder als Abweichung zur Abnahme geben;
   `sfx_ui_tap` bei Buttons/Overlay-Aktionen verdrahten.
+
+### Nachtrag Korrekturrunde 2026-07-21 (Review PR #37)
+
+- MAJOR-1 behoben: `onScreenEntered()` sendet bei laufender Partie ein
+  `BoardEntered(levelSeed, endpoints)` NACH (Recreation/Wiedereintritt:
+  ViewModel überlebt, Queue+JuiceState sind frisch — ohne Nachsendung
+  keine Endpunkt-Funken, levelSeed 0, falscher Puls-Nullpunkt).
+  BEWUSSTE, DOKUMENTIERTE ABWEICHUNG: Die Audio-Session startet bei
+  Recreation per exit+enter neu (Stems ab Sample 0) — Session-Erhalt
+  wäre ein eigenes Ticket; Produktentscheidung (Portrait-Lock vs.
+  configChanges vs. Session-Erhalt) liegt als Backlog-Notiz (Technik)
+  für die Gate-Vorlage an Branko/game-designer.
+- MAJOR-2 behoben — die frühere Behauptung, Solved-Kontrakt und
+  Stem-/Laser-Dedup seien testabgedeckt, stimmte nur für den
+  Positivpfad. Jetzt mutationsfest (Probe: Filter/Dedup entfernt ⇒ rot):
+  `Solved mit fremder zugNummer …` (DefaultJuiceStepperTest) und
+  `Gleicher Fortschritt sendet setStemMix und setLaserLoopActive nicht
+  erneut` (GameViewModelJuiceAudioTest; FakeAudioEngine hat dafür neu
+  `laserLoopHistory`).
+- MINOR-2: Dreh-Blitz hängt jetzt am SEMANTISCHEN Signal
+  `GameUiState.rotatedCell` (nur `Move.Rotate`; Undo/Reset ⇒ null) —
+  `rememberRotateFlash(board, rotatedCell, animationsEnabled)` nutzt
+  keine Board-Diff-Heuristik mehr.
+- MINOR-3: Compose-Dreh-Blitz gepinnt (Peak exakt 0,6, Ende nach
+  120 ms, RM ⇒ nichts) in `GameRotationAnimationFlashTest`. MERKE für
+  PW-4.9: Bei pausierter Testuhr unter Robolectric braucht state-write-
+  getriebene Recomposition `runOnIdle { write }` UND je Frame
+  `advanceTimeByFrame()` + `waitForIdle()` im Wechsel — jede Zutat
+  allein tut NICHTS (drei Anläufe gekostet).
+- NIT-3 (R31): gelöst GELADENER Startzustand löst weder
+  solve_explosion noch Duck aus (`solvedByMove = justSolved &&
+  move != null`).

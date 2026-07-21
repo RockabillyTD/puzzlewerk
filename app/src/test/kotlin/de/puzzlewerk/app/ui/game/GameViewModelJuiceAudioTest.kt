@@ -179,6 +179,87 @@ class GameViewModelJuiceAudioTest {
             assertEquals(1, audio.exitGameCount)
         }
 
+    /** MAJOR-1 (Korrekturrunde): Recreation/Wiedereintritt — frische Queue bekommt die Partie nachgesendet. */
+    @Test
+    fun `Wiedereintritt in laufende Partie sendet BoardEntered mit Seed und Endpunkten nach`() =
+        runTest(dispatcher) {
+            val audio = FakeAudioEngine()
+            val vm = viewModel(ScriptedEngine(START) { MoveResult.Applied(COMBO_STATE, COMBO_TRACE) }, audio)
+            runCurrent()
+            vm.onIntent(GameIntent.TapCell(MIRROR))
+            vm.juiceFeedback.test {
+                awaitItem() // BoardEntered (Partie-Start), vom ersten Screen konsumiert
+                awaitItem() // MoveApplied
+            }
+
+            vm.onScreenEntered() // zweiter Screen nach Activity-Recreation: Queue + JuiceState frisch
+
+            vm.juiceFeedback.test {
+                val reentered = awaitItem() as JuiceFeedback.BoardEntered
+                assertEquals(LEVEL_SEED, reentered.levelSeed) // ADR-011-Seed-Vertrag
+                assertEquals(FULL_ENDPOINTS, reentered.endpoints) // Emitter des AKTUELLEN trace
+            }
+        }
+
+    /** MAJOR-2b (Korrekturrunde): Dedup-Negativtest — gleicher Fortschritt darf die Engine nicht fluten. */
+    @Test
+    fun `Gleicher Fortschritt sendet setStemMix und setLaserLoopActive nicht erneut`() =
+        runTest(dispatcher) {
+            val audio = FakeAudioEngine()
+            val vm = viewModel(ScriptedEngine(START) { MoveResult.Applied(COMBO_STATE, COMBO_TRACE) }, audio)
+            runCurrent()
+
+            vm.onIntent(GameIntent.TapCell(MIRROR))
+            vm.onIntent(GameIntent.TapCell(MIRROR)) // identischer trace: kein Fortschrittswechsel
+
+            // Genau EIN Wechsel BASE -> voll; der zweite Applied sendet nichts (R46 ohne Spam).
+            assertEquals(listOf(StemMix.forProgress(0, 2), StemMix.forProgress(2, 2)), audio.stemMixHistory)
+            // Laser-Zustand unveraendert (keine Segmente): genau ein initialer Aufruf.
+            assertEquals(listOf(false), audio.laserLoopHistory)
+        }
+
+    /** MINOR-2 (Korrekturrunde): Undo ist keine Drehung — kein Dreh-Blitz-Signal im UiState. */
+    @Test
+    fun `Nur eine gueltige Drehung setzt rotatedCell, Undo liefert null`() =
+        runTest(dispatcher) {
+            val audio = FakeAudioEngine()
+            val engine =
+                ScriptedEngine(START) { move ->
+                    if (move is Move.Undo) {
+                        MoveResult.Applied(START.state, EMPTY_TRACE)
+                    } else {
+                        MoveResult.Applied(COMBO_STATE, COMBO_TRACE)
+                    }
+                }
+            val vm = viewModel(engine, audio)
+            runCurrent()
+            assertNull(vm.state.value.rotatedCell) // Partie-Start blitzt nicht
+
+            vm.onIntent(GameIntent.TapCell(MIRROR))
+            assertEquals(MIRROR, vm.state.value.rotatedCell)
+
+            vm.onIntent(GameIntent.Undo)
+            assertNull(vm.state.value.rotatedCell)
+        }
+
+    /** NIT-3 (Korrekturrunde, R31): geloest GELADENER Startzustand ist kein loesender Zug. */
+    @Test
+    fun `Bereits geloester Startzustand loest weder solve_explosion noch Duck aus`() =
+        runTest(dispatcher) {
+            val audio = FakeAudioEngine()
+            val solvedStart = MoveResult.Applied(SOLVED_START_STATE, SOLVED_TRACE)
+            val invalid = { _: Move -> MoveResult.Invalid(InvalidMoveReason.ALREADY_SOLVED) }
+            val vm = viewModel(ScriptedEngine(solvedStart, invalid), audio)
+            runCurrent()
+
+            assertNotNull(vm.state.value.result) // Overlay zeigt den R31-Zustand
+            assertTrue(audio.playedEffects.isEmpty())
+            assertEquals(0, audio.duckCount)
+            vm.juiceFeedback.test {
+                assertTrue(awaitItem() is JuiceFeedback.BoardEntered) // kein Solved-Feedback
+            }
+        }
+
     @Test
     fun `Replay verwirft Effekte (R49) und startet die Audio-Session neu`() =
         runTest(dispatcher) {
@@ -238,6 +319,10 @@ class GameViewModelJuiceAudioTest {
         val COMBO_STATE =
             GameState(LEVEL, mapOf(MIRROR to Orientation(1)), history = listOf(MIRROR), solved = false)
         val COMBO_TRACE = TraceResult(emptyList(), FULL_RECEIVED, solved = false, endpoints = FULL_ENDPOINTS)
+
+        /** R31-Kante: Partie startet bereits geloest (0 Zuege, leerer Verlauf). */
+        val SOLVED_START_STATE =
+            GameState(LEVEL, mapOf(MIRROR to Orientation(0)), history = emptyList(), solved = true)
 
         val SOLVED_STATE =
             GameState(LEVEL, mapOf(MIRROR to Orientation(1)), history = listOf(MIRROR), solved = true)

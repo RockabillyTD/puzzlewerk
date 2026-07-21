@@ -181,6 +181,26 @@ class DefaultJuiceStepperTest {
         assertEquals(FIREWORK_EMITTER_INDEX_EXPECTED, firework.emitterIndex)
     }
 
+    /**
+     * MAJOR-2a (Korrekturrunde): Negativtest zum Solved-Kontrakt — faellt der
+     * `takeIf { it.moveNumber == event.moveNumber }`-Filter in `onSolved`,
+     * uebernaehme das Feuerwerk Kaskade UND t_fw des FREMDEN Zugs (t_fw 80 ms,
+     * Ursprung (9,9), bleibt geplant) und dieser Test wird rot.
+     */
+    @Test
+    fun `Solved mit fremder zugNummer ignoriert die Kaskade und faellt auf t_fw 0 zurueck`() {
+        val s =
+            enter(seed = 8L).step(
+                0L,
+                JuiceEvent.CrystalBursts(2, listOf(origin(1f, 1f), origin(5f, 5f), origin(9f, 9f))),
+                JuiceEvent.Solved(3, crystalCount = 3, paletteArgb = listOf(0xFFFFFFFF.toInt())),
+            )
+        // t_fw = 0: das Feuerwerk feuerte SOFORT am Rueckfall-Ursprung (0,0)
+        // und triggerte den Flash; mit fremder Kaskade laege es noch bei 80 ms.
+        assertTrue(s.pendingBursts.none { it.kind == BurstKind.FIREWORK })
+        assertEquals(0.35f, s.flashAlpha, 1e-4f)
+    }
+
     @Test
     fun `Feuerwerks-Partikelzahl folgt F = min(120, 60 + 12K)`() {
         fun fireworkCount(k: Int): Int {

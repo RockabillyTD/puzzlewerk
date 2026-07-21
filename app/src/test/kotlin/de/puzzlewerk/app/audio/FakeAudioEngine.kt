@@ -32,6 +32,9 @@ internal class FakeAudioEngine : AudioEngine {
     val playedEffects = mutableListOf<SoundEffect>()
     var laserLoopActive = false
         private set
+
+    /** JEDER `setLaserLoopActive`-Aufruf (PW-4.6: Dedup-Negativtests des Choreografen). */
+    val laserLoopHistory = mutableListOf<Boolean>()
     val hostVisibleHistory = mutableListOf<Boolean>()
     var releaseCount = 0
         private set
@@ -64,6 +67,7 @@ internal class FakeAudioEngine : AudioEngine {
 
     override fun setLaserLoopActive(active: Boolean) {
         laserLoopActive = active
+        laserLoopHistory += active
     }
 
     override fun setHostVisible(visible: Boolean) {

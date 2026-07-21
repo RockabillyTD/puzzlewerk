@@ -4,6 +4,15 @@
 > Auftrags. Jeder Agent darf hier ergänzen; der Orchestrator priorisiert.
 
 ## Technik
+- [ ] PRODUKTENTSCHEIDUNG vor dem Phase-4-Gate (aus PW-4.6-Korrekturrunde,
+      MAJOR-1): Bei Activity-Recreation (Rotation, Dark-Mode-Wechsel, ...)
+      startet die Audio-Session per exit+enter neu — die Stems beginnen
+      wieder bei Sample 0 (bewusste, dokumentierte Abweichung; der
+      visuelle Zustand wird per BoardEntered nachgesendet). Optionen an
+      Branko/game-designer: (a) Portrait-Lock, (b) configChanges selbst
+      behandeln, (c) Audio-Session-Erhalt über Recreation hinweg
+      (eigenes Ticket, Engine-Erweiterung). Gehört als Frage in die
+      Gate-Vorlage.
 - [ ] gitleaks als CI-Schritt ergänzen (Regel S7); bis dahin prüft der
       security-auditor manuell je PR
 - [ ] OWASP Dependency-Check oder `gradle-versions-plugin` + CVE-Scan
