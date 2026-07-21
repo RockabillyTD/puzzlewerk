@@ -120,12 +120,12 @@ internal class DefaultAudioEngine(
                 issuesFlow.tryEmit(AudioIssue.EngineUnavailable("mixer"))
                 return
             }
-            if (!focus.request(::onFocusChange)) {
+            val newSession = MixerSession(newSink)
+            if (!focus.request { gained -> onFocusChange(newSession, gained) }) {
                 newSink.release()
                 issuesFlow.tryEmit(AudioIssue.EngineUnavailable("focus"))
                 return
             }
-            val newSession = MixerSession(newSink)
             session = newSession
             newSession.thread = mixerThreadFactory(Runnable(newSession::runLoop)).also { it.start() }
         }
@@ -194,8 +194,19 @@ internal class DefaultAudioEngine(
         return decoded
     }
 
-    private fun onFocusChange(gained: Boolean): Unit =
+    /**
+     * Fokus-Callback der Session [owner]. Callbacks einer bereits per
+     * `exitGame` invalidierten Session werden verworfen (BUG-PW4.9-1) —
+     * sonst vergiftet ein VERSPÄTETER Verlust-Callback nach `abandon()` das
+     * engine-globale `focusLost` und mutet Menü-SFX bis zum nächsten
+     * `enterGame` (R47 sperrt SFX nur in einer AKTIVEN Session).
+     */
+    private fun onFocusChange(
+        owner: MixerSession,
+        gained: Boolean,
+    ): Unit =
         synchronized(lock) {
+            if (session !== owner) return
             focusLost = !gained
             if (gained) {
                 if (hostVisible) session?.sink?.play()
