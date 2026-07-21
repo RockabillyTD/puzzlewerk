@@ -111,10 +111,17 @@ internal class BoardGeometry(
     }
 }
 
-/** Zeichnet die drei Schichten. Draw-Pfad: nur Iteration, keine Allokation. */
-internal fun DrawScope.drawBoard(spec: BoardRenderSpec) {
+/**
+ * Zeichnet die drei Schichten. Draw-Pfad: nur Iteration, keine Allokation.
+ * Strahlen laufen seit PW-4.5 durch den Laser-Pfad ([drawLaserBeams], §13.8a);
+ * [haloPulseFactor] ist der 2-Hz-Puls aus dem JuiceState (1,0 = Ruhe/R44).
+ */
+internal fun DrawScope.drawBoard(
+    spec: BoardRenderSpec,
+    haloPulseFactor: Float = 1f,
+) {
     drawOps(spec.base)
-    drawLineSpecs(spec.beams)
+    drawLaserBeams(spec.beams, haloPulseFactor)
     drawOps(spec.overlay)
 }
 

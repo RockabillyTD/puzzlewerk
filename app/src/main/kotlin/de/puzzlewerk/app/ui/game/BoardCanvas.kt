@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -20,6 +21,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import de.puzzlewerk.app.R
+import de.puzzlewerk.app.ui.juice.JuiceState
 import de.puzzlewerk.game.board.HexCoord
 import kotlin.math.roundToInt
 
@@ -44,6 +46,12 @@ import kotlin.math.roundToInt
  * Zeichenlisten werden je (Radius, Canvas-Größe) bzw. je (UiState, spin)
  * `remember`t; im Draw-Pfad wird nur noch iteriert, nichts alloziert.
  *
+ * Juice-Layer (PW-4.5, ADR-011): [juice] liefert den [JuiceState]-Snapshot des
+ * Frame-Treibers (`rememberJuiceFrameState`). Er wird AUSSCHLIESSLICH in der
+ * Draw-Phase gelesen — Puls, Partikel und Flash invalidieren damit nur das
+ * Zeichnen, nie die Komposition. `null` = statisches Brett (Previews/Tests):
+ * Laser mit Ruhe-Halo, keine Partikel.
+ *
  * Vorbedingung: endliche Constraints in beiden Achsen (z. B. über
  * `Modifier.fillMaxSize()` oder feste Größe) — unbounded Messung wäre ein
  * Aufruffehler und wird per `check` abgewiesen.
@@ -54,6 +62,7 @@ internal fun BoardCanvas(
     modifier: Modifier = Modifier,
     colors: BoardColors = BoardColors(),
     spin: BoardSpin? = null,
+    juice: State<JuiceState>? = null,
     onCellTap: ((HexCoord) -> Unit)? = null,
 ) {
     val boardDescription = stringResource(R.string.board_canvas)
@@ -71,7 +80,12 @@ internal fun BoardCanvas(
             remember(state, geometry, colors, spin) {
                 buildBoardRenderSpec(state, geometry, colors, spin)
             }
-        Canvas(modifier = Modifier.fillMaxSize().tapInput(geometry, state.radius, onCellTap)) { drawBoard(spec) }
+        Canvas(modifier = Modifier.fillMaxSize().tapInput(geometry, state.radius, onCellTap)) {
+            // Draw-Phase-Read: jedes Juice-Frame zeichnet nur neu, rekomponiert nicht.
+            val juiceState = juice?.value ?: JuiceState.EMPTY
+            drawBoard(spec, juiceState.haloPulseFactor)
+            drawJuiceEffects(juiceState)
+        }
         BoardCellSemantics(state = state, geometry = geometry, onCellTap = onCellTap)
     }
 }

@@ -9,6 +9,9 @@ complexity:
   LongParameterList:
     functionThreshold: 6
     constructorThreshold: 7
+    # Options-Parameter mit Defaults (Compose-Slot-Idiom) zählen nicht —
+    # Review-Empfehlung PW-4.5, ersetzt punktuelle @Suppress.
+    ignoreDefaultParameters: true
   TooManyFunctions:
     thresholdInFiles: 20
     thresholdInClasses: 15
