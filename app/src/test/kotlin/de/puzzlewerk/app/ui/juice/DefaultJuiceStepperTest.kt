@@ -202,7 +202,8 @@ class DefaultJuiceStepperTest {
 
     @Test
     fun `Kristall-Burst erzeugt beim Feuern einen Glow der in 250 ms auslaeuft`() {
-        var s = enter(seed = 3L).step(0L, JuiceEvent.CrystalBursts(1, listOf(origin(4f, 6f, argb = 0xFF3E63DD.toInt()))))
+        val blue = 0xFF3E63DD.toInt()
+        var s = enter(seed = 3L).step(0L, JuiceEvent.CrystalBursts(1, listOf(origin(4f, 6f, argb = blue))))
         val fresh = s.glows.single()
         assertEquals(4f, fresh.xDp, 0f)
         assertEquals(6f, fresh.yDp, 0f)

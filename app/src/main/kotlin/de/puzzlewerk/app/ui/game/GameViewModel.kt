@@ -5,17 +5,17 @@ import androidx.lifecycle.viewModelScope
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.data.WriteResult
 import de.puzzlewerk.data.progress.ProgressRepository
+import de.puzzlewerk.game.board.Board
+import de.puzzlewerk.game.board.HexCoord
+import de.puzzlewerk.game.color.LightColor
 import de.puzzlewerk.game.daily.dailySeed
 import de.puzzlewerk.game.daily.dailyTier
+import de.puzzlewerk.game.element.Element
 import de.puzzlewerk.game.engine.GameEngine
 import de.puzzlewerk.game.engine.GameState
 import de.puzzlewerk.game.engine.InvalidMoveReason
 import de.puzzlewerk.game.engine.Move
 import de.puzzlewerk.game.engine.MoveResult
-import de.puzzlewerk.game.board.Board
-import de.puzzlewerk.game.board.HexCoord
-import de.puzzlewerk.game.color.LightColor
-import de.puzzlewerk.game.element.Element
 import de.puzzlewerk.game.generator.LevelGenerator
 import de.puzzlewerk.game.level.LevelDefinition
 import de.puzzlewerk.game.level.campaignSeed
@@ -209,21 +209,6 @@ internal class GameViewModel(
         )
     }
 
-    /** Neue Orientierung der gedrehten Zelle in Grad (Bezugssystem der Dreh-Funken, §13.9). */
-    private fun orientationDegrees(
-        board: Board,
-        cell: HexCoord?,
-    ): Float =
-        cell
-            ?.let { (board[it] as? Element.Rotatable)?.orientation?.steps }
-            ?.times(DEGREES_PER_ORIENTATION_STEP) ?: 0f
-
-    /** Soll-Farben ALLER Kristalle in Brett-Reihenfolge (r, dann q) — Feuerwerkspalette §13.10. */
-    private fun crystalPalette(board: Board): List<LightColor> =
-        board.elements.entries
-            .sortedWith(compareBy({ it.key.r }, { it.key.q }))
-            .mapNotNull { (it.value as? Element.Crystal)?.required }
-
     private fun onInvalid(reason: InvalidMoveReason) {
         // §6.3/R32: Ein gelöstes Brett lehnt jeden Zug ab — kein Effect-Spam.
         // Zusätzlich einen etwaig offenen Reset-Dialog schließen, damit er auf
@@ -293,3 +278,18 @@ internal class GameViewModel(
         }
     }
 }
+
+/** Neue Orientierung der gedrehten Zelle in Grad (Bezugssystem der Dreh-Funken, §13.9). */
+private fun orientationDegrees(
+    board: Board,
+    cell: HexCoord?,
+): Float =
+    cell
+        ?.let { (board[it] as? Element.Rotatable)?.orientation?.steps }
+        ?.times(DEGREES_PER_ORIENTATION_STEP) ?: 0f
+
+/** Soll-Farben ALLER Kristalle in Brett-Reihenfolge (r, dann q) — Feuerwerkspalette §13.10. */
+private fun crystalPalette(board: Board): List<LightColor> =
+    board.elements.entries
+        .sortedWith(compareBy({ it.key.r }, { it.key.q }))
+        .mapNotNull { (it.value as? Element.Crystal)?.required }

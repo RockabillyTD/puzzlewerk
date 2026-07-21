@@ -172,7 +172,8 @@ class GameViewModelJuiceAudioTest {
 
             vm.onScreenEntered()
             runCurrent()
-            assertEquals(listOf(FakeAudioEngine.EnterGameCall(musicEnabled = true, sfxEnabled = true)), audio.enterGameCalls)
+            val expected = FakeAudioEngine.EnterGameCall(musicEnabled = true, sfxEnabled = true)
+            assertEquals(listOf(expected), audio.enterGameCalls)
 
             vm.onScreenLeft()
             assertEquals(1, audio.exitGameCount)

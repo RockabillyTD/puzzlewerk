@@ -91,15 +91,7 @@ internal fun GameRoute(
     val currentOnNavigate by rememberUpdatedState(onNavigate)
 
     GameEffectHandler(viewModel.effects, snackbarHostState, shake, animationsEnabled)
-
-    // Audio-Session folgt dem Screen-Lebenszyklus (§13.11/R49): Betreten ⇒
-    // enterGame, Verlassen/„Weiter" (ViewModel-Wechsel im selben Slot) ⇒
-    // exitGame. Die Dispose-Reihenfolge des Slots garantiert exit VOR dem
-    // enter des Folge-ViewModels (Session-Token-Vertrag der Engine, PW-4.8).
-    DisposableEffect(viewModel) {
-        viewModel.onScreenEntered()
-        onDispose { viewModel.onScreenLeft() }
-    }
+    AudioSessionLifecycle(viewModel)
 
     val nextLevel = (request as? LevelRequest.Campaign)?.levelNumber?.takeIf { it < CAMPAIGN_LEVEL_COUNT }
     Box(modifier = modifier.fillMaxSize()) {
@@ -116,6 +108,20 @@ internal fun GameRoute(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
         )
+    }
+}
+
+/**
+ * Audio-Session folgt dem Screen-Lebenszyklus (§13.11/R49): Betreten ⇒
+ * enterGame, Verlassen/„Weiter" (ViewModel-Wechsel im selben Slot) ⇒ exitGame.
+ * Die Dispose-Reihenfolge des Slots garantiert exit VOR dem enter des
+ * Folge-ViewModels (Session-Token-Vertrag der Engine, PW-4.8).
+ */
+@Composable
+private fun AudioSessionLifecycle(viewModel: GameViewModel) {
+    DisposableEffect(viewModel) {
+        viewModel.onScreenEntered()
+        onDispose { viewModel.onScreenLeft() }
     }
 }
 
@@ -225,38 +231,66 @@ private fun GameBoard(
             LoadingBoard()
         } else {
             val juiceEvents = remember { JuiceEventQueue() }
-            val juice = rememberJuiceFrameState(events = juiceEvents)
-            // R44: Systemeinstellung „Animationen entfernen" steuert den Reduce-Motion-Pfad
-            // des Juice-Kerns (kein Puls, keine Partikel-Spawns; Zeitachsen unverändert).
-            LaunchedEffect(juiceEvents, animationsEnabled) {
-                juiceEvents.offer(JuiceEvent.MotionPreferenceChanged(reduceMotion = !animationsEnabled))
-            }
-            val widthPx = constraints.maxWidth.toFloat()
-            val heightPx = constraints.maxHeight.toFloat()
-            val density = LocalDensity.current.density
-            val mapping =
-                remember(board.radius, widthPx, heightPx, density, animationsEnabled) {
-                    JuiceEventMapping(
-                        geometry = BoardGeometry.fit(board.radius, widthPx, heightPx),
-                        density = density,
-                        reduceMotion = !animationsEnabled,
-                    )
-                }
-            if (juiceFeedback != null) {
-                LaunchedEffect(juiceFeedback, juiceEvents, mapping) {
-                    juiceFeedback.collect { feedback -> offerJuiceEvents(juiceEvents, feedback, mapping) }
-                }
-            }
+            JuiceFeedbackBridge(
+                feedback = juiceFeedback,
+                queue = juiceEvents,
+                mapping =
+                    rememberJuiceMapping(
+                        radius = board.radius,
+                        widthPx = constraints.maxWidth.toFloat(),
+                        heightPx = constraints.maxHeight.toFloat(),
+                        animationsEnabled = animationsEnabled,
+                    ),
+            )
             BoardCanvas(
                 state = board,
                 modifier = Modifier.fillMaxSize(),
                 spin = rememberRotationSpin(board, animationsEnabled),
-                juice = juice,
+                juice = rememberJuiceFrameState(events = juiceEvents),
                 flash = rememberRotateFlash(board, animationsEnabled),
                 // Gelöst sperrt den Tap; zusätzlich blockt das Overlay Taps darüber.
                 onCellTap = if (state.result != null) null else { coord -> onIntent(GameIntent.TapCell(coord)) },
             )
         }
+    }
+}
+
+/** Abbildungskontext für [offerJuiceEvents]: Geometrie wie der [BoardCanvas] (identische Constraints). */
+@Composable
+private fun rememberJuiceMapping(
+    radius: Int,
+    widthPx: Float,
+    heightPx: Float,
+    animationsEnabled: Boolean,
+): JuiceEventMapping {
+    val density = LocalDensity.current.density
+    return remember(radius, widthPx, heightPx, density, animationsEnabled) {
+        JuiceEventMapping(
+            geometry = BoardGeometry.fit(radius, widthPx, heightPx),
+            density = density,
+            reduceMotion = !animationsEnabled,
+        )
+    }
+}
+
+/**
+ * Verbindet den [JuiceFeedback]-Fluss des ViewModels mit der [JuiceEventQueue]
+ * (PW-4.6) und meldet R44: Die Systemeinstellung „Animationen entfernen"
+ * steuert den Reduce-Motion-Pfad des Juice-Kerns (kein Puls, keine
+ * Partikel-Spawns; Zeitachsen unverändert) — auch ohne Feedback-Quelle.
+ */
+@Composable
+private fun JuiceFeedbackBridge(
+    feedback: Flow<JuiceFeedback>?,
+    queue: JuiceEventQueue,
+    mapping: JuiceEventMapping,
+) {
+    LaunchedEffect(queue, mapping.reduceMotion) {
+        queue.offer(JuiceEvent.MotionPreferenceChanged(reduceMotion = mapping.reduceMotion))
+    }
+    if (feedback == null) return
+    LaunchedEffect(feedback, queue, mapping) {
+        feedback.collect { offerJuiceEvents(queue, it, mapping) }
     }
 }
 

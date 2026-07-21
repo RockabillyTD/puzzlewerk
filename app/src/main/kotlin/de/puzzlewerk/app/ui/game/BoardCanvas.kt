@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -87,16 +88,7 @@ internal fun BoardCanvas(
             // Draw-Phase-Read: jedes Juice-Frame zeichnet nur neu, rekomponiert nicht.
             val juiceState = juice?.value ?: JuiceState.EMPTY
             drawBoard(spec, juiceState.haloPulseFactor)
-            // Dreh-Blitz §13.9: weißes Element-Overlay 0,6 → 0 über 120 ms (PW-4.6).
-            if (flash != null && flash.alpha > 0f) {
-                drawCircle(
-                    color = Color.White,
-                    radius = geometry.cellSize * ROTATE_FLASH_RADIUS_FACTOR,
-                    center = geometry.center(flash.cell),
-                    alpha = flash.alpha.coerceIn(0f, 1f),
-                    blendMode = BlendMode.Plus,
-                )
-            }
+            drawRotateFlash(flash, geometry)
             drawJuiceEffects(juiceState)
         }
         BoardCellSemantics(state = state, geometry = geometry, onCellTap = onCellTap)
@@ -135,6 +127,21 @@ private const val SEMANTICS_ROW_PITCH = 1.5f
 
 /** Radius des Dreh-Blitz-Overlays in Zellgrößen (§13.9: deckt das Elementsymbol ab). */
 private const val ROTATE_FLASH_RADIUS_FACTOR = 0.7f
+
+/** Dreh-Blitz §13.9 (PW-4.6): weißes Element-Overlay, Alpha 0,6 → 0 über 120 ms, additiv. */
+private fun DrawScope.drawRotateFlash(
+    flash: BoardFlash?,
+    geometry: BoardGeometry,
+) {
+    if (flash == null || flash.alpha <= 0f) return
+    drawCircle(
+        color = Color.White,
+        radius = geometry.cellSize * ROTATE_FLASH_RADIUS_FACTOR,
+        center = geometry.center(flash.cell),
+        alpha = flash.alpha.coerceIn(0f, 1f),
+        blendMode = BlendMode.Plus,
+    )
+}
 
 /**
  * Unsichtbare Semantics-Knoten über dem Canvas — einer je Zelle (§13.5).
