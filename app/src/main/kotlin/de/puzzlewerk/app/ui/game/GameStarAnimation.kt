@@ -1,6 +1,7 @@
 package de.puzzlewerk.app.ui.game
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
@@ -56,6 +57,11 @@ internal class StarAppearance(
  * R49-Abbruch: Verlässt das Overlay die Komposition („Nochmal"/„Weiter"/
  * Zurück), bricht der LaunchedEffect ab — ausstehende [onShown]-Aufrufe (und
  * damit Stern-SFX) entfallen ersatzlos.
+ *
+ * Einmaligkeit (BUG-PW4.9-2): [onShown] feuert höchstens EINMAL je
+ * Composition (§13.11: genau eine Meldung je Stern) — der `shown`-Zustand
+ * überlebt den Effekt-Restart beim Reduce-Motion-Toggle mit offenem Overlay
+ * (§13.12: Audio von Reduce-Motion unberührt); nur die Kurve wechselt.
  */
 @Composable
 internal fun rememberStarAppearance(
@@ -66,27 +72,40 @@ internal fun rememberStarAppearance(
     val scale = remember { Animatable(0f) }
     val alpha = remember { Animatable(0f) }
     val currentOnShown by rememberUpdatedState(onShown)
+    var shown by remember { mutableStateOf(false) }
     LaunchedEffect(startMillis, animationsEnabled) {
-        awaitFrameClockMillis(startMillis)
-        currentOnShown()
-        if (animationsEnabled) {
-            alpha.snapTo(1f)
-            scale.animateTo(
-                targetValue = 1f,
-                animationSpec =
-                    keyframes {
-                        durationMillis = STAR_BOUNCE_MILLIS
-                        0f at 0
-                        STAR_BOUNCE_PEAK at STAR_BOUNCE_PEAK_AT_MILLIS
-                        1f at STAR_BOUNCE_MILLIS
-                    },
-            )
-        } else {
-            scale.snapTo(1f)
-            alpha.animateTo(1f, tween(STAR_RM_FADE_MILLIS, easing = LinearEasing))
+        if (!shown) {
+            awaitFrameClockMillis(startMillis)
+            shown = true
+            currentOnShown()
         }
+        animateStarEntry(animationsEnabled, scale, alpha)
     }
     return remember(scale, alpha) { StarAppearance({ scale.value }, { alpha.value }) }
+}
+
+/** Einflug-Kurve: Bounce 0 → 1,15 → 1,0 (§13.10 Nr. 5) oder Reduce-Motion-Fade (§13.12). */
+private suspend fun animateStarEntry(
+    animationsEnabled: Boolean,
+    scale: Animatable<Float, AnimationVector1D>,
+    alpha: Animatable<Float, AnimationVector1D>,
+) {
+    if (animationsEnabled) {
+        alpha.snapTo(1f)
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec =
+                keyframes {
+                    durationMillis = STAR_BOUNCE_MILLIS
+                    0f at 0
+                    STAR_BOUNCE_PEAK at STAR_BOUNCE_PEAK_AT_MILLIS
+                    1f at STAR_BOUNCE_MILLIS
+                },
+        )
+    } else {
+        scale.snapTo(1f)
+        alpha.animateTo(1f, tween(STAR_RM_FADE_MILLIS, easing = LinearEasing))
+    }
 }
 
 /**
