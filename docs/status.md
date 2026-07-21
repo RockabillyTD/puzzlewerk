@@ -322,19 +322,33 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
       Branch feature/pw-4.3-juice-events; Ticket um ADR-012-Bezüge
       und die Review-Auflage „Golden-segments unverändert" ergänzt.
 
+## Erledigt (Zyklus 20, 2026-07-20) — Punkt 3 gemergt, Punkt 4 gestartet
+- [x] **PR #33 (PW-4.3) gemergt:** TraceResult.endpoints (Ableitung
+      im DefaultTracer, Brett-Aus ohne Eintrag §13.8a) + pure Funktion
+      juiceDelta(before, after, board) in :game nach ADR-012;
+      Test-First (8 + 12 Tests, Property 300 Iter.), Golden-segments
+      byte-identisch. code-reviewer: MERGEABLE (Suiten real grün,
+      Absorptions-Vollständigkeit inkl. visited-Set-Zyklen adversarial
+      geprüft; 1 NIT — deterministischer Sortier-Diskriminanztest —
+      nachgezogen); security-auditor: SECURITY-APPROVE (kein
+      Android-Import in :game, endpoints hart gedeckelt). CI grün.
+      PW-4.3-Worktree entfernt.
+- [x] PW-4.4 (ui-entwickler) gestartet: Worktree C:\0\worktrees\pw-4.4,
+      Branch feature/pw-4.4-juice-core; implementiert gegen die
+      ADR-011-Deklarationen (JuiceState/JuiceEvent/JuiceStepper).
+
 ## In Arbeit (Phase 4)
-- PW-4.3 (entwickler): TraceResult.endpoints + juiceDelta in :game,
-  Test-First — läuft (kritischer Pfad für 4.4/4.6/4.8).
+- PW-4.4 (ui-entwickler): JuiceState-Partikelkern + pure step() in
+  :app (ohne Rendering), deterministisch nach ADR-011 — läuft.
 
 ## Nächste Schritte
-1. PW-4.3 abschließen: Review, CI, Merge.
-2. Danach gemäß Plan: 4 (JuiceState-Kern) → (5 Laser [Prompt gemäß
-   ADR-011: Canvas-only statt AGSL], 8 Audio-Engine parallel,
-   isolation:worktree) → 6 → 7 → 9 (QS) → 10 (Gates + Artefakt)
-   → menschliches Gate Branko.
-3. Merkzettel Orchestrator: PW-4.8-Prompt um PCM-Speicherbudget-
-   Messung (mono vs. stereo) ergänzen; PW-4.9 misst zusätzlich
-   p95-Frame-Budget (ADR-011-Eskalationskriterium).
+1. PW-4.4 abschließen: Review, CI, Merge.
+2. Danach gemäß Plan: (5 Laser [Prompt gemäß ADR-011: Canvas-only
+   statt AGSL, „beide Pfade"-Tests streichen], 8 Audio-Engine
+   parallel, isolation:worktree) → 6 → 7 → 9 (QS) → 10 → Gate Branko.
+3. Merkzettel Orchestrator: PW-4.5-Prompt Canvas-only anpassen;
+   PW-4.8-Prompt PCM-Speicherbudget-Messung (mono vs. stereo);
+   PW-4.9 misst p95-Frame-Budget (ADR-011-Eskalationskriterium).
 4. Offene Backlog-Punkte unverändert (PW-3.7-QS-Funde, Wave-2-Reste,
    Infra) + keep.xml-Rückbau, Encode-Reproduzierbarkeit,
-   SFX-Zählfehler-Notiz/Demo-Asset-Entscheidung (PW-4.8).
+   SFX-Zählfehler/Demo-Asset-Entscheidung (PW-4.8).

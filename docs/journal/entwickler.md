@@ -4,6 +4,27 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.3 — Juice-Ereignisdaten in :game (PR #33, gemergt 2026-07-20)
+- Gebaut nach ADR-012: TraceResult.endpoints (BeamEndpoint,
+  Ableitung nur im DefaultTracer-absorb()-Pfad; Brett-Aus ohne
+  Eintrag §13.8a; Reihenfolge = Verarbeitungsreihenfolge §5.2) +
+  pure Funktion juiceDelta(before, after, board) mit newlyFulfilled
+  (sortiert r, dann q = Kaskadenordnung §13.9), newlyLit, fulfilled
+  (L), crystalTotal (K), comboSize; before=null = Partie-Start.
+- Test-First: DefaultTracerEndpointTest (8), JuiceDeltaTest (12),
+  Property „newlyFulfilled ⊆ fulfilled" (300 Iter., fest geseedet).
+  Fixture-Migration bewusst source-breaking (endpoints ohne Default),
+  Golden-segments byte-identisch (Review-Auflage erfüllt).
+- Review: MERGEABLE (beide Suiten real grün, Absorptions-
+  Vollständigkeit inkl. visited-Set-Zyklen adversarial geprüft);
+  1 NIT nachgezogen (deterministischer Sortier-Diskriminanztest —
+  ADR-Beispiel 7.3 unterschied compareBy(r,q) nicht von (q,r)).
+  Security-APPROVE (kein Android-Import, endpoints hart gedeckelt).
+- Learning: „erfüllt" strikt = FULFILLED (Übersättigung zählt nicht);
+  ADR-Beispiele können mutations-blind sein — Sortier-Invarianten
+  brauchen einen Fall, der BEIDE Schlüsselreihenfolgen unterscheidet.
+- Schritte: PW-4.3 in 3 Gate-Läufen + NIT-Nachzug (voll grün).
+
 ## PW-3.2 — Persistenzkern :data (PR #19/#20, gemergt 2026-07-13)
 - Gebaut: Envelope-Serializer v1, DataStore-Repositories (Progress/
   Daily/Settings), In-Memory-Fakes, isLevelUnlocked §11.2 in :game,
