@@ -449,3 +449,82 @@ aus :game fließen jetzt bis in Partikel, Glow und Ton.
 - NIT-3 (R31): gelöst GELADENER Startzustand löst weder
   solve_explosion noch Duck aus (`solvedByMove = justSolved &&
   move != null`).
+
+## PW-4.7 — ui-entwickler → test-engineer (PW-4.9) (2026-07-21)
+
+### Kontext
+
+Gebaut: die Screen-Seite des Lösungs-Feuerwerks (§13.10) — Vollbild-Flash,
+Stern-Einflüge samt SFX und die 600-ms-Overlay-Frist. Kein :game-Code
+angefasst; Stepper nur minimal (Formel-Extraktion, s. u.).
+
+- **Flash auf SCREEN-Ebene (Auflage MINOR-2 aus PW-4.5, eingelöst):**
+  `JuiceEventQueue` + `rememberJuiceFrameState` sind aus `GameBoard` in den
+  `GameScreen`-Root hochgezogen (GameBoard bekommt Queue und
+  `State<JuiceState>` als Parameter; das Event-Mapping mit Brett-Geometrie
+  bleibt in GameBoard). `SolveFlashOverlay` (GameScreen.kt, testTag
+  `solveFlash`, Konstante `SOLVE_FLASH_TEST_TAG`) liegt als LETZTES Kind des
+  Root-Box über Kopfzeile, Brett UND Ergebnis-Overlay und liest `flashAlpha`
+  AUSSCHLIESSLICH in `drawBehind` (Draw-Phase-Read, keine Recomposition je
+  Frame); kein `pointerInput` — Eingaben laufen durch (R32 sperrt das Brett).
+  `BoardLaserRender.drawJuiceEffects` zeichnet KEINEN Flash mehr. Beide
+  Alpha-Kurven (0,35→0/80 ms; Reduce-Motion-Dreieck 0→0,15→0/400 ms) kommen
+  unverändert aus dem Stepper (`flashAlpha`-Projektion, Tests PW-4.4/4.6).
+- **Sterne-Choreografie (§13.10 Nr. 5, GameStarAnimation.kt):**
+  `rememberStarAppearance(startMillis, animationsEnabled, onShown)` wartet
+  über ein Animatable auf der FRAME-UHR (bewusst KEIN `delay()` — das hinge
+  an der echten Looper-Zeit, Learning-Kette PW-4.5/4.6), ruft `onShown` beim
+  Einflug und fährt den Bounce als Keyframes 0 → 1,15 (bei 150 ms) → 1,0
+  (220 ms). Start `t_fw + 120 + (n−1)·150 ms` (`starEntryStartMillis`).
+  Reduce-Motion: GLEICHE Zeitpunkte, statt Bounce ein 150-ms-Fade (§13.12);
+  `onShown` feuert auch dann (Audio ist von RM unberührt). Scale/Alpha sind
+  PROVIDER, gelesen nur in der `graphicsLayer`-Lambda (keine Recomposition
+  je Animations-Frame). TalkBack unverändert: Glyphen-Row komplett
+  `clearAndSetSemantics {}`, Wertung trägt die Textzeile (PW-3.7-QS grün).
+- **t_fw-Quelle:** `fireworkStartMillis(cascadeSize)` liegt jetzt internal in
+  DefaultJuiceStepper.kt (einzige Formel-Quelle, `40·(min(N,5)−1)`); der
+  Stepper nutzt sie für den Burst-Start, das ViewModel schreibt sie als
+  `GameResult.fireworkStartMillis` in den UiState (R31/gelöst geladen ⇒ 0,
+  kein lösender Zug). N kommt aus `juiceDelta.comboSize` des lösenden Zugs.
+- **SFX-Fluss der Sterne:** Overlay → `GameIntent.StarShown(n)` (MVI, kein
+  Extra-Kanal) → ViewModel-Guard `result != null` (fängt Nachzügler nach
+  Replay) → `GameAudioChoreographer.onStarShown` → `sfx_star_1..3`. R49:
+  Composition-Teardown des Overlays bricht wartende Einflüge ab — kein SFX
+  nach Dismiss (Tests in GameOverlayFireworkTest/GameStarAnimationTest).
+- **Overlay-Buttons (§13.10 Nr. 6 + abgenommene V3-Abweichung):**
+  `rememberOverlayActionsAppearance` fährt Alpha 0→1 über 500–600 ms und
+  schaltet `interactive` exakt am Fade-Ende frei. WICHTIG: Das Gate macht
+  Klicks WIRKUNGSLOS statt die Buttons zu disablen — Semantik/TalkBack-Fläche
+  unverändert, bestehende QS-/E2E-Tests bleiben grün (autoAdvance treibt den
+  Fade zu Ende, bevor performClick wirkt). Titel/Sterne/Punkte des Overlays
+  stehen ab Commit (t = 0), nur die Knöpfe faden.
+- **Bewusste Abweichungen, die BLEIBEN (Gate-Abnahme):** (1) SFX-Kaskaden-
+  versatz 40 ms + solve_explosion bei Zug-Commit statt t_fw — Optional-Punkt
+  PW-4.7 NICHT umgesetzt, die PW-4.6-Abweichung gilt weiter. (2) §13.12-
+  Aura-Fade der 13.3-Schicht weiterhin nicht animiert. (3) `sfx_ui_tap`
+  weiterhin unverdrahtet. (4) Halo-/Glow-Treppen (PW-4.5/4.6) bleiben
+  abnahmepflichtige Canvas-Näherungen. (5) Stern-Bounce-Ende 800 ms > 600-ms-
+  Frist ist die im Design kodifizierte, abgenommene V3-Abweichung.
+- **Stolpersteine:** (a) 16-ms-Frame-Raster ⇒ Fenster- statt Punkt-
+  Assertions (Peak-Sampling trifft 1,15 nie exakt — Overshoot > 1,0 prüfen).
+  (b) GameScreen-Tests mit exakten Intent-Listen müssen `StarShown`
+  herausfiltern (autoAdvance spielt die Einflüge ab). (c) Klick-Gate testet
+  sich über „Klick verpufft", NICHT über `assertIsNotEnabled`.
+
+### Aufgaben für den nächsten Agenten
+
+- **PW-4.9 — Abbruch-Kanten:** Navigation („Weiter"/Zurück) und Prozess-/
+  Activity-Recreation WÄHREND laufender Effekte: Queue-/JuiceState-Reste,
+  Stern-LaunchedEffects, Audio exit/enter-Reihenfolge. Bekannte Kante:
+  Nach Recreation spielt das Overlay die Stern-Choreografie ERNEUT ab
+  (ViewModel überlebt, Composition ist frisch) — bewerten/pinnen.
+- **Reduce-Motion-Matrix ALLER Effektpfade** (§13.12/R44): Flash-Fade statt
+  Blitz, Sterne-Fade statt Bounce (gleiche Zeitpunkte), Partikel 0, Glow
+  leer, Puls statisch, Dreh-Blitz/Wackeln aus — Zeitachsen und
+  Overlay-Frist konstant; Mid-Session-Umschaltung (MotionPreferenceChanged).
+- **Frame-Budget-Smoke:** `step()` < 4 ms bei Volllast (512 Partikel,
+  Kaskade + Feuerwerk) — ADR-011-Rückfalltür (p95 < 55 fps ⇒ Folge-ADR).
+- **Audio-Kanten aus dem PW-4.8-Handover** (Fokus-Verlust R47, Schalter R48,
+  Session-Token-Races) gegen die reale Choreographen-Verdrahtung.
+- **Bounds-Tests ungepinnter Konstanten** aus dem Backlog-Hinweis im
+  PW-4.4-Abschnitt dieses Dokuments (Speed-/Lebensdauer-Spannen etc.).
