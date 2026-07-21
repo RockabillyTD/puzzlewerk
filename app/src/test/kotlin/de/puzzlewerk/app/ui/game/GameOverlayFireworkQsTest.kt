@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import de.puzzlewerk.app.ui.theme.PuzzlewerkTheme
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,16 +81,15 @@ class GameOverlayFireworkQsTest {
     }
 
     /**
-     * BUG-PW4.9-2 (Repro, NICHT gefixt — Fix ist Entwickler-Ticket): Der
-     * Reduce-Motion-Toggle bei offenem Overlay startet den
-     * `LaunchedEffect(startMillis, animationsEnabled)` in
-     * `rememberStarAppearance` neu — ein bereits eingeflogener Stern wartet
-     * seine Startzeit ERNEUT ab und meldet `onShown` ein zweites Mal
-     * (⇒ doppeltes sfx_star_n, §13.11 sieht genau EINE Meldung je Stern vor;
-     * §13.12: Audio ist von Reduce-Motion NICHT betroffen).
+     * BUG-PW4.9-2 (behoben in PW-4.9-FIX): Der Reduce-Motion-Toggle bei
+     * offenem Overlay startet den `LaunchedEffect(startMillis,
+     * animationsEnabled)` in `rememberStarAppearance` neu — vor dem Fix
+     * wartete ein bereits eingeflogener Stern seine Startzeit ERNEUT ab und
+     * meldete `onShown` ein zweites Mal (⇒ doppeltes sfx_star_n). Fix: der
+     * `shown`-Zustand überlebt den Effekt-Restart — genau EINE Meldung je
+     * Stern (§13.11), nur die Kurve wechselt (§13.12: Audio unberührt).
      */
     @Test
-    @Ignore("BUG-PW4.9-2: RM-Toggle bei offenem Overlay wiederholt onShown/Stern-SFX (LaunchedEffect-Key)")
     fun `RM-Toggle mit offenem Overlay darf den Stern-SFX nicht wiederholen`() {
         val animations = mutableStateOf(true)
         composeRule.mainClock.autoAdvance = false

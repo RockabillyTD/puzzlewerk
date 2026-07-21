@@ -3,7 +3,6 @@ package de.puzzlewerk.app.audio
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -205,17 +204,16 @@ class DefaultAudioEngineQsTest {
     }
 
     /**
-     * BUG-PW4.9-1 (Repro, NICHT gefixt — Fix ist Entwickler-Ticket): Ein
-     * VERSPAETETER Fokus-Verlust-Callback der bereits per `exitGame`
-     * invalidierten Session setzt das engine-globale `focusLost` erneut auf
-     * `true`, obwohl keine Session existiert und `focus.abandon()` längst
-     * gerufen wurde. Folge: Menü-/UI-SFX bleiben bis zum nächsten `enterGame`
-     * stumm — exakt die Regression, die MINOR-1 (PW-4.8-Korrekturrunde)
-     * beheben sollte, nur über die Callback-Schiene. Erwartung laut R47/R48:
-     * Callbacks invalidierter Sessions dürfen den Folgezustand nicht vergiften.
+     * BUG-PW4.9-1 (behoben in PW-4.9-FIX): Ein VERSPAETETER
+     * Fokus-Verlust-Callback der bereits per `exitGame` invalidierten Session
+     * setzte das engine-globale `focusLost` erneut auf `true`, obwohl keine
+     * Session existierte und `focus.abandon()` längst gerufen wurde. Folge:
+     * Menü-/UI-SFX stumm bis zum nächsten `enterGame` — die MINOR-1-Regression
+     * (PW-4.8-Korrekturrunde) über die Callback-Schiene. Fix: der Callback ist
+     * an das Session-Token seines `enterGame` gebunden; Callbacks
+     * invalidierter Sessions werden verworfen (R47/R48).
      */
     @Test
-    @Ignore("BUG-PW4.9-1: verspaeteter Fokus-Callback nach exitGame mutet Menue-SFX bis zum naechsten enterGame")
     fun `Fokus-Callback einer invalidierten Session darf Menue-SFX nicht stummschalten`() {
         val h = Harness()
         h.enterAndPrepare()
