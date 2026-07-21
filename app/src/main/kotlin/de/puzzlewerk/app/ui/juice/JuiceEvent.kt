@@ -77,6 +77,15 @@ internal sealed interface JuiceEvent {
      * LETZTEN Kristall-Bursts. Sterne/Overlay laufen als Compose-Animationen
      * auf derselben Zeitachse (nicht hier).
      *
+     * KONTRAKT (PW-4.6, Klärung des PW-4.4-Backlog-MINORs): [Solved] MUSS im
+     * SELBEN `step()`-Aufruf NACH dem [CrystalBursts]-Ereignis DESSELBEN Zugs
+     * (gleiche `moveNumber`) eingereiht werden — der Stepper leitet den
+     * Feuerwerk-Ursprung aus frame-lokalem Kaskaden-Wissen ab und verwirft
+     * Kaskaden fremder Züge. Ohne passende Kaskade fällt der Ursprung auf
+     * (0, 0) und t_fw auf 0 zurück. Der Produzent (GameViewModel →
+     * `offerJuiceEvents`) erfüllt das, indem er beide Ereignisse in einem
+     * Rutsch in die [JuiceEventQueue] legt (ein `drain()` = ein Frame).
+     *
      * @property moveNumber Der lösende Zug (Seed-Bestandteil, emitterIndex
      *   2000 laut ADR-011).
      * @property crystalCount K = Kristallzahl des Levels (Partikelformel).

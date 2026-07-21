@@ -67,17 +67,32 @@ internal fun consumeFrameDelta(
 }
 
 /**
+ * Kapazitätsgrenze der [JuiceEventQueue] (PW-4.5-Security-MINOR-2, Härtung in
+ * PW-4.6, seit das ViewModel Produzent ist): Die Queue wächst nur, wenn der
+ * Frame-Loop steht (z. B. UI im Hintergrund) — 64 Einträge fassen weit mehr
+ * Züge, als ein Mensch zwischen zwei Frames auslösen kann.
+ */
+internal const val MAX_PENDING_JUICE_EVENTS: Int = 64
+
+/**
  * Haupt-Thread-Postfach für [JuiceEvent]s an den Frame-Treiber: der GameScreen
  * (ab PW-4.6 gespeist aus ViewModel-Effects) legt Ereignisse ab, der Treiber
  * entnimmt sie EINMAL pro Frame und reicht sie gesammelt an
  * [JuiceStepper.step] (Listenreihenfolge = Verarbeitungsreihenfolge).
  * Kein Lock: Ablage und Entnahme laufen beide auf dem Compose-Haupt-Thread.
+ *
+ * Überlauf ab [MAX_PENDING_JUICE_EVENTS]: SILENT-DROP des neuen Ereignisses —
+ * dieselbe Degradationspolitik wie der ParticleBuffer (Effekte sind nie
+ * tragender Feedback-Kanal, nie crashen). Coalescing wäre komplexer und
+ * gewönne nichts: Der Fall tritt nur bei stehendem Frame-Loop auf, und der
+ * nächste `drain()` leert ohnehin alles auf einmal.
  */
 internal class JuiceEventQueue {
     private val pending = mutableListOf<JuiceEvent>()
 
-    /** Reiht [event] für den nächsten Frame ein. */
+    /** Reiht [event] für den nächsten Frame ein; voll ⇒ Silent-Drop (s. o.). */
     fun offer(event: JuiceEvent) {
+        if (pending.size >= MAX_PENDING_JUICE_EVENTS) return
         pending.add(event)
     }
 
@@ -140,8 +155,9 @@ internal fun rememberJuiceFrameState(
 
 /**
  * Render-relevanter Unterschied zweier Snapshots: lebende Partikel (Positionen
- * wandern jeden Frame), Halo-Puls oder Flash. `elapsedMillis`/Emitter allein
- * ändern das Bild nicht — solche Frames werden nicht veröffentlicht.
+ * wandern jeden Frame), Glow-Bursts (Radius/Alpha wandern jeden Frame, PW-4.6),
+ * Halo-Puls oder Flash. `elapsedMillis`/Emitter allein ändern das Bild nicht —
+ * solche Frames werden nicht veröffentlicht.
  */
 private fun rendersDifferently(
     old: JuiceState,
@@ -149,5 +165,7 @@ private fun rendersDifferently(
 ): Boolean =
     old.particles.count > 0 ||
         new.particles.count > 0 ||
+        old.glows.isNotEmpty() ||
+        new.glows.isNotEmpty() ||
         old.haloPulseFactor != new.haloPulseFactor ||
         old.flashAlpha != new.flashAlpha

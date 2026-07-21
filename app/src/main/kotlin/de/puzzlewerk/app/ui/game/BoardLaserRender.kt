@@ -27,6 +27,17 @@ private val CORE_COLOR = Color(0xFFF0F0F3)
 /** Vollbild-Flash (§13.10): additives Weiß, Alpha liefert der JuiceState. */
 private val FLASH_COLOR = Color.White
 
+// Glow-Burst §13.9 als 3-Stufen-Treppe konzentrischer Kreise (Canvas-Näherung
+// des radialen Verlaufs, analog zur abgenommenen Halo-Treppe aus PW-4.5 —
+// allokationsfreier Draw-Pfad statt frischer RadialGradient-Brushes je Frame).
+// Additive Summe im Zentrum = 1,0 · Glow-Alpha; außen bleibt nur die äußerste
+// Stufe — das Alpha läuft sichtbar von 0,8 auf 0 aus (§13.9).
+private const val GLOW_ALPHA_OUTER = 0.27f
+private const val GLOW_ALPHA_MID = 0.33f
+private const val GLOW_ALPHA_INNER = 0.40f
+private const val GLOW_RADIUS_MID = 0.66f
+private const val GLOW_RADIUS_INNER = 0.33f
+
 /**
  * Laser-Rendering der Strahl-Segmente (§13.8a, ADR-011 Canvas-only): je Strahl
  * ein additiver Halo in Strahlfarbe (drei Ringe, [BlendMode.Plus]), darüber der
@@ -92,9 +103,9 @@ private fun DrawScope.haloLine(
 }
 
 /**
- * Partikel-Layer und Vollbild-Flash aus dem [JuiceState]-Snapshot (§13.8a
- * Auftreff-Funken, §13.9 Burst-Partikel, §13.10 Feuerwerk/Flash) — additiv
- * über allen Brett-Schichten.
+ * Glow-, Partikel- und Flash-Layer aus dem [JuiceState]-Snapshot (§13.9
+ * Glow-Bursts + Burst-Partikel, §13.8a Auftreff-Funken, §13.10
+ * Feuerwerk/Flash) — additiv über allen Brett-Schichten.
  *
  * Koordinaten-Vertrag (für PW-4.6): `xDp`/`yDp` sind dp relativ zur LINKEN
  * OBEREN Ecke des BoardCanvas; gezeichnet wird mit `dp.toPx()` derselben
@@ -105,6 +116,17 @@ private fun DrawScope.haloLine(
  * [Color]/[Offset]/Dp sind Value-Klassen, es entsteht kein Objekt.
  */
 internal fun DrawScope.drawJuiceEffects(juice: JuiceState) {
+    val glows = juice.glows
+    for (i in 0 until glows.size) {
+        val glow = glows[i]
+        val radiusPx = glow.radiusDp.dp.toPx()
+        if (radiusPx <= 0f || glow.alpha <= 0f) continue
+        val center = Offset(glow.xDp.dp.toPx(), glow.yDp.dp.toPx())
+        val color = Color(glow.colorArgb)
+        glowRing(color, center, radiusPx, glow.alpha * GLOW_ALPHA_OUTER)
+        glowRing(color, center, radiusPx * GLOW_RADIUS_MID, glow.alpha * GLOW_ALPHA_MID)
+        glowRing(color, center, radiusPx * GLOW_RADIUS_INNER, glow.alpha * GLOW_ALPHA_INNER)
+    }
     val particles = juice.particles
     for (i in 0 until particles.count) {
         drawCircle(
@@ -118,4 +140,20 @@ internal fun DrawScope.drawJuiceEffects(juice: JuiceState) {
     if (juice.flashAlpha > 0f) {
         drawRect(color = FLASH_COLOR, alpha = juice.flashAlpha.coerceIn(0f, 1f), blendMode = BlendMode.Plus)
     }
+}
+
+/** Eine Glow-Stufe: gefüllter Kreis in Kristallfarbe, additiv (§13.9/ADR-011). */
+private fun DrawScope.glowRing(
+    color: Color,
+    center: Offset,
+    radiusPx: Float,
+    alpha: Float,
+) {
+    drawCircle(
+        color = color,
+        radius = radiusPx,
+        center = center,
+        alpha = alpha.coerceIn(0f, 1f),
+        blendMode = BlendMode.Plus,
+    )
 }

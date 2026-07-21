@@ -34,6 +34,10 @@ package de.puzzlewerk.app.ui.juice
  *   ist eine reine Projektion daraus (§13.10-Kurve bzw. Reduce-Motion-Dreieck)
  *   und deshalb NICHT eindeutig invertierbar — die Kurve braucht einen eigenen
  *   Zeitzähler, den der pure Stepper zwischen Frames tragen muss. 0 = kein Flash.
+ * @property glows PW-4.6-Erweiterung (ADR-011-Feldlisten-Delta, Orchestrator-
+ *   Entscheidung digest.md): lebende §13.9-Glow-Bursts — entstehen beim Feuern
+ *   eines Kristall-Bursts, laufen in 250 ms aus; leer unter Reduce-Motion (R44,
+ *   §13.12: statt Glow-Blitz nur der einfache Aura-Fade der 13.3-Schicht).
  */
 internal data class JuiceState(
     val elapsedMillis: Long,
@@ -45,11 +49,47 @@ internal data class JuiceState(
     val pendingBursts: List<ScheduledBurst>,
     val particles: ParticleSnapshot,
     val flashRemainingMillis: Long,
+    val glows: List<GlowBurst>,
 ) {
     internal companion object {
         /** Neutraler Startzustand vor dem ersten [JuiceEvent.ScreenEntered]. */
-        val EMPTY = JuiceState(0L, false, 0L, 1f, 0f, emptyList(), emptyList(), ParticleSnapshot.EMPTY, 0L)
+        val EMPTY =
+            JuiceState(0L, false, 0L, 1f, 0f, emptyList(), emptyList(), ParticleSnapshot.EMPTY, 0L, emptyList())
     }
+}
+
+/** Lebensdauer eines Glow-Bursts (§13.9: 250 ms). */
+internal const val GLOW_LIFETIME_MILLIS: Long = 250L
+
+/** Maximalradius eines Glow-Bursts (§13.9: 0 → 28 dp). */
+internal const val GLOW_MAX_RADIUS_DP: Float = 28f
+
+/** Start-Alpha eines Glow-Bursts (§13.9: 0,8 → 0). */
+internal const val GLOW_PEAK_ALPHA: Float = 0.8f
+
+/**
+ * Radialer Glow-Burst eines NEU erfüllten Kristalls (§13.9): Radius 0 → 28 dp
+ * und Alpha 0,8 → 0 linear über 250 ms, additiv gezeichnet. Deterministisch:
+ * kein Zufall, die Kurven sind reine Projektionen aus [ageMillis].
+ *
+ * @property xDp Ursprung (dp-Brettkoordinaten, Kristall-Zentrum).
+ * @property yDp Ursprung (dp-Brettkoordinaten, Kristall-Zentrum).
+ * @property colorArgb Soll-Farbe des Kristalls (ARGB, Palette §13.4).
+ * @property ageMillis Alter seit dem Feuern; ≥ [GLOW_LIFETIME_MILLIS] ⇒ tot.
+ */
+internal data class GlowBurst(
+    val xDp: Float,
+    val yDp: Float,
+    val colorArgb: Int,
+    val ageMillis: Long,
+) {
+    private val progress: Float get() = (ageMillis.toFloat() / GLOW_LIFETIME_MILLIS).coerceIn(0f, 1f)
+
+    /** Aktueller Radius in dp (0 → 28 linear, §13.9). */
+    val radiusDp: Float get() = GLOW_MAX_RADIUS_DP * progress
+
+    /** Aktuelles Gesamt-Alpha (0,8 → 0 linear, §13.9). */
+    val alpha: Float get() = GLOW_PEAK_ALPHA * (1f - progress)
 }
 
 /**
