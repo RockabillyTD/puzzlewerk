@@ -247,7 +247,7 @@ private fun GameBoard(
                 modifier = Modifier.fillMaxSize(),
                 spin = rememberRotationSpin(board, animationsEnabled),
                 juice = rememberJuiceFrameState(events = juiceEvents),
-                flash = rememberRotateFlash(board, animationsEnabled),
+                flash = rememberRotateFlash(board, state.rotatedCell, animationsEnabled),
                 // Gelöst sperrt den Tap; zusätzlich blockt das Overlay Taps darüber.
                 onCellTap = if (state.result != null) null else { coord -> onIntent(GameIntent.TapCell(coord)) },
             )

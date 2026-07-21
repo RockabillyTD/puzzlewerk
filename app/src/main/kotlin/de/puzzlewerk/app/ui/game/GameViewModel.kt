@@ -98,9 +98,20 @@ internal class GameViewModel(
         }
     }
 
-    /** Betreten des Spiel-Screens (GameRoute): startet die Audio-Session mit den Settings (§13.11). */
+    /**
+     * Betreten des Spiel-Screens (GameRoute): startet die Audio-Session mit den
+     * Settings (§13.11). Läuft bereits eine Partie (Wiedereintritt/Activity-
+     * Recreation — das ViewModel überlebt, Queue und JuiceState sind aber
+     * frisch), wird sie als [JuiceFeedback.BoardEntered] NACHGESENDET: sonst
+     * fehlten Endpunkt-Funken bis zum nächsten Zug, `levelSeed` bliebe 0
+     * (ADR-011-Seed-Vertrag) und der Puls-Nullpunkt wäre falsch
+     * (Korrekturrunde PW-4.6, MAJOR-1).
+     */
     fun onScreenEntered() {
         viewModelScope.launch { audio.enter() }
+        val running = gameState ?: return // Erst-Eintritt: BoardEntered kommt mit newGame
+        val trace = lastTrace ?: return
+        juiceChannel.trySend(JuiceFeedback.BoardEntered(running.level.seed, trace.endpoints))
     }
 
     /**
@@ -171,16 +182,19 @@ internal class GameViewModel(
         move: Move? = null,
     ) {
         val justSolved = applied.state.solved && gameState?.solved != true
+        // R31 (NIT-3 der Korrekturrunde): Ein bereits gelöst GELADENER
+        // Startzustand ist kein lösender ZUG — kein solve_explosion, kein Duck.
+        val solvedByMove = justSolved && move != null
         val board = applied.state.currentBoard()
         val delta = juiceDelta(lastTrace, applied.trace, board)
         lastTrace = applied.trace
         gameState = applied.state
-        mutableState.value = renderState(applied)
-        juiceChannel.trySend(juiceFeedbackFor(applied, board, delta, move, justSolved))
+        mutableState.value = renderState(applied, move)
+        juiceChannel.trySend(juiceFeedbackFor(applied, board, delta, move, solvedByMove))
         audio.onApplied(
             delta = delta,
             validRotation = move is Move.Rotate,
-            justSolved = justSolved,
+            justSolved = solvedByMove,
             beamsVisible = applied.trace.segments.isNotEmpty(),
         )
         if (justSolved) persistIfCampaign(applied.state)
@@ -245,7 +259,10 @@ internal class GameViewModel(
     }
 
     /** Übersetzt `MoveResult.Applied` → render-fertigen UiState (Board aus `.trace`, §12.3). */
-    private fun renderState(applied: MoveResult.Applied): GameUiState {
+    private fun renderState(
+        applied: MoveResult.Applied,
+        move: Move?,
+    ): GameUiState {
         val current = applied.state
         return GameUiState(
             isLoading = false,
@@ -255,6 +272,9 @@ internal class GameViewModel(
             canUndo = current.moveCount > 0 && !current.solved,
             pendingResetConfirm = false,
             result = if (current.solved) gameResultFor(current) else null,
+            // Semantisches Dreh-Blitz-Signal (MINOR-2): nur eine GÜLTIGE Drehung
+            // blitzt (§13.9) — Undo/Reset/Partie-Start liefern null.
+            rotatedCell = (move as? Move.Rotate)?.cell,
         )
     }
 

@@ -22,6 +22,9 @@ import de.puzzlewerk.game.board.HexCoord
  *   noch (§6.2/R32: Gelöst sperrt Undo).
  * @property pendingResetConfirm Reset-Bestätigung offen (§12.3: ab ≥ 5 Zügen).
  * @property result Ergebnis-Overlay-Daten, gesetzt genau dann, wenn gelöst (§7.2).
+ * @property rotatedCell Zelle der letzten GÜLTIGEN Drehung — semantisches
+ *   Signal für den Dreh-Blitz (§13.9, PW-4.6): `null` bei Undo/Reset/Partie-
+ *   Start, die lösen keinen Blitz aus (Korrekturrunde MINOR-2).
  */
 @Immutable
 internal data class GameUiState(
@@ -32,6 +35,7 @@ internal data class GameUiState(
     val canUndo: Boolean = false,
     val pendingResetConfirm: Boolean = false,
     val result: GameResult? = null,
+    val rotatedCell: HexCoord? = null,
 )
 
 /**
