@@ -56,7 +56,6 @@ import kotlin.math.roundToInt
  * `Modifier.fillMaxSize()` oder feste Größe) — unbounded Messung wäre ein
  * Aufruffehler und wird per `check` abgewiesen.
  */
-@Suppress("LongParameterList") // Options-Parameter mit Defaults sind das Compose-Widget-Idiom
 @Composable
 internal fun BoardCanvas(
     state: BoardUiState,

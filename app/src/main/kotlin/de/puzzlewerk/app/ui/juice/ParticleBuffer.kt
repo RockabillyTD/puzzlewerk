@@ -47,6 +47,10 @@ internal class ParticleBuffer {
     /**
      * Spawnt einen Partikel mit Alpha 1 und Fade = 1/[lifeMillis]. Ab
      * [MAX_PARTICLES] wird still verworfen (Kapazitätsinvariante §13).
+     *
+     * Suppress bleibt nötig: `ignoreDefaultParameters` (PW-4.5) greift hier
+     * nicht, weil das SoA-Spawn-Primitiv 8 PFLICHT-Parameter hat — ein
+     * Parameter-Objekt widerspräche dem allokationsarmen Step-Pfad (ADR-011).
      */
     @Suppress("LongParameterList")
     fun add(
