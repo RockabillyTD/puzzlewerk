@@ -16,8 +16,9 @@ android {
         applicationId = "de.puzzlewerk"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        // PW-4.10: Phase-4-Gate — SemVer minor (Juice-Update), versionCode monoton.
+        versionCode = 2
+        versionName = "0.4.0"
     }
 
     buildTypes {
