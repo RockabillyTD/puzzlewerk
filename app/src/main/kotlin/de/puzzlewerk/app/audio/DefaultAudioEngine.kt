@@ -37,6 +37,9 @@ internal interface PcmSink {
 
 /** SoundPool-Fassade für die 12 Einmal-SFX plus den Laser-Loop (§13.11). */
 internal interface SfxPlayer {
+    /** `false` = Init fehlgeschlagen; alle Aufrufe degradieren zu Stille (C3). */
+    val available: Boolean
+
     fun play(effect: SoundEffect)
 
     fun setLaserLoopActive(active: Boolean)
@@ -58,8 +61,15 @@ internal interface FocusRequester {
  * Alle Android-Berührungen liegen hinter den vier Adapter-Schnittstellen —
  * die Engine selbst ist mit Fakes auf der JVM testbar.
  *
+ * Nebenläufigkeit (Review PW-4.8, MAJOR-1): Jedes `enterGame` erzeugt eine
+ * eigene [MixerSession] (Senke, Mix-Puffer, Kern, Thread, `active`-Token).
+ * Der Mixer-Thread prüft ausschließlich das Token SEINER Session — ein nach
+ * `exitGame` verspätet auslaufender Thread kann eine Folge-Session daher
+ * konstruktionsbedingt nie berühren; `exitGame` invalidiert nur und blockiert
+ * höchstens [JOIN_TIMEOUT_MS] ms.
+ *
  * @param mixerThreadFactory Seam für Tests: liefert dort einen nicht
- *   startenden Thread, die Tests pumpen [prepareMixer]/[pumpOnce] selbst.
+ *   startenden Thread, die Tests pumpen die Session selbst.
  */
 internal class DefaultAudioEngine(
     private val decoder: StemDecoder,
@@ -74,17 +84,14 @@ internal class DefaultAudioEngine(
             extraBufferCapacity = ISSUE_BUFFER,
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
-    private val mixBuffer = ShortArray(MIX_BLOCK_FRAMES)
 
-    private var stems: List<ShortArray?>? = null
-    private var core: StemMixerCore? = null
+    @Volatile private var stems: List<ShortArray?>? = null
+
+    private var session: MixerSession? = null
     private var pendingMix: StemMix? = null
-    private var sink: PcmSink? = null
-    private var mixerThread: Thread? = null
     private var laserActive = false
     private var sfxEnabled = false
-
-    @Volatile private var running = false
+    private var soundpoolIssueEmitted = false
 
     @Volatile private var focusLost = false
 
@@ -92,13 +99,21 @@ internal class DefaultAudioEngine(
 
     override val issues: Flow<AudioIssue> = issuesFlow
 
+    /** Test-Seam (JVM-Tests, ADR-010-Schichtung): die aktuell aktive Session. */
+    internal val activeSession: MixerSession?
+        get() = synchronized(lock) { session }
+
     override fun enterGame(
         musicEnabled: Boolean,
         sfxEnabled: Boolean,
     ): Unit =
         synchronized(lock) {
             this.sfxEnabled = sfxEnabled
-            if (!musicEnabled || running) return // R48: Mixer wird NICHT erzeugt
+            if (sfxEnabled && !sfxPlayer.available && !soundpoolIssueEmitted) {
+                soundpoolIssueEmitted = true // MINOR-2: SFX degradieren nicht mehr still
+                issuesFlow.tryEmit(AudioIssue.EngineUnavailable("soundpool"))
+            }
+            if (!musicEnabled || session != null) return // R48: Mixer wird NICHT erzeugt
             focusLost = false
             val newSink = sinkFactory()
             if (newSink == null) {
@@ -110,43 +125,36 @@ internal class DefaultAudioEngine(
                 issuesFlow.tryEmit(AudioIssue.EngineUnavailable("focus"))
                 return
             }
-            sink = newSink
-            running = true
-            mixerThread =
-                mixerThreadFactory(
-                    Runnable {
-                        prepareMixer()
-                        while (running) pumpOnce()
-                    },
-                ).also { it.start() }
+            val newSession = MixerSession(newSink)
+            session = newSession
+            newSession.thread = mixerThreadFactory(Runnable(newSession::runLoop)).also { it.start() }
         }
 
     override fun exitGame() {
-        val oldSink: PcmSink?
-        val oldThread: Thread?
+        val old: MixerSession?
         synchronized(lock) {
-            running = false
-            oldSink = sink
-            oldThread = mixerThread
-            sink = null
-            mixerThread = null
-            core = null
+            old = session
+            session = null
             pendingMix = null
             laserActive = false
+            focusLost = false // MINOR-1: R47 sperrt SFX nur in einer AKTIVEN Session
         }
         sfxPlayer.setLaserLoopActive(false)
-        oldSink?.release() // löst auch einen blockierten write (Adapter fangen Fehler, C3)
-        oldThread?.join(JOIN_TIMEOUT_MS)
+        if (old != null) {
+            old.active = false // Token-Invalidierung statt langem Join (MAJOR-1)
+            old.sink.release() // löst auch einen blockierten write (Adapter fangen Fehler, C3)
+            old.thread?.join(JOIN_TIMEOUT_MS)
+        }
         focus.abandon()
     }
 
     override fun setStemMix(mix: StemMix): Unit =
         synchronized(lock) {
-            val activeCore = core
+            val activeCore = session?.core
             if (activeCore == null) pendingMix = mix else activeCore.setTargets(mix)
         }
 
-    override fun duckForSolve(): Unit = synchronized(lock) { core?.startDuck() ?: Unit }
+    override fun duckForSolve(): Unit = synchronized(lock) { session?.core?.startDuck() ?: Unit }
 
     override fun playSfx(effect: SoundEffect) {
         if (sfxEnabled && !focusLost) sfxPlayer.play(effect) // R47/R48
@@ -164,29 +172,15 @@ internal class DefaultAudioEngine(
         synchronized(lock) {
             hostVisible = visible
             if (!visible) {
-                sink?.pause()
-            } else if (running && !focusLost) {
-                sink?.play()
+                session?.sink?.pause()
+            } else if (!focusLost) {
+                session?.sink?.play()
             }
         }
 
     override fun release() {
         exitGame()
         sfxPlayer.release()
-    }
-
-    /** Mixer-Thread, Schritt 1: Stems einmalig dekodieren, Kern aufbauen, Senke starten. */
-    internal fun prepareMixer() {
-        val pcm = stems ?: decodeStems().also { stems = it }
-        synchronized(lock) {
-            if (!running) return
-            core =
-                StemMixerCore(pcm).also { newCore ->
-                    pendingMix?.let(newCore::setTargets)
-                    pendingMix = null
-                }
-            if (!focusLost && hostVisible) sink?.play()
-        }
     }
 
     private fun decodeStems(): List<ShortArray?> {
@@ -200,37 +194,68 @@ internal class DefaultAudioEngine(
         return decoded
     }
 
-    /** Mixer-Thread, Schritt 2 (wiederholt): einen 20-ms-Block mischen und schreiben. */
-    internal fun pumpOnce() {
-        val target: PcmSink? =
-            synchronized(lock) {
-                val audible = running && !focusLost && hostVisible
-                val activeSink = sink
-                if (audible && activeSink != null) {
-                    core?.mixInto(mixBuffer, MIX_BLOCK_FRAMES)
-                    activeSink
-                } else {
-                    null
-                }
-            }
-        if (target == null) pausedBackoff() else target.write(mixBuffer, MIX_BLOCK_FRAMES)
-    }
-
-    private fun pausedBackoff() {
-        runCatching { Thread.sleep(PAUSED_POLL_MS) }
-    }
-
     private fun onFocusChange(gained: Boolean): Unit =
         synchronized(lock) {
             focusLost = !gained
             if (gained) {
-                if (running && hostVisible) sink?.play()
+                if (hostVisible) session?.sink?.play()
                 if (laserActive && sfxEnabled) sfxPlayer.setLaserLoopActive(true)
                 issuesFlow.tryEmit(AudioIssue.FocusRegained)
             } else {
-                sink?.pause() // alle 4 Ebenen GEMEINSAM, Cursor bleibt stehen (R47)
+                session?.sink?.pause() // alle 4 Ebenen GEMEINSAM, Cursor bleibt stehen (R47)
                 sfxPlayer.setLaserLoopActive(false)
                 issuesFlow.tryEmit(AudioIssue.FocusLost)
             }
         }
+
+    /**
+     * Eine Mixer-Session = ein `enterGame` (MAJOR-1): eigener Sink, eigener
+     * Mix-Puffer, eigener Kern und ein eigenes `active`-Token, das der
+     * zugehörige Thread als EINZIGES Abbruchkriterium liest.
+     */
+    internal inner class MixerSession(
+        val sink: PcmSink,
+    ) {
+        private val mixBuffer = ShortArray(MIX_BLOCK_FRAMES)
+
+        @Volatile var active = true
+
+        var core: StemMixerCore? = null
+        var thread: Thread? = null
+
+        /** Produktions-Thread-Body; Tests rufen [prepare]/[pump] direkt. */
+        fun runLoop() {
+            prepare()
+            while (active) pump()
+        }
+
+        /** Schritt 1: Stems einmalig dekodieren (prozessweit gecacht), Kern aufbauen, Senke starten. */
+        fun prepare() {
+            val pcm = stems ?: decodeStems().also { stems = it }
+            synchronized(lock) {
+                if (!active) return // Session wurde während des Decodes beendet
+                core =
+                    StemMixerCore(pcm).also { newCore ->
+                        pendingMix?.let(newCore::setTargets)
+                        pendingMix = null
+                    }
+                if (!focusLost && hostVisible) sink.play()
+            }
+        }
+
+        /** Schritt 2 (wiederholt): einen 20-ms-Block in den EIGENEN Sink mischen. */
+        fun pump() {
+            val audible =
+                synchronized(lock) {
+                    val mixNow = active && !focusLost && hostVisible
+                    if (mixNow) core?.mixInto(mixBuffer, MIX_BLOCK_FRAMES)
+                    mixNow
+                }
+            if (audible) sink.write(mixBuffer, MIX_BLOCK_FRAMES) else pausedBackoff()
+        }
+
+        private fun pausedBackoff() {
+            runCatching { Thread.sleep(PAUSED_POLL_MS) }
+        }
+    }
 }

@@ -9,9 +9,10 @@ import org.junit.Test
 
 /**
  * [DefaultAudioEngine] gegen die vier Adapter-Fakes (ADR-010): kein echter
- * Ton, kein echter Thread — die Tests pumpen [DefaultAudioEngine.prepareMixer]
- * und [DefaultAudioEngine.pumpOnce] selbst und prüfen R47/R48/R49 sowie die
- * Fehlerwerte (C3). Der Mixer-Thread wird über die Factory stillgelegt.
+ * Ton, kein echter Thread — die Tests treiben die [DefaultAudioEngine.MixerSession]
+ * über `prepare()`/`pump()` selbst und prüfen R47/R48/R49, die Fehlerwerte
+ * (C3) sowie die Session-Token-Isolation (Review PW-4.8, MAJOR-1). Der
+ * Mixer-Thread wird über die Factory stillgelegt.
  */
 class DefaultAudioEngineTest {
     private companion object {
@@ -21,11 +22,13 @@ class DefaultAudioEngineTest {
     private class FakeDecoder(
         val failing: Set<String> = emptySet(),
         val fill: (Int) -> Short = { TONE },
+        val onDecode: (String) -> Unit = {},
     ) : StemDecoder {
         val decoded = mutableListOf<String>()
 
         override fun decode(resourceName: String): ShortArray? {
             decoded += resourceName
+            onDecode(resourceName)
             if (resourceName in failing) return null
             return ShortArray(STEM_LOOP_FRAMES) { fill(it) }
         }
@@ -57,7 +60,9 @@ class DefaultAudioEngineTest {
         }
     }
 
-    private class FakeSfxPlayer : SfxPlayer {
+    private class FakeSfxPlayer(
+        override val available: Boolean = true,
+    ) : SfxPlayer {
         val played = mutableListOf<SoundEffect>()
         val laserCalls = mutableListOf<Boolean>()
         var released = false
@@ -97,20 +102,29 @@ class DefaultAudioEngineTest {
         decoder: FakeDecoder = FakeDecoder(),
         val focus: FakeFocus = FakeFocus(),
         sinkAvailable: Boolean = true,
+        sfxAvailable: Boolean = true,
     ) {
-        val sink = FakeSink()
-        val sfx = FakeSfxPlayer()
+        /** Ein Sink JE Session (MAJOR-1); bestehende Tests nutzen den ersten. */
+        val sinks = mutableListOf<FakeSink>()
+        val sink: FakeSink get() = sinks.first()
+        val sfx = FakeSfxPlayer(available = sfxAvailable)
         var sinkRequested = false
+
+        /** Thread-Bodies je Session in Startreihenfolge (Race-Test MAJOR-1). */
+        val runnables = mutableListOf<Runnable>()
         val engine =
             DefaultAudioEngine(
                 decoder = decoder,
                 sinkFactory = {
                     sinkRequested = true
-                    if (sinkAvailable) sink else null
+                    if (sinkAvailable) FakeSink().also { sinks += it } else null
                 },
                 sfxPlayer = sfx,
                 focus = focus,
-                mixerThreadFactory = { runnable -> DormantThread(runnable) },
+                mixerThreadFactory = { runnable ->
+                    runnables += runnable
+                    DormantThread(runnable)
+                },
             )
 
         fun enterAndPrepare(
@@ -118,7 +132,11 @@ class DefaultAudioEngineTest {
             sfxEnabled: Boolean = true,
         ) {
             engine.enterGame(musicEnabled, sfxEnabled)
-            engine.prepareMixer()
+            engine.activeSession?.prepare()
+        }
+
+        fun pump() {
+            engine.activeSession?.pump()
         }
     }
 
@@ -138,7 +156,7 @@ class DefaultAudioEngineTest {
         assertFalse(harness.focus.requested)
         harness.engine.setStemMix(StemMix.BASE) // No-ops duerfen nie crashen
         harness.engine.duckForSolve()
-        harness.engine.pumpOnce()
+        harness.pump()
     }
 
     @Test
@@ -147,7 +165,7 @@ class DefaultAudioEngineTest {
         harness.enterAndPrepare()
         assertTrue(harness.focus.requested)
         assertEquals(1, harness.sink.playCount)
-        harness.engine.pumpOnce()
+        harness.pump()
         assertEquals(1, harness.sink.writes.size)
         assertEquals(MIX_BLOCK_FRAMES, harness.sink.writes[0].size)
         assertEquals(TONE, harness.sink.writes[0][0]) // Ebene 1 sofort mit 100 %
@@ -186,13 +204,13 @@ class DefaultAudioEngineTest {
             val harness = Harness(decoder = decoder)
             harness.engine.issues.test {
                 harness.enterAndPrepare()
-                harness.engine.pumpOnce()
+                harness.pump()
                 requireNotNull(harness.focus.onFocusChange).invoke(false)
                 assertEquals(AudioIssue.FocusLost, awaitItem())
                 requireNotNull(harness.focus.onFocusChange).invoke(true)
                 assertEquals(AudioIssue.FocusRegained, awaitItem())
                 assertEquals(2, harness.sink.playCount)
-                harness.engine.pumpOnce()
+                harness.pump()
                 val expected = (MIX_BLOCK_FRAMES % 100).toShort()
                 assertEquals(expected, harness.sink.writes[1][0]) // kein Neustart bei 0
             }
@@ -213,13 +231,66 @@ class DefaultAudioEngineTest {
     }
 
     @Test
+    fun `exitGame setzt focusLost zurueck - Menue-SFX bleiben nicht stumm (MINOR-1)`() {
+        val harness = Harness()
+        harness.enterAndPrepare()
+        requireNotNull(harness.focus.onFocusChange).invoke(false)
+        harness.engine.exitGame()
+        harness.engine.playSfx(SoundEffect.UI_TAP)
+        assertEquals(listOf(SoundEffect.UI_TAP), harness.sfx.played)
+    }
+
+    @Test
+    fun `Exit und Re-Enter waehrend des Decodes - alter Lauf beruehrt die neue Session nie (MAJOR-1)`() {
+        lateinit var harness: Harness
+        var raced = false
+        val decoder =
+            FakeDecoder(
+                onDecode = {
+                    if (!raced) {
+                        raced = true // mitten im Erst-Decode: Exit + sofortiges Re-Enter
+                        harness.engine.exitGame()
+                        harness.engine.enterGame(musicEnabled = true, sfxEnabled = true)
+                    }
+                },
+            )
+        harness = Harness(decoder = decoder)
+        harness.engine.enterGame(musicEnabled = true, sfxEnabled = true)
+        harness.runnables[0].run() // Thread-Body der ALTEN Session A laeuft (verspaetet) durch
+        val oldSink = harness.sinks[0]
+        val newSink = harness.sinks[1]
+        assertTrue(oldSink.released) // Session A wurde invalidiert und freigegeben
+        assertEquals(0, oldSink.playCount) // A hat nach der Invalidierung nie gestartet
+        assertEquals(0, newSink.playCount) // und die neue Session nie beruehrt
+        assertEquals(emptyList<ShortArray>(), newSink.writes)
+        val current = requireNotNull(harness.engine.activeSession)
+        current.prepare() // Session B arbeitet normal weiter
+        current.pump()
+        assertEquals(1, newSink.playCount)
+        assertEquals(1, newSink.writes.size)
+        assertEquals(TONE, newSink.writes[0][0])
+    }
+
+    @Test
     fun `Senken-Ausfall wird zum Wert EngineUnavailable mixer (C3)`() =
         runTest {
             val harness = Harness(sinkAvailable = false)
             harness.engine.issues.test {
                 harness.engine.enterGame(musicEnabled = true, sfxEnabled = true)
                 assertEquals(AudioIssue.EngineUnavailable("mixer"), awaitItem())
-                harness.engine.pumpOnce() // stiller Betrieb, kein Crash
+                harness.pump() // stiller Betrieb, kein Crash
+            }
+        }
+
+    @Test
+    fun `SoundPool-Ausfall wird als EngineUnavailable soundpool gemeldet (MINOR-2)`() =
+        runTest {
+            val harness = Harness(sfxAvailable = false)
+            harness.engine.issues.test {
+                harness.engine.enterGame(musicEnabled = false, sfxEnabled = true)
+                assertEquals(AudioIssue.EngineUnavailable("soundpool"), awaitItem())
+                harness.engine.enterGame(musicEnabled = false, sfxEnabled = true)
+                expectNoEvents() // nur einmal je Prozess gemeldet
             }
         }
 
@@ -241,7 +312,7 @@ class DefaultAudioEngineTest {
             harness.engine.issues.test {
                 harness.enterAndPrepare()
                 assertEquals(AudioIssue.AssetUnavailable("music_stem2_kalimba"), awaitItem())
-                harness.engine.pumpOnce()
+                harness.pump()
                 assertEquals(TONE, harness.sink.writes[0][0]) // Ebene 1 unbeeindruckt
             }
         }
@@ -273,11 +344,11 @@ class DefaultAudioEngineTest {
         val decoder = FakeDecoder(failing = setOf("music_stem1_urig"))
         val harness = Harness(decoder = decoder)
         harness.engine.enterGame(musicEnabled = true, sfxEnabled = true)
-        harness.engine.setStemMix(StemMix(1f, 1f, 0f, 0f)) // vor prepareMixer
-        harness.engine.prepareMixer()
+        harness.engine.setStemMix(StemMix(1f, 1f, 0f, 0f)) // vor prepare()
+        harness.engine.activeSession?.prepare()
         var pumped = 0
         while (pumped * MIX_BLOCK_FRAMES < FADE_FRAMES + MIX_BLOCK_FRAMES) {
-            harness.engine.pumpOnce()
+            harness.pump()
             pumped++
         }
         val lastWrite = harness.sink.writes.last()
@@ -291,7 +362,7 @@ class DefaultAudioEngineTest {
         harness.engine.duckForSolve()
         var pumped = 0
         while (pumped * MIX_BLOCK_FRAMES < DUCK_ATTACK_FRAMES + MIX_BLOCK_FRAMES) {
-            harness.engine.pumpOnce()
+            harness.pump()
             pumped++
         }
         val lastWrite = harness.sink.writes.last()

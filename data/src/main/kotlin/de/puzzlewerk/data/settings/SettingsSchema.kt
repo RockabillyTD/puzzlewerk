@@ -30,8 +30,11 @@ private const val SFX_FIELD = "sfxEnabled"
 
 /**
  * Migration v1 → v2 (§13.11, normativ): alter Wert AUS ⇒ beide AUS; alter
- * Wert AN ODER Feld fehlt ⇒ beide AN. Alle übrigen Felder wandern unverändert
- * mit; Nicht-Objekte werden durchgereicht und scheitern anschließend an der
+ * Wert AN ODER Feld fehlt ⇒ beide AN. Ein NICHT-boolescher Altwert (durch v1
+ * nie geschrieben) wird bewusst wie „Feld fehlt" zu beiden AN koerziert —
+ * §13.11 definiert den Fall nicht, Default AN ist die normkonforme Wahl
+ * (Review PW-4.8, NIT-1). Alle übrigen Felder wandern unverändert mit;
+ * Nicht-Objekte werden durchgereicht und scheitern anschließend an der
  * strikten v2-Dekodierung (Fehler bleibt ein Wert, C3/ADR-007).
  */
 internal val settingsMigrationV1ToV2: PayloadMigration =

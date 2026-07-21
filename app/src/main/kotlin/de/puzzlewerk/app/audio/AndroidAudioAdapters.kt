@@ -38,7 +38,7 @@ private const val MAX_IDLE_SPINS = 1_000
 private const val MAX_SFX_STREAMS = 6
 private const val LASER_LOOP_VOLUME = 0.2f
 private const val SINK_BUFFER_BLOCKS = 4
-private const val BYTES_PER_FRAME = 2
+private const val BYTES_PER_SAMPLE = 2
 
 /**
  * [StemDecoder] über MediaExtractor + MediaCodec (ADR-010, keine neue
@@ -139,7 +139,7 @@ internal class MediaCodecStemDecoder(
                 .order(ByteOrder.nativeOrder())
                 .asShortBuffer()
         var cursor = written
-        var remaining = byteSize / BYTES_PER_FRAME
+        var remaining = byteSize / BYTES_PER_SAMPLE
         while (remaining >= channels && cursor < out.size) {
             var acc = 0
             repeat(channels) { acc += samples.get().toInt() }
@@ -176,7 +176,7 @@ internal fun audioTrackSinkOrNull(): PcmSink? =
                 .setAudioAttributes(gameAttributes(AudioAttributes.CONTENT_TYPE_MUSIC))
                 .setAudioFormat(monoOutputFormat())
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .setBufferSizeInBytes(maxOf(minBytes, MIX_BLOCK_FRAMES * BYTES_PER_FRAME * SINK_BUFFER_BLOCKS))
+                .setBufferSizeInBytes(maxOf(minBytes, MIX_BLOCK_FRAMES * BYTES_PER_SAMPLE * SINK_BUFFER_BLOCKS))
                 .build()
         AudioTrackSink(track)
     }.getOrNull()
@@ -220,6 +220,10 @@ internal class SoundPoolSfxPlayer(
                 .setAudioAttributes(gameAttributes(AudioAttributes.CONTENT_TYPE_SONIFICATION))
                 .build()
         }.getOrNull()
+
+    /** MINOR-2 (Review PW-4.8): Init-Fehler als Wert — die Engine meldet ihn auf `issues`. */
+    override val available: Boolean
+        get() = pool != null
 
     private val effectIds: Map<SoundEffect, Int> =
         SoundEffect.entries.associateWith { effect ->
