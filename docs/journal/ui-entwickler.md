@@ -4,6 +4,29 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.6 — Aktions-Feedback V2 + Glow + Audio-Choreo (PR #37, gemergt 2026-07-21)
+- Gebaut: Event-Verdrahtung GameViewModel→juiceDelta→JuiceFeedback-
+  Channel→offerJuiceEvents→Queue (Kappe 64, Silent-Drop);
+  §13.9-Glow als JuiceState-Erweiterung (0→28 dp, 0,8→0, 250 ms,
+  ADR-011-Delta im PR); Dreh-Blitz 0,6→0/120 ms am semantischen
+  Signal rotatedCell; GameAudioChoreographer (enterGame/exitGame via
+  DisposableEffect, SFX-Ketten R45, setStemMix nur bei Änderung);
+  Solved-Kontrakt kodifiziert (nach CrystalBursts, moveNumber-Filter).
+- Review-Zyklus: CHANGES-REQUIRED → Korrektur → MERGEABLE. MAJOR-1
+  Session-Verlust bei Recreation (BoardEntered-Nachsendung mit Seed/
+  Endpoints); MAJOR-2 mutationsblinde Kontrakte → Negativtests, vom
+  Reviewer per eigener Mutationsprobe bestätigt. Security-APPROVE
+  (LOW: enter/exit-Race erst bei echter DataStore-Verdrahtung →
+  Auflage fürs Settings-Ticket). Größen-Ausnahme ~700 Z. genehmigt;
+  Prozess-Auflage: Orchestrator-Scope-Nachschübe künftig als
+  eigenes Mini-Ticket.
+- Bewusste Abweichungen dokumentiert: SFX beim Zug-Commit statt
+  40-ms-Kaskade (PW-4.7-Option/Abnahme); Stem-Neustart bei Rotation
+  (Produktfrage Portrait-Lock im Backlog, vor Gate an Branko).
+- Learning: Robolectric + pausierte Testuhr: runOnIdle{write} +
+  advanceTimeByFrame()+waitForIdle() im Wechsel — einzeln bewegt nichts.
+- Schritte: ~120/140 + Korrektur ~45/50.
+
 ## PW-4.8 — AudioEngine SFX + Stems + Settings (PR #35, gemergt 2026-07-21)
 - Gebaut: StemMixerCore (purer Mixer, EIN Loop-Cursor über 756 000
   Frames, Fades/Duck klickfrei), DefaultAudioEngine (Session-Token-

@@ -407,15 +407,43 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
       Audio-Choreografie (enterGame/setStemMix/playSfx) und
       Event-Queue-Kapazitätsgrenze (Audit-Härtung PW-4.5).
 
+## Erledigt (Zyklus 23, 2026-07-21) — Punkt 6 gemergt, Punkt 7 gestartet
+- [x] **PR #37 (PW-4.6) gemergt:** Aktions-Feedback (V2) —
+      Event-Verdrahtung ViewModel→juiceDelta→Queue (Kappe 64),
+      §13.9-Glow als JuiceState-Erweiterung (ADR-011-Delta im PR
+      dokumentiert, Orchestrator-Entscheidung Zyklus 21 umgesetzt),
+      Dreh-Blitz 0,6→0/120 ms (semantisches Signal rotatedCell),
+      GameAudioChoreographer (erste echte Aufrufer der AudioEngine:
+      enterGame/exitGame via DisposableEffect, SFX-Ketten R45,
+      StemMix.forProgress bei Fortschritt), Solved-Event-Kontrakt
+      kodifiziert (Backlog-MINOR aus PW-4.4 geschlossen).
+      Review-Zyklus: CHANGES-REQUIRED (MAJOR-1 Session-Verlust bei
+      Recreation → BoardEntered-Nachsendung; MAJOR-2 mutationsblinde
+      Kontrakte → Negativtests, Reviewer bestätigte per eigener
+      Mutationsprobe) → Delta-Re-Review MERGEABLE; Security-APPROVE.
+      Größen-Ausnahme ~700 Zeilen genehmigt; Prozess-Auflage:
+      Orchestrator-Scope-Nachschübe künftig als eigenes Mini-Ticket.
+      Dokumentierte Abweichungen: SFX beim Zug-Commit (statt 40-ms-
+      Kaskade), Stem-Neustart bei Rotation; Produktfrage Portrait-
+      Lock/configChanges/Session-Erhalt im Backlog → Gate-Vorlage.
+      Settings laufen bis zum Verdrahtungs-Ticket über In-Memory-
+      Defaults (kein Verlust: DataStore-Repo war nie verdrahtet);
+      Security-LOW (enter-Race bei künftiger DataStore-Anbindung)
+      als Auflage im Backlog.
+- [x] PW-4.7 (ui-entwickler) gestartet: Worktree C:\0\worktrees\pw-4.7,
+      Branch feature/pw-4.7-solve-fireworks — inkl. übernommener
+      Auflagen (Vollbild-Flash, Overlay ≤ 600 ms, R49-Kanten,
+      Sterne-SFX, optional 40-ms-SFX-Kaskade).
+
 ## In Arbeit (Phase 4)
-- PW-4.6 (ui-entwickler): Aktions-Feedback (V2) + Glow-Erweiterung +
-  Audio-Choreografie — läuft.
+- PW-4.7 (ui-entwickler): Lösungs-Feuerwerk + Sterne-Choreografie.
 
 ## Nächste Schritte
-1. PW-4.6: Review, CI, Merge.
-2. Danach: 7 (Feuerwerk, inkl. Vollbild-Flash-Auflage) → 9 (QS:
-   p95-Frame-Budget, Bounds-Tests ungepinnter Konstanten, Audio-/
-   Session-Kanten aus dem Handover) → 10 → Gate Branko.
+1. PW-4.7: Review, CI, Merge.
+2. Danach: 9 (QS: p95-Frame-Budget, Bounds-Tests, Audio-/Session-
+   Kanten, Robolectric-Adapter-Smoke) → 10 (inkl. Abnahme-Deltas:
+   Halo-/Glow-Treppe, SFX-Timing, Rotation-Neustart) → Gate Branko.
 3. Offene Backlog-Punkte: PW-3.7-QS-Funde, Wave-2-Reste, Infra,
-   keep.xml-Rückbau, Demo-Asset-Entscheidung (PW-4.10),
-   Solved-ohne-Bursts-Kontrakt (PW-4.6/4.7).
+   keep.xml-Rückbau, Demo-Asset-Entscheidung (PW-4.10), Settings-
+   Verdrahtung DataStore (+ enter-Race-Auflage), Produktfrage
+   Portrait-Lock (Gate-Vorlage).
