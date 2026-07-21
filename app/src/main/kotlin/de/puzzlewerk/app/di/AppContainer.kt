@@ -9,9 +9,12 @@ import de.puzzlewerk.app.audio.DefaultAudioEngine
 import de.puzzlewerk.app.audio.MediaCodecStemDecoder
 import de.puzzlewerk.app.audio.SoundPoolSfxPlayer
 import de.puzzlewerk.app.audio.audioTrackSinkOrNull
+import de.puzzlewerk.app.ui.game.GameAudioChoreographer
 import de.puzzlewerk.app.ui.game.GameViewModel
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.data.progress.ProgressRepository
+import de.puzzlewerk.data.settings.FakeSettingsRepository
+import de.puzzlewerk.data.settings.SettingsRepository
 import de.puzzlewerk.game.engine.GameEngine
 import de.puzzlewerk.game.engine.defaultGameEngine
 import de.puzzlewerk.game.generator.DefaultLevelGenerator
@@ -34,6 +37,13 @@ class AppContainer {
      * Issue: docs/backlog.md („DataStore-Repositories verdrahten", PW-3.3).
      */
     val progressRepository: ProgressRepository = InMemoryProgressRepository()
+
+    /**
+     * Nutzereinstellungen (§12.5/§13.11). Übergangsweise in-memory mit den
+     * normativen Defaults (Musik/SFX AN) — analog [progressRepository]; der
+     * Settings-Screen (Phase-4-Punkt 9) verdrahtet die DataStore-Implementierung.
+     */
+    val settingsRepository: SettingsRepository = FakeSettingsRepository()
 
     /** Zug-/Trace-Semantik (§6) mit dem `:game`-Default-Tracer — kein Tracer in :app (ui-arch §4). */
     private val engine: GameEngine = defaultGameEngine(DefaultTracer)
@@ -82,6 +92,10 @@ class AppContainer {
                         generator = generator,
                         scoreCalculator = scoreCalculator,
                         progressRepository = progressRepository,
+                        // Lazy-Provider: die AudioEngine entsteht mit Context in
+                        // Application.onCreate; fehlt sie (Container-JVM-Tests),
+                        // degradiert die Choreografie still zu No-ops (C3).
+                        audio = GameAudioChoreographer({ audioEngineInstance }, settingsRepository),
                     )
                 return requireNotNull(modelClass.cast(viewModel))
             }

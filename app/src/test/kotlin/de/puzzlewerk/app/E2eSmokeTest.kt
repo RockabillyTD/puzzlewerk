@@ -13,7 +13,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import de.puzzlewerk.app.audio.FakeAudioEngine
 import de.puzzlewerk.app.di.InMemoryProgressRepository
+import de.puzzlewerk.app.ui.game.GameAudioChoreographer
 import de.puzzlewerk.app.ui.game.GameViewModel
 import de.puzzlewerk.app.ui.home.HomeViewModel
 import de.puzzlewerk.app.ui.levelselect.LevelSelectViewModel
@@ -21,6 +23,7 @@ import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.app.ui.navigation.NavigationState
 import de.puzzlewerk.app.ui.navigation.Screen
 import de.puzzlewerk.data.DataResult
+import de.puzzlewerk.data.settings.FakeSettingsRepository
 import de.puzzlewerk.game.board.Board
 import de.puzzlewerk.game.board.Direction
 import de.puzzlewerk.game.board.HexCoord
@@ -102,6 +105,7 @@ class E2eSmokeTest {
                         generator = fakeGenerator,
                         scoreCalculator = DefaultScoreCalculator,
                         progressRepository = progressRepository,
+                        audio = GameAudioChoreographer(FakeAudioEngine(), FakeSettingsRepository()),
                         // Determinismus-Seam (ViewModel-Doc: „Tests nutzen einen injizierten
                         // Dispatcher"): die winzige Fake-Generierung läuft auf dem Main-Looper,
                         // den der Compose-Test taktet — sonst bliebe die off-main-Fortsetzung

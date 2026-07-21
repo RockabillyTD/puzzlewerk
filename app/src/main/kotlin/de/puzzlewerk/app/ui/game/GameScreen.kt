@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -89,6 +92,15 @@ internal fun GameRoute(
 
     GameEffectHandler(viewModel.effects, snackbarHostState, shake, animationsEnabled)
 
+    // Audio-Session folgt dem Screen-Lebenszyklus (§13.11/R49): Betreten ⇒
+    // enterGame, Verlassen/„Weiter" (ViewModel-Wechsel im selben Slot) ⇒
+    // exitGame. Die Dispose-Reihenfolge des Slots garantiert exit VOR dem
+    // enter des Folge-ViewModels (Session-Token-Vertrag der Engine, PW-4.8).
+    DisposableEffect(viewModel) {
+        viewModel.onScreenEntered()
+        onDispose { viewModel.onScreenLeft() }
+    }
+
     val nextLevel = (request as? LevelRequest.Campaign)?.levelNumber?.takeIf { it < CAMPAIGN_LEVEL_COUNT }
     Box(modifier = modifier.fillMaxSize()) {
         GameScreen(
@@ -98,6 +110,7 @@ internal fun GameRoute(
             onNavigateNext = nextLevel?.let { n -> { currentOnNavigate(Screen.Game(LevelRequest.Campaign(n + 1))) } },
             // Das ganze Spielbild wackelt bei ungültigem Zug (dezent, respektiert Reduce-Motion).
             modifier = Modifier.graphicsLayer { translationX = shake.value },
+            juiceFeedback = viewModel.juiceFeedback,
         )
         SnackbarHost(
             hostState = snackbarHostState,
@@ -157,6 +170,7 @@ internal fun GameScreen(
     onNavigateBack: () -> Unit,
     onNavigateNext: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    juiceFeedback: Flow<JuiceFeedback>? = null,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -165,6 +179,7 @@ internal fun GameScreen(
                 state = state,
                 onIntent = onIntent,
                 modifier = Modifier.fillMaxWidth().weight(1f).padding(8.dp),
+                juiceFeedback = juiceFeedback,
             )
         }
         if (state.pendingResetConfirm) {
@@ -191,9 +206,10 @@ internal fun GameScreen(
  * (§13.6) und schaltet zugleich den Reduce-Motion-Pfad des Juice-Kerns (R44);
  * die pure Dreh-Erkennung ist separat testbar ([singleRotatedCell]).
  *
- * Juice-Verdrahtung (Einstiegspunkt für PW-4.6): [JuiceEventQueue] ist das
- * Postfach des Frame-Treibers — Aktions-Ereignisse aus ViewModel-Effects
- * (juiceDelta/MoveResult) werden hier ge`offer`t.
+ * Juice-Verdrahtung (PW-4.6): [juiceFeedback] aus dem ViewModel wird mit der
+ * Brett-Geometrie dieses Bereichs (identische Constraints wie der [BoardCanvas])
+ * über [offerJuiceEvents] in JuiceEvents gemappt und der [JuiceEventQueue]
+ * übergeben — ein Feedback = ein Frame ([de.puzzlewerk.app.ui.juice.JuiceEvent.Solved]-Kontrakt).
  */
 @Composable
 private fun GameBoard(
@@ -201,8 +217,9 @@ private fun GameBoard(
     onIntent: (GameIntent) -> Unit,
     modifier: Modifier = Modifier,
     animationsEnabled: Boolean = rememberAnimationsEnabled(),
+    juiceFeedback: Flow<JuiceFeedback>? = null,
 ) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val board = state.board
         if (state.isLoading || board == null) {
             LoadingBoard()
@@ -214,11 +231,28 @@ private fun GameBoard(
             LaunchedEffect(juiceEvents, animationsEnabled) {
                 juiceEvents.offer(JuiceEvent.MotionPreferenceChanged(reduceMotion = !animationsEnabled))
             }
+            val widthPx = constraints.maxWidth.toFloat()
+            val heightPx = constraints.maxHeight.toFloat()
+            val density = LocalDensity.current.density
+            val mapping =
+                remember(board.radius, widthPx, heightPx, density, animationsEnabled) {
+                    JuiceEventMapping(
+                        geometry = BoardGeometry.fit(board.radius, widthPx, heightPx),
+                        density = density,
+                        reduceMotion = !animationsEnabled,
+                    )
+                }
+            if (juiceFeedback != null) {
+                LaunchedEffect(juiceFeedback, juiceEvents, mapping) {
+                    juiceFeedback.collect { feedback -> offerJuiceEvents(juiceEvents, feedback, mapping) }
+                }
+            }
             BoardCanvas(
                 state = board,
                 modifier = Modifier.fillMaxSize(),
                 spin = rememberRotationSpin(board, animationsEnabled),
                 juice = juice,
+                flash = rememberRotateFlash(board, animationsEnabled),
                 // Gelöst sperrt den Tap; zusätzlich blockt das Overlay Taps darüber.
                 onCellTap = if (state.result != null) null else { coord -> onIntent(GameIntent.TapCell(coord)) },
             )
