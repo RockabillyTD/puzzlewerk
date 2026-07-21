@@ -74,6 +74,14 @@ internal interface AudioEngine {
      */
     fun setLaserLoopActive(active: Boolean)
 
+    /**
+     * Lebenszyklus der Host-Activity (PW-4.8, Ergänzung zum ADR-010-Vertrag):
+     * `false` (onStop) pausiert den Mixer wie ein Fokus-Verlust — an derselben
+     * Cursor-Position, ohne Versatz; `true` (onStart) setzt fort, sofern der
+     * Audio-Fokus nicht verloren ist. Ohne laufende Stems ein No-op.
+     */
+    fun setHostVisible(visible: Boolean)
+
     /** Gibt alle Audio-Ressourcen frei (App-Ende/AppContainer, ADR-006). */
     fun release()
 }
@@ -96,7 +104,34 @@ internal data class StemMix(
     val stem2Kalimba: Float,
     val stem3Bass: Float,
     val stem4Modern: Float,
-)
+) {
+    companion object {
+        /** Grundzustand beim Betreten des Spiel-Screens: nur Ebene 1 (§13.11). */
+        val BASE: StemMix = StemMix(1f, 0f, 0f, 0f)
+
+        /**
+         * Pure Zuordnung Erfüllungsstand → Ebenen-Lautstärken (Tabelle §13.11;
+         * ohne Hysterese auch abwärts anwendbar, R46; kein Sonderfall-Code für
+         * kleine Level, R50).
+         *
+         * @param fulfilled L = aktuell erfüllte Kristalle laut trace.
+         * @param crystalTotal K = Kristallzahl des Levels (≥ 1).
+         */
+        fun forProgress(
+            fulfilled: Int,
+            crystalTotal: Int,
+        ): StemMix {
+            require(crystalTotal >= 1) { "K muss >= 1 sein, war $crystalTotal" }
+            require(fulfilled in 0..crystalTotal) { "L muss in 0..K liegen, war $fulfilled" }
+            return StemMix(
+                stem1Urig = 1f,
+                stem2Kalimba = if (fulfilled >= 1) 1f else 0f,
+                stem3Bass = if (2 * fulfilled >= crystalTotal) 1f else 0f,
+                stem4Modern = if (fulfilled >= maxOf(1, crystalTotal - 1)) 1f else 0f,
+            )
+        }
+    }
+}
 
 /**
  * Die 12 Einmal-SFX aus §13.11 (Zuordnungstabelle); [resourceName] ist der
