@@ -1,7 +1,14 @@
 package de.puzzlewerk.app.di
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import de.puzzlewerk.app.audio.AudioEngine
+import de.puzzlewerk.app.audio.AudioManagerFocusRequester
+import de.puzzlewerk.app.audio.DefaultAudioEngine
+import de.puzzlewerk.app.audio.MediaCodecStemDecoder
+import de.puzzlewerk.app.audio.SoundPoolSfxPlayer
+import de.puzzlewerk.app.audio.audioTrackSinkOrNull
 import de.puzzlewerk.app.ui.game.GameViewModel
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.data.progress.ProgressRepository
@@ -37,6 +44,24 @@ class AppContainer {
 
     /** Gemeinsame Factory der parameterlosen ViewModels (Home/LevelSelect, ADR-006). */
     val viewModelFactory: ViewModelProvider.Factory = PuzzlewerkViewModelFactory(this)
+
+    private var audioEngineInstance: AudioEngine? = null
+
+    /**
+     * [AudioEngine] (ADR-010), einmal je Prozess: Aufbau beim App-Start lädt
+     * die SoundPool-SFX vor; die Stems dekodiert der Mixer-Thread beim ersten
+     * `enterGame`. Konsumiert wird die Engine ab PW-4.6 (Aktions-Feedback).
+     */
+    internal fun audioEngine(context: Context): AudioEngine =
+        audioEngineInstance ?: run {
+            val appContext = context.applicationContext
+            DefaultAudioEngine(
+                decoder = MediaCodecStemDecoder(appContext),
+                sinkFactory = ::audioTrackSinkOrNull,
+                sfxPlayer = SoundPoolSfxPlayer(appContext),
+                focus = AudioManagerFocusRequester(appContext),
+            ).also { audioEngineInstance = it }
+        }
 
     /**
      * Request-parametrierte Factory des [GameViewModel] (ui-architektur §3:

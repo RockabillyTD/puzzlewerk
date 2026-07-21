@@ -36,7 +36,7 @@ class DataStoreSettingsRepository(
 ) : SettingsRepository {
     private val store: DataStore<StoreState<Settings>> =
         DataStoreFactory.create(
-            serializer = EnvelopeSerializer(SettingsSchemaV1, StoreState.Loaded(Settings.DEFAULT)),
+            serializer = EnvelopeSerializer(SettingsSchema, StoreState.Loaded(Settings.DEFAULT)),
             scope = scope,
             produceFile = produceFile,
         )
