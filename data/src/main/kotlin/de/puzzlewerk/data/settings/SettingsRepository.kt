@@ -7,9 +7,15 @@ import kotlinx.coroutines.flow.Flow
  * Nutzereinstellungen (Design §12.5). Die Defaults sind hier normativ:
  * Barrierefreiheits-Kanäle (Farbsymbole, Strahlmuster) sind bewusst AN
  * (§13.1/§13.2). Sprache folgt dem System und wird nicht gespeichert.
+ *
+ * BREAKING §13.11 (PW-4.8): Der frühere Schalter `soundEnabled` ist durch
+ * die getrennten Schalter [musicEnabled] (Stems) und [sfxEnabled] (alle SFX
+ * inkl. sfx_laser_loop) ersetzt, beide Default AN; Migration des alten
+ * Werts: AUS ⇒ beide AUS, AN oder Feld fehlt ⇒ beide AN (Schema v1 → v2).
  */
 data class Settings(
-    val soundEnabled: Boolean = true,
+    val musicEnabled: Boolean = true,
+    val sfxEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
     val colorSymbolsEnabled: Boolean = true,
     val beamPatternsEnabled: Boolean = true,
@@ -23,7 +29,7 @@ data class Settings(
 /**
  * Speichert die Einstellungen dauerhaft (Design §12.5; Persistenz-Semantik:
  * ADR-007). Bewusste Abweichung von den anderen Repositories: Der
- * Settings-Bestand ist nicht schützenswert (4 Booleans) — bei Korruption
+ * Settings-Bestand ist nicht schützenswert (5 Booleans) — bei Korruption
  * oder Versionskonflikt fällt [settings] auf [Settings.DEFAULT] zurück
  * (definiertes Verhalten laut ADR-007) statt einen Fehlerwert zu liefern.
  *

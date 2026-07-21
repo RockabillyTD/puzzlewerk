@@ -9,12 +9,13 @@ import org.junit.jupiter.api.Test
 
 class FakeSettingsRepositoryTest {
     @Test
-    fun `Erststart liefert die normativen Defaults (Paragraf 12_5)`() =
+    fun `Erststart liefert die normativen Defaults (Paragraf 12_5 und 13_11)`() =
         runTest {
             FakeSettingsRepository().settings.first() shouldBe Settings.DEFAULT
             Settings.DEFAULT shouldBe
                 Settings(
-                    soundEnabled = true,
+                    musicEnabled = true,
+                    sfxEnabled = true,
                     hapticsEnabled = true,
                     colorSymbolsEnabled = true,
                     beamPatternsEnabled = true,
@@ -27,10 +28,10 @@ class FakeSettingsRepositoryTest {
             val repository = FakeSettingsRepository()
             repository.settings.test {
                 awaitItem() shouldBe Settings.DEFAULT
-                repository.update { it.copy(soundEnabled = false) } shouldBe WriteResult.Success
-                awaitItem() shouldBe Settings.DEFAULT.copy(soundEnabled = false)
-                repository.update { it.copy(beamPatternsEnabled = false) } shouldBe WriteResult.Success
-                awaitItem() shouldBe Settings.DEFAULT.copy(soundEnabled = false, beamPatternsEnabled = false)
+                repository.update { it.copy(musicEnabled = false) } shouldBe WriteResult.Success
+                awaitItem() shouldBe Settings.DEFAULT.copy(musicEnabled = false)
+                repository.update { it.copy(sfxEnabled = false) } shouldBe WriteResult.Success
+                awaitItem() shouldBe Settings.DEFAULT.copy(musicEnabled = false, sfxEnabled = false)
             }
         }
 
@@ -39,7 +40,8 @@ class FakeSettingsRepositoryTest {
         runTest {
             val initial =
                 Settings(
-                    soundEnabled = false,
+                    musicEnabled = false,
+                    sfxEnabled = true,
                     hapticsEnabled = false,
                     colorSymbolsEnabled = true,
                     beamPatternsEnabled = true,
