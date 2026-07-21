@@ -96,3 +96,86 @@ sein (Android-Studio-JBR funktioniert).
   in PW-4.2 deklarierte AudioEngine-Interface implementieren. Läuft
   PARALLEL zu PW-4.5 — Dateien sind disjunkt (audio/ vs. ui/juice/ +
   BoardCanvas), keine gemeinsamen Berührpunkte.
+
+## PW-4.5 — ui-entwickler → ui-entwickler (PW-4.6) (2026-07-21)
+
+### Kontext
+
+Gebaut: der Canvas-only-Laser-Renderpfad (§13.8a, ADR-011) plus der
+withFrameNanos-Treiber des Juice-Kerns. Kein Stepper-Code angefasst.
+
+- **BoardLaserRender.kt (neu, ui/game)** — `drawLaserBeams(beams, halo-
+  PulseFactor)`: je Strahl DREI additive Halo-Ringe (12/8/5 dp, BlendMode.Plus,
+  Alpha-Treppe 0,14/0,18/0,23 — Summe am Kern 0,55, radial auslaufend) in
+  Strahlfarbe, darüber der weiße 3-dp-Kern (#F0F0F3, pulst NICHT), zuoberst der
+  §13.2-Musterkanal in Strahlfarbe auf Kernbreite. Sekundärfarben tragen ihre
+  Mischfarbe im Halo; Kreuzungen mischen additiv; Mischfarben-Chips bleiben im
+  Overlay. `drawJuiceEffects(juice)`: SoA-Partikel indexbasiert (nur count/x/y/
+  size/alpha/color), Vollbild-Flash als additives Weiß-Rect. KEINE Allokation im
+  Draw-Pfad (nur Value-Klassen). Halo-Puls: Grundalpha × `haloPulseFactor` aus
+  dem Snapshot.
+- **JuiceFrameDriver.kt (neu, ui/juice)** — `JuiceEventQueue` (Haupt-Thread-
+  Postfach, `offer`/frame-weises `drain`) + `rememberJuiceFrameState(events,
+  stepper)`: Endlos-Loop über **`withInfiniteAnimationFrameNanos`** (NICHT
+  rohes `withFrameNanos`, s. Stolpersteine), dt aus Frame-Nanos, **dt-Clamp
+  `clampFrameDelta` auf 0..100 ms VOR `step()`** (Auflage LOW-1 aus dem
+  PW-4.4-Audit: emitSparks skaliert sonst unbegrenzt nach App-Background;
+  Begründung als KDoc an der Funktion). Publikations-Filter
+  `rendersDifferently`: nur Puls-/Flash-/Partikel-Änderungen schreiben den
+  State — unter Reduce-Motion ohne Effekte invalidiert NICHTS.
+- **Einhängung** — `BoardCanvas(juice: State<JuiceState>? = null)` liest den
+  Snapshot AUSSCHLIESSLICH in der Draw-Phase (`juice?.value` im Canvas-Block):
+  Frame-Updates zeichnen nur neu, rekomponieren nie. `drawBoard(spec,
+  haloPulseFactor)` ersetzt den alten dünnen Beam-Zeichner. Verdrahtet in
+  `GameScreen.kt`/`GameBoard`: `remember { JuiceEventQueue() }` +
+  `rememberJuiceFrameState`; R44 wird per
+  `MotionPreferenceChanged(!animationsEnabled)` aus
+  `rememberAnimationsEnabled()` in den Kern gemeldet.
+- **Koordinaten-Vertrag** (KDoc an `drawJuiceEffects`): `xDp/yDp` im
+  JuiceState sind dp relativ zur LINKEN OBEREN Ecke des BoardCanvas;
+  gezeichnet wird mit `dp.toPx()`. Event-Erzeuger mappen Zellzentren also
+  `BoardGeometry.center(coord).x / density` (Board-Ursprung = Canvas-Mitte).
+
+Stolpersteine/Learnings:
+
+- **Rohes `withFrameNanos` in einer Endlosschleife hängt JEDEN bestehenden
+  Robolectric-Test** (per Wegwerf-Probe verifiziert: AppNotIdleException nach
+  60 s — `waitForIdle` wird nie idle). `withInfiniteAnimationFrameNanos` löst
+  das: die InfiniteAnimationPolicy des Compose-Test-Harness bricht den Loop
+  bei `mainClock.autoAdvance` ab (E2E/GameRoute-Tests grün, Juice bleibt dort
+  EMPTY), während eine manuelle Testuhr (`autoAdvance = false` **VOR**
+  `setContent`, sonst ist die Coroutine schon tot) den Treiber deterministisch
+  treibt — Muster in `JuiceFrameDriverTest`.
+- Die Testuhr produziert nur 16-ms-Frames; ein „großes dt" ist über
+  `mainClock` nicht erzeugbar — der Clamp ist deshalb als pure Funktion
+  (`clampFrameDelta`) gepinnt plus Treiber-Durchleitungs-Assertion.
+- detekt `LongParameterList` schlägt ab dem 6. Parameter zu (BoardCanvas:
+  begründeter Suppress); ktlint verbietet EOL-Kommentare direkt unter KDoc.
+
+### Aufgaben für den nächsten Agenten
+
+- **PW-4.6 — Aktions-Feedback**: Ereignisdaten aus :game (`juiceDelta`/
+  `MoveResult`, ADR-012) über das ViewModel als Effects zum JuiceState
+  verdrahten. Einstiegspunkt ist die `JuiceEventQueue` in
+  `GameScreen.kt`/`GameBoard` — für ViewModel-Effects die Queue ggf. zu
+  `GameRoute`/`GameEffectHandler` hochziehen und an `GameBoard`
+  durchreichen. Zu senden: `ScreenEntered(levelSeed, reduceMotion,
+  endpoints)` beim Partie-Start (setzt Puls-Nullpunkt; levelSeed kommt aus
+  dem ViewModel), `EndpointsChanged` nach jedem Zug
+  (`TraceResult.endpoints`), `RotateFlash`, `CrystalBursts`, `Solved` sowie
+  `Dismissed` bei „Nochmal"/„Weiter"/Zurück (R49). Positionen nach dem
+  Koordinaten-Vertrag oben in dp mappen, Farben über `BoardColors.beam`
+  (§13.4) auflösen.
+- **WICHTIG (Orchestrator-Entscheidung, digest.md)**: PW-4.6 erweitert
+  zusätzlich den JuiceState-Snapshot um die **§13.9-Glow-Einträge**
+  (Glow-Burst: Radius 0→28 dp, Alpha 0,8→0, 250 ms, additiv) — Glow lebt
+  datenseitig; das ADR-011-Delta im PR dokumentieren. Einstiegspunkte:
+  `JuiceState.kt` (neues Snapshot-Feld analog `pendingBursts`),
+  `DefaultJuiceStepper` (`onCrystalBursts`/`fireBursts` planen bereits die
+  Burst-Zeitpunkte — Glow dort mit erzeugen), Rendering in
+  `BoardLaserRender.drawJuiceEffects` (RadialGradient + BlendMode.Plus,
+  ADR-011), UND der Publikations-Filter `rendersDifferently` in
+  `JuiceFrameDriver.kt` muss Glow-Änderungen mit veröffentlichen, sonst
+  bleibt der Glow unsichtbar.
+- Der dt-Clamp bleibt im Treiber (nicht in den Stepper verschieben);
+  Emitter-/Spawn-Logik im Stepper nur konsumieren.

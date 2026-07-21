@@ -38,6 +38,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.puzzlewerk.app.R
+import de.puzzlewerk.app.ui.juice.JuiceEvent
+import de.puzzlewerk.app.ui.juice.JuiceEventQueue
+import de.puzzlewerk.app.ui.juice.rememberJuiceFrameState
 import de.puzzlewerk.app.ui.navigation.LevelRequest
 import de.puzzlewerk.app.ui.navigation.Screen
 import de.puzzlewerk.app.ui.navigation.encodeScreen
@@ -183,9 +186,14 @@ internal fun GameScreen(
 }
 
 /**
- * Brettbereich: Ladeindikator oder [BoardCanvas] mit Tap-Eingabe und
- * Dreh-Animation. [animationsEnabled] folgt „Animationen entfernen" (§13.6);
+ * Brettbereich: Ladeindikator oder [BoardCanvas] mit Tap-Eingabe, Dreh-Animation
+ * und Juice-Layer (PW-4.5). [animationsEnabled] folgt „Animationen entfernen"
+ * (§13.6) und schaltet zugleich den Reduce-Motion-Pfad des Juice-Kerns (R44);
  * die pure Dreh-Erkennung ist separat testbar ([singleRotatedCell]).
+ *
+ * Juice-Verdrahtung (Einstiegspunkt für PW-4.6): [JuiceEventQueue] ist das
+ * Postfach des Frame-Treibers — Aktions-Ereignisse aus ViewModel-Effects
+ * (juiceDelta/MoveResult) werden hier ge`offer`t.
  */
 @Composable
 private fun GameBoard(
@@ -199,10 +207,18 @@ private fun GameBoard(
         if (state.isLoading || board == null) {
             LoadingBoard()
         } else {
+            val juiceEvents = remember { JuiceEventQueue() }
+            val juice = rememberJuiceFrameState(events = juiceEvents)
+            // R44: Systemeinstellung „Animationen entfernen" steuert den Reduce-Motion-Pfad
+            // des Juice-Kerns (kein Puls, keine Partikel-Spawns; Zeitachsen unverändert).
+            LaunchedEffect(juiceEvents, animationsEnabled) {
+                juiceEvents.offer(JuiceEvent.MotionPreferenceChanged(reduceMotion = !animationsEnabled))
+            }
             BoardCanvas(
                 state = board,
                 modifier = Modifier.fillMaxSize(),
                 spin = rememberRotationSpin(board, animationsEnabled),
+                juice = juice,
                 // Gelöst sperrt den Tap; zusätzlich blockt das Overlay Taps darüber.
                 onCellTap = if (state.result != null) null else { coord -> onIntent(GameIntent.TapCell(coord)) },
             )
