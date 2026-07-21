@@ -664,10 +664,11 @@ Phase-4-Abschluss vorbereitet; Punkte 1–9 waren gemergt (PRs #30–#40).
 - **Gate-Artefakt:** `app/build/outputs/apk/debug/app-debug.apk`,
   11.173.577 B, SHA-256
   `ac2384678b61cd604a483861c296d197f7971261115783f0c8c50beed5efb959`,
-  gebaut aus sauberem Working Tree auf Branch-HEAD (Tree-Hash
+  gebaut aus sauberem Working Tree auf dem Build-Commit (Tree-Hash
   `26b6a289df2b5dd2417852fe17905801f1741e4f`, verifiziert via
-  `git rev-parse HEAD^{tree}`). KEIN Signing, KEIN Tag, KEIN Upload —
-  Tag erst nach Freigabe.
+  `git rev-parse HEAD^{tree}`) und auf dem finalen Branch-HEAD
+  (Docs-Commit obendrauf) byte-identisch bestätigt (gleiche SHA-256).
+  KEIN Signing, KEIN Tag, KEIN Upload — Tag erst nach Freigabe.
 - **Checkliste:** docs/phase4-gate-checklist.md — Spieltest (VFX,
   Audio, Reduce-Motion), Abweichungen D1–D10 einzeln zur Entscheidung,
   Produktfrage Portrait-Lock vs. configChanges vs. Session-Erhalt.
