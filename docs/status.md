@@ -368,15 +368,54 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
       angepasst (Canvas-only, „beide Pfade"-Tests gestrichen,
       dt-Clamp-Auflage aus PW-4.4-Audit).
 
+## Erledigt (Zyklus 22, 2026-07-21) — Punkte 5 + 8 gemergt (je eine Korrekturrunde), Punkt 6 gestartet
+- [x] **PR #35 (PW-4.8) gemergt:** AudioEngine nach ADR-010 —
+      StemMixerCore (EIN Loop-Cursor über 756 000 Frames, klickfreie
+      Fades/Duck), DefaultAudioEngine mit 4 Adapter-Seams,
+      AndroidAudioAdapters (MediaCodec→Mono-PCM ≈ 5,77 MiB, AudioTrack,
+      SoundPool 13 SFX, Fokus + BECOMING_NOISY), StemMix.forProgress
+      (§13.11 exakt, R46/R50 getestet), Settings-Schema v2
+      (musicEnabled/sfxEnabled, Migration + Golden beidseitig).
+      Review-Zyklus: CHANGES-REQUIRED (MAJOR-1 Mixer-Thread-
+      Resurrection — von code-reviewer UND security-auditor unabhängig
+      gefunden) → Korrekturrunde: Session-Token-Architektur je
+      enterGame + deterministischer Race-Test, focusLost-Reset (R47),
+      soundpool-Issue-Event; Delta-Re-Review MERGEABLE, Security-
+      APPROVE. Größen-Ausnahme 868 Zeilen genehmigt (ADR-010-Glue,
+      Review-Empfehlung gegen Split). ADR-010-Addendum: setHostVisible.
+- [x] **PR #36 (PW-4.5) gemergt:** Laser-Rendering Canvas-only —
+      BoardLaserRender (weißer Kern 3 dp + additive Halo-Ringe
+      0,55→0, BlendMode.Plus, 2-Hz-Puls nur Halo, §13.2-Musterkanal
+      über dem Kern), JuiceFrameDriver (dt-Clamp 0..100 ms = Auflage
+      aus PW-4.4-Audit, Publikations-Filter). Review-Zyklus:
+      CHANGES-REQUIRED (MAJOR-1 dt-Trunkierung: Juice-Uhr ~4 % zu
+      langsam, Puls 1,92 statt exakt 2,0 Hz) → Korrekturrunde:
+      consumeFrameDelta mit Rest-Übertrag + mutationssensitive
+      Drift-Tests mit ECHTEN Frame-Dauern (16.666.667 ns);
+      Delta-Re-Review MERGEABLE, Security-APPROVE. Detekt-Entscheidung:
+      LongParameterList.ignoreDefaultParameters statt Suppress.
+      Abnahmepflichtiges Delta dokumentiert: Halo als 3-Stufen-Treppe
+      statt kontinuierlichem Verlauf (→ PW-4.10-Gate-Checkliste);
+      Flash bisher nur Brettfläche (→ PW-4.7-Auflage Vollbild).
+- [x] Handover-Kette gepflegt: drei Einträge (PW-4.4, PW-4.5, PW-4.8)
+      inkl. Korrekturrunden-Nachträge; Merge-Konflikte der parallelen
+      Branches per Union aufgelöst (Kopf einheitlich, Einträge
+      chronologisch).
+- [x] PW-4.6 (ui-entwickler) gestartet: Worktree C:\0\worktrees\pw-4.6,
+      Branch feature/pw-4.6-action-feedback — Aufgaben erweitert um
+      Glow-Snapshot-Erweiterung (Orchestrator-Entscheidung Zyklus 21),
+      Audio-Choreografie (enterGame/setStemMix/playSfx) und
+      Event-Queue-Kapazitätsgrenze (Audit-Härtung PW-4.5).
+
 ## In Arbeit (Phase 4)
-- PW-4.5 (ui-entwickler): Laser-Rendering Canvas-only — läuft.
-- PW-4.8 (ui-entwickler): AudioEngine SFX + Stems + Settings — läuft.
+- PW-4.6 (ui-entwickler): Aktions-Feedback (V2) + Glow-Erweiterung +
+  Audio-Choreografie — läuft.
 
 ## Nächste Schritte
-1. PW-4.5 + PW-4.8: Review, CI, Merge (Handover-Einträge prüfen).
-2. Danach gemäß Plan: 6 (inkl. Glow-Snapshot-Erweiterung,
-   ADR-011-Delta) → 7 → 9 (QS: p95-Frame-Budget, Bounds-Test
-   ungepinnter Konstanten, step-Garbage-Messung) → 10 → Gate Branko.
+1. PW-4.6: Review, CI, Merge.
+2. Danach: 7 (Feuerwerk, inkl. Vollbild-Flash-Auflage) → 9 (QS:
+   p95-Frame-Budget, Bounds-Tests ungepinnter Konstanten, Audio-/
+   Session-Kanten aus dem Handover) → 10 → Gate Branko.
 3. Offene Backlog-Punkte: PW-3.7-QS-Funde, Wave-2-Reste, Infra,
-   keep.xml-Rückbau, Encode-Reproduzierbarkeit, Demo-Asset-
-   Entscheidung (PW-4.8), Solved-ohne-Bursts-Kontrakt (PW-4.6/4.7).
+   keep.xml-Rückbau, Demo-Asset-Entscheidung (PW-4.10),
+   Solved-ohne-Bursts-Kontrakt (PW-4.6/4.7).
