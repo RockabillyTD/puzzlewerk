@@ -538,7 +538,7 @@ und §15 (R44–R50). **Verdikt: PASS** — der Kern hält Determinismus,
 Kapazität, Reduce-Motion und die Audio-Kanten; 2 echte Bugs gefunden
 (dokumentiert, NICHT gefixt, als @Ignore-Regressionstests eingecheckt).
 
-Neue Tests (7 QS-Dateien NEBEN den Entwickler-Tests, keine Duplikate):
+Neue Tests (8 QS-Dateien NEBEN den Entwickler-Tests, keine Duplikate):
 
 - **JuiceDeterminismQsTest** — 1000-Frame-Property (§13.13): gleiche Seeds
   + gleiche Event-Folge (ALLE Event-Typen inkl. Mid-Session-RM und
@@ -595,6 +595,9 @@ Neue Tests (7 QS-Dateien NEBEN den Entwickler-Tests, keine Duplikate):
    Overlay darf den Stern-SFX nicht wiederholen` (shownCount 2 statt 1).
    Fix-Idee: Meldung einmalig pro Composition halten (z. B.
    `remember { mutableStateOf(shown) }`-Guard), nur die Kurve umschalten.
+
+Nachtrag 2026-07-21: BUG-1 und BUG-2 in PW-4.9-FIX behoben (PR #40),
+Repro-Tests scharf.
 
 **Ungetestete Restrisiken:** (a) Android-Adapter real (MediaCodec-Decode,
 AudioTrack-Underruns, SoundPool-Latenz) — nur JVM-Fakes, der im
