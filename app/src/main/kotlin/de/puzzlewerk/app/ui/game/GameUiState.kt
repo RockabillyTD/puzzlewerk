@@ -47,6 +47,10 @@ internal data class GameUiState(
  * @property stars Sterne 1..3 (§7.2).
  * @property moves Züge der Lösung (für „Züge X · Par Y").
  * @property par Par des Levels.
+ * @property fireworkStartMillis t_fw der §13.10-Zeitachse (PW-4.7): Versatz des
+ *   Feuerwerks nach dem lösenden Zug-Commit, `40 · (min(N, 5) − 1) ms` aus der
+ *   Kaskadenlänge N — Nullpunkt der Stern-Einflüge (`t_fw + 120 + (n−1)·150`).
+ *   0 ohne Kaskade (R31: gelöst geladener Startzustand ist kein lösender Zug).
  */
 @Immutable
 internal data class GameResult(
@@ -54,6 +58,7 @@ internal data class GameResult(
     val stars: Int,
     val moves: Int,
     val par: Int,
+    val fireworkStartMillis: Long = 0L,
 )
 
 /** Nutzerabsichten des Spiel-Screens; einziger Eingang ist [GameViewModel.onIntent]. */
@@ -77,6 +82,16 @@ internal sealed interface GameIntent {
 
     /** „Nochmal spielen" aus dem Ergebnis-Overlay: frische Partie desselben Levels (§12.3, R32). */
     data object Replay : GameIntent
+
+    /**
+     * Stern [star] (1-basiert) ist ins Ergebnis-Overlay eingeflogen (§13.10
+     * Nr. 5, PW-4.7) — SFX-Auslöser sfx_star_n (§13.11). Quelle ist die
+     * Compose-Stern-Animation; ihr Composition-Teardown bei „Nochmal"/
+     * „Weiter"/Zurück bricht ausstehende Meldungen ab (R49).
+     */
+    data class StarShown(
+        val star: Int,
+    ) : GameIntent
 }
 
 /** Einmal-Ereignisse; die Senke (Haptik/Ton/Fehlermeldung) ist Screen-Sache (PW-3.5b). */

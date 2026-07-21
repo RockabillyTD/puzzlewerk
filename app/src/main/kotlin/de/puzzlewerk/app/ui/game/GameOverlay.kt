@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -18,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,14 +36,19 @@ private const val MAX_STARS = 3
 private const val OVERLAY_MAX_WIDTH = 360
 
 /**
- * Ergebnis-Overlay einer gelösten Partie (§7.2, §12.3): Sterne (mehrkanalig:
- * Glyphe + Text), Punkte, „Züge X · Par Y" und die Aktionen Weiter / Nochmal /
- * Zurück. Deckt das Brett ab und verschluckt Taps darunter (Undo/Reset bleiben
- * so unerreichbar).
+ * Ergebnis-Overlay einer gelösten Partie (§7.2, §12.3, §13.10): Sterne
+ * (mehrkanalig: Glyphe + Text) fliegen einzeln mit Bounce ein (Start
+ * `t_fw + 120 + (n−1)·150 ms`, [GameResult.fireworkStartMillis]), Punkte,
+ * „Züge X · Par Y" und die Aktionen Weiter / Nochmal / Zurück (Fade ab 500 ms,
+ * interaktiv ab 600 ms — abgenommene V3-Abweichung: der 3. Stern darf beim
+ * Freischalten noch fliegen). Deckt das Brett ab und verschluckt Taps darunter
+ * (Undo/Reset bleiben so unerreichbar).
  *
  * @param onNext Nächstes Kampagnenlevel — `null` bei Daily oder Level 50 (kein „Weiter").
  * @param onReplay Frische Partie desselben Levels (GameIntent.Replay, nicht Reset — R32).
  * @param onBack Zurück zur Levelauswahl/Home.
+ * @param onStarShown Stern n (1-basiert) ist eingeflogen — SFX-Senke sfx_star_n (§13.11).
+ * @param animationsEnabled §13.12: `false` ⇒ Sterne ohne Bounce (150-ms-Fade), gleiche Zeitpunkte.
  */
 @Composable
 internal fun GameResultOverlay(
@@ -50,6 +57,8 @@ internal fun GameResultOverlay(
     onReplay: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onStarShown: (Int) -> Unit = {},
+    animationsEnabled: Boolean = rememberAnimationsEnabled(),
 ) {
     Box(
         modifier =
@@ -69,30 +78,43 @@ internal fun GameResultOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                ResultSummary(result = result)
+                ResultSummary(result = result, animationsEnabled = animationsEnabled, onStarShown = onStarShown)
                 ResultActions(onNext = onNext, onReplay = onReplay, onBack = onBack)
             }
         }
     }
 }
 
-/** Aktionsknöpfe des Overlays (§12.3): „Weiter" nur bei vorhandenem [onNext], sonst Nochmal/Zurück. */
+/**
+ * Aktionsknöpfe des Overlays (§12.3, §13.10 Nr. 6): „Weiter" nur bei
+ * vorhandenem [onNext], sonst Nochmal/Zurück. Alpha-Fade 500 → 600 ms und
+ * Klick-Gate bis zur 600-ms-Frist ([rememberOverlayActionsAppearance]) — die
+ * Knöpfe bleiben semantisch unverändert (kein enabled-Wechsel, TalkBack-Fläche
+ * wie bisher), Klicks vor der Frist verpuffen wirkungslos.
+ */
 @Composable
 private fun ResultActions(
     onNext: (() -> Unit)?,
     onReplay: () -> Unit,
     onBack: () -> Unit,
 ) {
-    onNext?.let {
-        Button(onClick = it, modifier = Modifier.fillMaxWidth()) {
-            Text(text = stringResource(R.string.game_result_next))
+    val appearance = rememberOverlayActionsAppearance()
+    val gated = { action: () -> Unit -> if (appearance.interactive) action() }
+    Column(
+        modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = appearance.alpha() },
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        onNext?.let {
+            Button(onClick = { gated(it) }, modifier = Modifier.fillMaxWidth()) {
+                Text(text = stringResource(R.string.game_result_next))
+            }
         }
-    }
-    OutlinedButton(onClick = onReplay, modifier = Modifier.fillMaxWidth()) {
-        Text(text = stringResource(R.string.game_result_replay))
-    }
-    TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-        Text(text = stringResource(R.string.game_result_back))
+        OutlinedButton(onClick = { gated(onReplay) }, modifier = Modifier.fillMaxWidth()) {
+            Text(text = stringResource(R.string.game_result_replay))
+        }
+        TextButton(onClick = { gated(onBack) }, modifier = Modifier.fillMaxWidth()) {
+            Text(text = stringResource(R.string.game_result_back))
+        }
     }
 }
 
@@ -103,7 +125,11 @@ private fun ResultActions(
  * vorliegt (§13: Zustand nie nur über Farbe/Symbol allein).
  */
 @Composable
-private fun ResultSummary(result: GameResult) {
+private fun ResultSummary(
+    result: GameResult,
+    animationsEnabled: Boolean,
+    onStarShown: (Int) -> Unit,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -114,7 +140,7 @@ private fun ResultSummary(result: GameResult) {
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
         )
-        StarRow(stars = result.stars)
+        StarRow(result = result, animationsEnabled = animationsEnabled, onStarShown = onStarShown)
         Text(
             text = pluralStringResource(R.plurals.game_result_stars, result.stars, result.stars),
             style = MaterialTheme.typography.bodyMedium,
@@ -130,18 +156,46 @@ private fun ResultSummary(result: GameResult) {
     }
 }
 
-/** Sterne als Formkanal (§13): Anzahl gefüllter ★ kodiert die Wertung, nicht die Farbe. */
+/**
+ * Sterne als Formkanal (§13): Anzahl gefüllter ★ kodiert die Wertung, nicht die
+ * Farbe. Verdiente Sterne fliegen einzeln mit Bounce ein (§13.10 Nr. 5,
+ * [rememberStarAppearance]); die Provider werden NUR in der
+ * `graphicsLayer`-Lambda gelesen (keine Recomposition je Animations-Frame).
+ * TalkBack-Semantik unverändert (PW-3.7-QS): die Glyphenzeile ist komplett
+ * ausgenommen — die Textzeile „%d von 3 Sternen" trägt die Wertung.
+ */
 @Composable
-private fun StarRow(stars: Int) {
+private fun StarRow(
+    result: GameResult,
+    animationsEnabled: Boolean,
+    onStarShown: (Int) -> Unit,
+) {
     val filled = stringResource(R.string.game_stars_filled)
     val empty = stringResource(R.string.game_stars_empty)
-    val text =
-        buildString {
-            repeat(stars) { append(filled) }
-            repeat(MAX_STARS - stars) { append(empty) }
+    Row(modifier = Modifier.clearAndSetSemantics {}) {
+        for (star in 1..MAX_STARS) {
+            if (star <= result.stars) {
+                val appearance =
+                    rememberStarAppearance(
+                        startMillis = starEntryStartMillis(result.fireworkStartMillis, star),
+                        animationsEnabled = animationsEnabled,
+                        onShown = { onStarShown(star) },
+                    )
+                Text(
+                    text = filled,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier =
+                        Modifier.graphicsLayer {
+                            scaleX = appearance.scale()
+                            scaleY = appearance.scale()
+                            alpha = appearance.alpha()
+                        },
+                )
+            } else {
+                Text(text = empty, style = MaterialTheme.typography.headlineSmall)
+            }
         }
-    // Glyphen von TalkBack ausnehmen — die Textzeile „%d von 3 Sternen" trägt die Wertung.
-    Text(text = text, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clearAndSetSemantics {})
+    }
 }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)

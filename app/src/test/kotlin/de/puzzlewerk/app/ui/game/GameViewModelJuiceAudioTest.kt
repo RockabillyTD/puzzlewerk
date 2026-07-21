@@ -284,6 +284,55 @@ class GameViewModelJuiceAudioTest {
             assertEquals(0, vm.state.value.moves)
         }
 
+    @Test
+    fun `Loesender Zug traegt t_fw aus der Kaskadenlaenge im Result`() =
+        runTest(dispatcher) {
+            val audio = FakeAudioEngine()
+            val vm = viewModel(ScriptedEngine(START) { MoveResult.Applied(SOLVED_STATE, SOLVED_TRACE) }, audio)
+            runCurrent()
+
+            vm.onIntent(GameIntent.TapCell(MIRROR))
+
+            // N = 2 neu erfüllte Kristalle ⇒ t_fw = 40 · (min(2, 5) − 1) = 40 ms (§13.10 Nr. 1).
+            assertEquals(40L, vm.state.value.result!!.fireworkStartMillis)
+        }
+
+    @Test
+    fun `R31-Startzustand traegt t_fw 0 (kein loesender Zug, keine Kaskade)`() =
+        runTest(dispatcher) {
+            val audio = FakeAudioEngine()
+            val solvedStart = MoveResult.Applied(SOLVED_START_STATE, SOLVED_TRACE)
+            val invalid = { _: Move -> MoveResult.Invalid(InvalidMoveReason.ALREADY_SOLVED) }
+            val vm = viewModel(ScriptedEngine(solvedStart, invalid), audio)
+            runCurrent()
+
+            assertEquals(0L, vm.state.value.result!!.fireworkStartMillis)
+        }
+
+    @Test
+    fun `Stern-Einflug spielt sfx_star_1 bis _3, nach Replay verpufft die Meldung (R49)`() =
+        runTest(dispatcher) {
+            val audio = FakeAudioEngine()
+            val vm = viewModel(ScriptedEngine(START) { MoveResult.Applied(SOLVED_STATE, SOLVED_TRACE) }, audio)
+            runCurrent()
+            vm.onIntent(GameIntent.TapCell(MIRROR))
+            audio.playedEffects.clear()
+
+            vm.onIntent(GameIntent.StarShown(1))
+            vm.onIntent(GameIntent.StarShown(2))
+            vm.onIntent(GameIntent.StarShown(3))
+            assertEquals(
+                listOf(SoundEffect.STAR_1, SoundEffect.STAR_2, SoundEffect.STAR_3),
+                audio.playedEffects,
+            )
+
+            vm.onIntent(GameIntent.Replay)
+            runCurrent()
+            audio.playedEffects.clear()
+            vm.onIntent(GameIntent.StarShown(1)) // nachlaufende Meldung eines schon abgebauten Overlays
+            assertTrue(audio.playedEffects.isEmpty())
+        }
+
     private companion object {
         val MIRROR = HexCoord(0, 0)
 

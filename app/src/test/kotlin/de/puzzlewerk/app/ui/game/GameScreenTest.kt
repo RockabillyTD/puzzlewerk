@@ -4,9 +4,12 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import de.puzzlewerk.app.R
 import de.puzzlewerk.app.ui.theme.PuzzlewerkTheme
@@ -136,7 +139,14 @@ class GameScreenTest {
 
         composeRule.onNodeWithText(string(R.string.game_result_replay)).performClick()
 
-        composeRule.runOnIdle { assertEquals(listOf<GameIntent>(GameIntent.Replay), intents) }
+        // Die Stern-Einflüge melden sich ebenfalls als Intents (§13.10 Nr. 5, PW-4.7)
+        // — hier interessiert nur die Nutzeraktion „Nochmal".
+        composeRule.runOnIdle {
+            assertEquals(
+                listOf<GameIntent>(GameIntent.Replay),
+                intents.filterNot { it is GameIntent.StarShown },
+            )
+        }
     }
 
     @Test
@@ -163,5 +173,19 @@ class GameScreenTest {
         composeRule.onNodeWithText(string(R.string.game_reset)).performClick()
 
         composeRule.runOnIdle { assertEquals(listOf<GameIntent>(GameIntent.Reset), intents) }
+    }
+
+    /**
+     * §13.10 Nr. 2 (Auflage MINOR-2 aus PW-4.5): Der Lösungs-Flash liegt auf
+     * SCREEN-Ebene — sein Zeichenknoten überzieht das komplette Fenster
+     * (Kopfzeile und Overlay inklusive), nicht nur den BoardCanvas.
+     */
+    @Test
+    fun loesungsFlashUeberziehtDenGanzenScreen() {
+        setScreen(solved)
+
+        val rootBounds = composeRule.onRoot().getBoundsInRoot()
+        val flashBounds = composeRule.onNodeWithTag(SOLVE_FLASH_TEST_TAG).getBoundsInRoot()
+        assertEquals(rootBounds, flashBounds)
     }
 }
