@@ -4,6 +4,24 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.7 — Lösungs-Feuerwerk + Sterne (PR #38, gemergt 2026-07-21)
+- Gebaut: SolveFlashOverlay auf GameScreen-Root (Vollbild-Auflage
+  eingelöst; flashAlpha nur in drawBehind, klick-durchlässig),
+  Queue/Treiber in den Screen-Root gehoben (genau EIN Frame-Loop),
+  GameStarAnimation (Start t_fw+120+(n−1)·150, Bounce 0→1,15→1,0/
+  220 ms über Frame-Uhr, kein delay), sfx_star_1..3 via StarShown-
+  Intent + Guard, Buttons Fade 500→600 ms + Klick-Gate,
+  fireworkStartMillis() als einzige Formel-Quelle. 349 Zeilen.
+- Review: MERGEABLE OHNE Korrekturrunde (erster PR der Phase);
+  Security-APPROVE. MINORs an PW-4.9 delegiert: Bounce-Konstanten
+  nicht mutationsfest, Doppel-SFX bei RM-Toggle mit offenem Overlay,
+  Recreation spielt Sterne-Choreo erneut (bounded, konsistent).
+- Bewusste Nicht-Umsetzung (Budget): SFX-Kaskadenversatz 40 ms —
+  bleibt dokumentierte Abnahme-Abweichung.
+- Learning: Frame-Uhr-Wartezeiten via Animatable/tween statt delay —
+  deterministisch testbar mit mainClock.
+- Schritte: ~60/120, Gate-Läufe 3/3.
+
 ## PW-4.6 — Aktions-Feedback V2 + Glow + Audio-Choreo (PR #37, gemergt 2026-07-21)
 - Gebaut: Event-Verdrahtung GameViewModel→juiceDelta→JuiceFeedback-
   Channel→offerJuiceEvents→Queue (Kappe 64, Silent-Drop);

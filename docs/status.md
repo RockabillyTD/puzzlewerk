@@ -435,14 +435,33 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
       Auflagen (Vollbild-Flash, Overlay ≤ 600 ms, R49-Kanten,
       Sterne-SFX, optional 40-ms-SFX-Kaskade).
 
+## Erledigt (Zyklus 24, 2026-07-21) — Punkt 7 gemergt (Punkte 1–8 komplett), Punkt 9 gestartet
+- [x] **PR #38 (PW-4.7) gemergt:** Lösungs-Feuerwerk + Sterne (V3) —
+      SolveFlashOverlay auf Screen-Root (Vollbild-Auflage aus PW-4.5
+      eingelöst, flashAlpha nur in der Draw-Phase, klick-durchlässig),
+      Queue/Treiber-Hebung (genau EIN Frame-Loop), Sterne-Einflug
+      t_fw+120+(n−1)·150 mit Bounce über die Frame-Uhr, sfx_star_1..3
+      (StarShown-Intent + Guard), Buttons-Klick-Gate 600 ms,
+      R49/R31-Kanten. 349 produktive Zeilen. code-reviewer: MERGEABLE
+      OHNE Korrekturrunde (Zahlen zeichengenau nachgerechnet, 229
+      Tests real grün, Vollbild per Bounds-Test belegt);
+      security-auditor: SECURITY-APPROVE (Flash-Einmaligkeit + 3-Hz-
+      Schutz strukturell, ein Frame-Loop). MINORs an PW-4.9 delegiert
+      (Bounce-Pinning, RM-Toggle-Doppel-SFX, Recreation-Sterne).
+- [x] PW-4.9 (test-engineer) gestartet: Worktree C:\0\worktrees\pw-4.9,
+      Branch test/pw-4.9-juice-qs — unabhängiger QS-Pass über die
+      Punkte 3–8; Einstiegspunkte aus den Handover-Abschnitten
+      PW-4.4–4.7 + delegierte Review-MINORs.
+
 ## In Arbeit (Phase 4)
-- PW-4.7 (ui-entwickler): Lösungs-Feuerwerk + Sterne-Choreografie.
+- PW-4.9 (test-engineer): unabhängiger QS-Pass Juice — läuft.
 
 ## Nächste Schritte
-1. PW-4.7: Review, CI, Merge.
-2. Danach: 9 (QS: p95-Frame-Budget, Bounds-Tests, Audio-/Session-
-   Kanten, Robolectric-Adapter-Smoke) → 10 (inkl. Abnahme-Deltas:
-   Halo-/Glow-Treppe, SFX-Timing, Rotation-Neustart) → Gate Branko.
+1. PW-4.9: Review, CI, Merge (Bugs nur dokumentieren, nicht fixen).
+2. PW-4.10 (release-engineer): Gate-Kette auf main, APK-Größenbudget,
+   Shrinker-Prüfung, phase4-gate-checklist.md (inkl. Abnahme-Deltas:
+   Halo-/Glow-Treppe, SFX-Timing, Rotation-Neustart, 800-ms-Sterne,
+   RM-Konstanten), Debug-APK, versionName 0.4.0 → Gate Branko.
 3. Offene Backlog-Punkte: PW-3.7-QS-Funde, Wave-2-Reste, Infra,
    keep.xml-Rückbau, Demo-Asset-Entscheidung (PW-4.10), Settings-
    Verdrahtung DataStore (+ enter-Race-Auflage), Produktfrage

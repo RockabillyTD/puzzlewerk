@@ -5,7 +5,7 @@
 > Agenten lesen NUR dieses Dokument + ihr Rollen-Journal —
 > status.md/backlog.md liest nur der Orchestrator.
 
-## Phase & nächstes Gate (Stand 2026-07-21, Zyklus 23)
+## Phase & nächstes Gate (Stand 2026-07-21, Zyklus 24)
 - Phase 3 abgenommen: Gate-Feedback Branko = „zu langweilig, Richtung
   Zuma" → Phase 4 „Juice-Update" läuft (docs/phase4-10-punkte-plan.md,
   PW-4.1–4.10; Feedback-Vorlage: docs/phase4-juice-update.md).
@@ -30,8 +30,11 @@
   §13.9-Glow im JuiceState = ADR-011-Delta, Solved-Kontrakt,
   Queue-Kappe 64). Abweichungen dokumentiert: SFX ohne 40-ms-Versatz,
   Stem-Neustart bei Rotation (Produktfrage im Backlog).
-- In Arbeit: PW-4.7 (Feuerwerk + Sterne-Choreografie, inkl. Auflage
-  Vollbild-Flash auf Screen-Ebene, Overlay ≤ 600 ms, R49-Kanten).
+- Gemergt: PR #38 PW-4.7 — Vollbild-Flash (Screen-Root), Sterne-
+  Choreografie (t_fw+120+(n−1)·150, Bounce 220 ms), sfx_star_n,
+  R49/R31-Kanten. Punkte 1–8 damit KOMPLETT.
+- In Arbeit: PW-4.9 (test-engineer, unabhängiger QS-Pass über 3–8;
+  Einstiegspunkte aus den Handover-Abschnitten PW-4.4–4.7).
 - NEU: Handover-Regime — jeder Agent hängt am Ticket-Ende an
   docs/handover.md an: (a) Kontext, (b) Aufgaben des nächsten Agenten.
   Nachfolger lesen den eigenen Handover-Abschnitt ihres Vorgängers.
@@ -94,8 +97,8 @@
     Custom-Detekt-Regel, ringIndex, KDoc-Referenzen.
 
 ## Letzte 5 Merges
+- PR #38 PW-4.7: Vollbild-Flash + Sterne-Choreografie (349 Z., clean).
 - PR #37 PW-4.6: Aktions-Feedback + Glow + Audio-Choreo (~700 Z., Ausn.).
 - PR #36 PW-4.5: Laser-Rendering Canvas-only + JuiceFrameDriver.
 - PR #35 PW-4.8: AudioEngine + Settings v2 (868 Z., Ausnahme genehmigt).
 - PR #34 PW-4.4: JuiceState-Kern + Stepper (513 Z., Ausnahme genehmigt).
-- PR #33 PW-4.3: TraceResult.endpoints + juiceDelta() in :game.
