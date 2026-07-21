@@ -5,7 +5,7 @@
 > Agenten lesen NUR dieses Dokument + ihr Rollen-Journal —
 > status.md/backlog.md liest nur der Orchestrator.
 
-## Phase & nächstes Gate (Stand 2026-07-21, Zyklus 22)
+## Phase & nächstes Gate (Stand 2026-07-21, Zyklus 23)
 - Phase 3 abgenommen: Gate-Feedback Branko = „zu langweilig, Richtung
   Zuma" → Phase 4 „Juice-Update" läuft (docs/phase4-10-punkte-plan.md,
   PW-4.1–4.10; Feedback-Vorlage: docs/phase4-juice-update.md).
@@ -26,8 +26,12 @@
   ADR-010 hat ein Addendum: setHostVisible + Lifecycle-Glue.
 - Gemergt: PR #36 PW-4.5 — Laser-Rendering Canvas-only (Kern+Halo+Puls,
   JuiceFrameDriver mit dt-Clamp + driftfreiem Rest-Übertrag).
-- In Arbeit: PW-4.6 (Aktions-Feedback: Events→ViewModel→JuiceState,
-  §13.9-Glow-Snapshot-Erweiterung + ADR-011-Delta, Audio-Choreografie).
+- Gemergt: PR #37 PW-4.6 — Aktions-Feedback (Events→Juice+Audio,
+  §13.9-Glow im JuiceState = ADR-011-Delta, Solved-Kontrakt,
+  Queue-Kappe 64). Abweichungen dokumentiert: SFX ohne 40-ms-Versatz,
+  Stem-Neustart bei Rotation (Produktfrage im Backlog).
+- In Arbeit: PW-4.7 (Feuerwerk + Sterne-Choreografie, inkl. Auflage
+  Vollbild-Flash auf Screen-Ebene, Overlay ≤ 600 ms, R49-Kanten).
 - NEU: Handover-Regime — jeder Agent hängt am Ticket-Ende an
   docs/handover.md an: (a) Kontext, (b) Aufgaben des nächsten Agenten.
   Nachfolger lesen den eigenen Handover-Abschnitt ihres Vorgängers.
@@ -90,8 +94,8 @@
     Custom-Detekt-Regel, ringIndex, KDoc-Referenzen.
 
 ## Letzte 5 Merges
+- PR #37 PW-4.6: Aktions-Feedback + Glow + Audio-Choreo (~700 Z., Ausn.).
 - PR #36 PW-4.5: Laser-Rendering Canvas-only + JuiceFrameDriver.
 - PR #35 PW-4.8: AudioEngine + Settings v2 (868 Z., Ausnahme genehmigt).
 - PR #34 PW-4.4: JuiceState-Kern + Stepper (513 Z., Ausnahme genehmigt).
 - PR #33 PW-4.3: TraceResult.endpoints + juiceDelta() in :game.
-- PR #32 PW-4.2: ADR-010/011/012 + AudioEngine-/JuiceState-Deklarationen.
