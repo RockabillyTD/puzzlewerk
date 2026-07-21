@@ -631,3 +631,57 @@ PW-4.10 (release-engineer):
   als offene Entwickler-Tickets in die Vorlage.
 - **Debug-APK-Artefakt** fürs Gate bauen und ablegen; **versionName 0.4.0**
   setzen.
+
+## PW-4.10 — release-engineer → MENSCHLICHES GATE (Branko) (2026-07-21)
+
+### Kontext
+
+Phase-4-Abschluss vorbereitet; Punkte 1–9 waren gemergt (PRs #30–#40).
+
+- **Gate-Kette auf main-Stand: GRÜN.** `checkModuleGraph ktlintCheck
+  detekt test koverVerify :app:lintDebug :data:lintDebug
+  :app:assembleDebug` — BUILD SUCCESSFUL (210 Tasks), keine Failures;
+  zusätzlich `:app:assembleRelease` (R8 + Ressourcen-Shrinking) grün.
+- **APK-Größenbudget:** Phase-3-Gate ~10,4 MB → mit allen 18 OGGs
+  11.841.714 B (≈ +1,4 MB, im Erwartungskorridor +1–1,5 MB, weit unter
+  der +3-MB-Eskalationsschwelle). OGG-Anteil im APK: 1.351.809 B, alle
+  18 „Stored" (unkomprimiert — OGG ist vorkomprimiert, aapt packt raw
+  nicht erneut). Nach Demo-Entfernung: Gate-APK 11.173.577 B
+  (≈ 10,66 MiB), OGG-Anteil 684.632 B (17 Assets).
+- **Demo-Asset-Entscheidung:** `music_demo_steigerung.ogg` (667.177 B ≈
+  652 KiB) ENTFERNT — reines Anhör-Demo, von keinem Code referenziert
+  (AudioEngine nutzt 17 Assets); Quelle bleibt über
+  `tools/audio/synth.py` reproduzierbar (Orchestrator-Empfehlung).
+- **keep.xml: ENTFERNT (obsolet).** Beweis per Release-Build-Analyse
+  ohne keep.xml: `app/build/outputs/mapping/release/resources.txt`
+  markiert alle 17 raw-Einträge „reachable: referenced from …dex"
+  (R.raw-Referenzen in AndroidAudioAdapters.kt, inkl. des noch
+  unverdrahteten sfx_ui_tap — SoundPool lädt es); Release-APK enthält
+  17/17 OGGs (684.632 B). Der PW-4.0-Zweck (Schutz VOR der
+  Code-Referenzierung) ist entfallen.
+- **Version:** versionName 0.1.0 → 0.4.0 (SemVer minor), versionCode
+  1 → 2.
+- **Gate-Artefakt:** `app/build/outputs/apk/debug/app-debug.apk`,
+  11.173.577 B, SHA-256
+  `ac2384678b61cd604a483861c296d197f7971261115783f0c8c50beed5efb959`,
+  gebaut aus sauberem Working Tree auf dem Build-Commit (Tree-Hash
+  `26b6a289df2b5dd2417852fe17905801f1741e4f`, verifiziert via
+  `git rev-parse HEAD^{tree}`) und auf dem finalen Branch-HEAD
+  (Docs-Commit obendrauf) byte-identisch bestätigt (gleiche SHA-256).
+  KEIN Signing, KEIN Tag, KEIN Upload — Tag erst nach Freigabe.
+- **Checkliste:** docs/phase4-gate-checklist.md — Spieltest (VFX,
+  Audio, Reduce-Motion), Abweichungen D1–D10 einzeln zur Entscheidung,
+  Produktfrage Portrait-Lock vs. configChanges vs. Session-Erhalt.
+
+### Aufgaben für den nächsten Agenten
+
+Nächste Instanz ist das MENSCHLICHE GATE (Branko):
+
+- Spieltest nach `docs/phase4-gate-checklist.md` auf dem Gerät
+  (Artefakt-Pfad + SHA-256 oben; Installation per `adb install -r`).
+- Entscheidungen: Abnahme-Deltas D1–D10 EINZELN (OK bleibt /
+  Nacharbeiten-Ticket) und die Produktfrage in Abschnitt 6
+  (Portrait-Lock vs. configChanges vs. Session-Erhalt).
+- Nach der Abnahme: Orchestrator priorisiert den Backlog für Phase 5
+  (u. a. Settings-Screen mit echten musicEnabled/sfxEnabled-Schaltern,
+  Folge-Tickets aus den Delta-Entscheidungen).
