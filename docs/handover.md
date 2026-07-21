@@ -111,9 +111,18 @@ withFrameNanos-Treiber des Juice-Kerns. Kein Stepper-Code angefasst.
   §13.2-Musterkanal in Strahlfarbe auf Kernbreite. Sekundärfarben tragen ihre
   Mischfarbe im Halo; Kreuzungen mischen additiv; Mischfarben-Chips bleiben im
   Overlay. `drawJuiceEffects(juice)`: SoA-Partikel indexbasiert (nur count/x/y/
-  size/alpha/color), Vollbild-Flash als additives Weiß-Rect. KEINE Allokation im
+  size/alpha/color), Flash als additives Weiß-Rect ÜBER DER BRETTFLÄCHE —
+  Achtung: das ist NICHT das Vollbild aus §13.10, nur der BoardCanvas
+  (Korrektur-Auflage MINOR-2, Aufgabe für PW-4.7 unten). KEINE Allokation im
   Draw-Pfad (nur Value-Klassen). Halo-Puls: Grundalpha × `haloPulseFactor` aus
   dem Snapshot.
+- **ABNAHMEPFLICHTIGES Interpretations-Delta (für die PW-4.10-Gate-
+  Checkliste)**: §13.8a beschreibt den Halo als KONTINUIERLICHEN radialen
+  Alpha-Verlauf 55 % → 0 %. Gerendert wird eine 3-stufige Treppe aus
+  konzentrischen Strichen (12/8/5 dp mit 0,14/0,18/0,23; additive Summe am
+  Kern 0,55, Außenkante endet bei 0,14 → 0) — eine Canvas-Näherung, weil
+  Compose keinen Quer-Gradienten über eine Strichbreite kann (Review-Verdikt
+  PW-4.5: als Näherung ok, aber von Branko am Gate visuell abzunehmen).
 - **JuiceFrameDriver.kt (neu, ui/juice)** — `JuiceEventQueue` (Haupt-Thread-
   Postfach, `offer`/frame-weises `drain`) + `rememberJuiceFrameState(events,
   stepper)`: Endlos-Loop über **`withInfiniteAnimationFrameNanos`** (NICHT
@@ -177,5 +186,13 @@ Stolpersteine/Learnings:
   ADR-011), UND der Publikations-Filter `rendersDifferently` in
   `JuiceFrameDriver.kt` muss Glow-Änderungen mit veröffentlichen, sonst
   bleibt der Glow unsichtbar.
-- Der dt-Clamp bleibt im Treiber (nicht in den Stepper verschieben);
+- **PW-4.7 — Flash auf Screen-Ebene (Auflage MINOR-2 aus der PW-4.5-
+  Korrekturrunde)**: §13.10 verlangt einen VOLLBILD-Flash; aktuell füllt das
+  Weiß-Rect nur den BoardCanvas (Kopfzeile/Buttons bleiben unbeleuchtet).
+  Entweder den Flash als Overlay im GameScreen-Root hochziehen (dasselbe
+  `State<JuiceState>` lesen, nur `flashAlpha`, Draw-Phase-Read wie im
+  BoardCanvas) ODER die Brett-only-Abweichung Branko explizit zur Abnahme
+  vorlegen.
+- Der dt-Clamp und der Sub-ms-Rest-Übertrag bleiben im Treiber
+  (`consumeFrameDelta` — nicht in den Stepper verschieben);
   Emitter-/Spawn-Logik im Stepper nur konsumieren.
