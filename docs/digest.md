@@ -5,7 +5,7 @@
 > Agenten lesen NUR dieses Dokument + ihr Rollen-Journal —
 > status.md/backlog.md liest nur der Orchestrator.
 
-## Phase & nächstes Gate (Stand 2026-07-21, Zyklus 24)
+## Phase & nächstes Gate (Stand 2026-07-21, Zyklus 25)
 - Phase 3 abgenommen: Gate-Feedback Branko = „zu langweilig, Richtung
   Zuma" → Phase 4 „Juice-Update" läuft (docs/phase4-10-punkte-plan.md,
   PW-4.1–4.10; Feedback-Vorlage: docs/phase4-juice-update.md).
@@ -31,10 +31,14 @@
   Queue-Kappe 64). Abweichungen dokumentiert: SFX ohne 40-ms-Versatz,
   Stem-Neustart bei Rotation (Produktfrage im Backlog).
 - Gemergt: PR #38 PW-4.7 — Vollbild-Flash (Screen-Root), Sterne-
-  Choreografie (t_fw+120+(n−1)·150, Bounce 220 ms), sfx_star_n,
-  R49/R31-Kanten. Punkte 1–8 damit KOMPLETT.
-- In Arbeit: PW-4.9 (test-engineer, unabhängiger QS-Pass über 3–8;
-  Einstiegspunkte aus den Handover-Abschnitten PW-4.4–4.7).
+  Choreografie. Punkte 1–8 komplett.
+- Gemergt: PR #39 PW-4.9 — QS-Pass PASS (31 Tests, step() p95 83 µs,
+  2 Bugs gefunden) + PR #40 PW-4.9-FIX (Fokus-Session-Guard,
+  Stern-SFX-Einmaligkeit; Repro-Tests scharf).
+- In Arbeit: PW-4.10 (release-engineer) — Gate-Kette auf main,
+  APK-Größenbudget, Shrinker-Prüfung, phase4-gate-checklist.md
+  (inkl. aller Abnahme-Deltas), Debug-APK, versionName 0.4.0.
+  DANACH: menschliches Gate Branko.
 - NEU: Handover-Regime — jeder Agent hängt am Ticket-Ende an
   docs/handover.md an: (a) Kontext, (b) Aufgaben des nächsten Agenten.
   Nachfolger lesen den eigenen Handover-Abschnitt ihres Vorgängers.
@@ -97,8 +101,8 @@
     Custom-Detekt-Regel, ringIndex, KDoc-Referenzen.
 
 ## Letzte 5 Merges
+- PR #40 PW-4.9-FIX: Fokus-Session-Guard + Stern-SFX-Einmaligkeit.
+- PR #39 PW-4.9: QS-Pass Juice — PASS, 31 Tests, 2 Bugs dokumentiert.
 - PR #38 PW-4.7: Vollbild-Flash + Sterne-Choreografie (349 Z., clean).
 - PR #37 PW-4.6: Aktions-Feedback + Glow + Audio-Choreo (~700 Z., Ausn.).
 - PR #36 PW-4.5: Laser-Rendering Canvas-only + JuiceFrameDriver.
-- PR #35 PW-4.8: AudioEngine + Settings v2 (868 Z., Ausnahme genehmigt).
-- PR #34 PW-4.4: JuiceState-Kern + Stepper (513 Z., Ausnahme genehmigt).

@@ -4,6 +4,29 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.9 — QS-Pass Juice Punkte 3–8 (PR #39, gemergt 2026-07-21)
+- Verdikt: PASS mit 2 echten Bugs (per @Ignore-Repro belegt, NICHT
+  gefixt): BUG-1 verspäteter Fokus-Callback nach exitGame vergiftet
+  focusLost (Menü-SFX stumm); BUG-2 RM-Toggle bei offenem Overlay
+  wiederholt Stern-SFX (LaunchedEffect-Key-Restart). Beide in
+  PW-4.9-FIX (PR #40, ui-entwickler) behoben, Repros scharf.
+- Gebaut: 31 Tests in 8 QS-Dateien — Determinismus-Property 1000
+  Frames (komplette Folge, alle Arrays), Kapazität 512 exakt
+  (Sättigung erzwungen), RM-Matrix jeder Pfad + Mid-Session,
+  Audio-Kanten (Schwellen-Property K 1..50, Duck-im-Fade,
+  Session-Token-Kanten), Frame-Budget-Smoke (median 54 µs / p95
+  83 µs vs. 4-ms-Gate; ~44 KiB/step gemessen), Bounds-Pinning aller
+  §13-Konstanten (beide P-Ränder über 300 Seeds erzwungen),
+  IST-Pins (Recreation-Sterne, RM-Flash-Kurvenwechsel).
+- Review: MERGEABLE; Reviewer bestätigte beide Bug-Repros durch
+  eigenes Entfernen der @Ignore (rot) + Tree-clean-Probe.
+- Restrisiken dokumentiert: Android-Adapter nur JVM-Fakes,
+  Geräte-p95 offen (ADR-011-Rückfalltür), Stem-Sync auf Hardware.
+- Learning: Handover-Kette der Entwickler (Testlücken-Selbstauskunft)
+  war der effektivste Angriffsplan — beide Bugs standen dort als
+  „Kandidaten".
+- Schritte: ~40/130, Gate-Läufe 3/3.
+
 ## PW-3.7-QS — QS-Pass gegen §12/§13 (PR #29, gemergt 2026-07-14)
 - Verdikt: PASS mit 3 dokumentierten Befunden (nicht gefixt, Backlog):
   „Weiter" pusht statt ersetzt Backstack-Top; LevelRequest.Daily vs.

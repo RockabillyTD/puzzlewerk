@@ -453,16 +453,32 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
       Punkte 3–8; Einstiegspunkte aus den Handover-Abschnitten
       PW-4.4–4.7 + delegierte Review-MINORs.
 
+## Erledigt (Zyklus 25, 2026-07-21) — Punkt 9 gemergt + Bugs gefixt, Punkt 10 gestartet
+- [x] **PR #39 (PW-4.9) gemergt:** Unabhängiger QS-Pass, Verdikt
+      **PASS** — 31 Tests in 8 QS-Dateien (Determinismus-Property
+      1000 Frames inkl. Glow, Kapazität 512 exakt gesättigt,
+      RM-Matrix aller Pfade + Mid-Session, Audio-Kanten inkl.
+      Session-Token-Races, Frame-Budget-Smoke median 54 µs / p95
+      83 µs vs. 4-ms-Gate, ~44 KiB/step gemessen, Bounds-Pinning
+      aller §13-Konstanten). 2 echte Bugs per @Ignore-Repro belegt
+      (Prozess eingehalten: nicht gefixt). Reviewer verifizierte
+      beide Repros eigenhändig rot. Restrisiken dokumentiert
+      (Android-Adapter nur JVM, Geräte-p95 = ADR-011-Rückfalltür).
+- [x] **PR #40 (PW-4.9-FIX, ui-entwickler) gemergt:** BUG-1
+      Fokus-Callback jetzt session-gebunden (onFocusChange(owner) —
+      konsistent zur Session-Token-Architektur); BUG-2 Stern-SFX-
+      Einmaligkeit (Shown-Zustand überlebt LaunchedEffect-Restart).
+      Beide Ex-Ignore-Repros scharf und grün; Folge-Review MERGEABLE
+      (Lock-Fenster-Analyse, remember-Scope-Probe). CI grün.
+- [x] PW-4.10 (release-engineer) gestartet: Worktree
+      C:\0\worktrees\pw-4.10, Branch build/pw-4.10-gate.
+
 ## In Arbeit (Phase 4)
-- PW-4.9 (test-engineer): unabhängiger QS-Pass Juice — läuft.
+- PW-4.10 (release-engineer): Gates, Größenbudget, Gate-Artefakt.
 
 ## Nächste Schritte
-1. PW-4.9: Review, CI, Merge (Bugs nur dokumentieren, nicht fixen).
-2. PW-4.10 (release-engineer): Gate-Kette auf main, APK-Größenbudget,
-   Shrinker-Prüfung, phase4-gate-checklist.md (inkl. Abnahme-Deltas:
-   Halo-/Glow-Treppe, SFX-Timing, Rotation-Neustart, 800-ms-Sterne,
-   RM-Konstanten), Debug-APK, versionName 0.4.0 → Gate Branko.
-3. Offene Backlog-Punkte: PW-3.7-QS-Funde, Wave-2-Reste, Infra,
-   keep.xml-Rückbau, Demo-Asset-Entscheidung (PW-4.10), Settings-
-   Verdrahtung DataStore (+ enter-Race-Auflage), Produktfrage
-   Portrait-Lock (Gate-Vorlage).
+1. PW-4.10: Review, CI, Merge → **menschliches Gate Branko**
+   (Spieltest nach phase4-gate-checklist.md; Gate-Vorlage enthält
+   die Abnahme-Deltas und die Produktfrage Portrait-Lock).
+2. Nach dem Gate: Backlog-Priorisierung (PW-3.7-QS-Funde, Settings-
+   Verdrahtung DataStore + enter-Race-Auflage, Wave-2-Reste, Infra).
