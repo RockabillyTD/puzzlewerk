@@ -4,6 +4,45 @@
 > gemergten/eskalierten Ticket. Letzte 8 Tickets voll, ältere je 1 Zeile.
 > Kappe: 400 Zeilen. Schrittangaben vor Phase 4: n. a. (vor Budget-Regime).
 
+## PW-4.8 — AudioEngine SFX + Stems + Settings (PR #35, gemergt 2026-07-21)
+- Gebaut: StemMixerCore (purer Mixer, EIN Loop-Cursor über 756 000
+  Frames, Fades/Duck klickfrei), DefaultAudioEngine (Session-Token-
+  Architektur, 4 Adapter-Seams, Fehler als Werte auf issues),
+  AndroidAudioAdapters (MediaCodec→Mono-PCM, AudioTrack, SoundPool 13
+  SFX, Fokus + BECOMING_NOISY), StemMix.forProgress (§13.11 exakt),
+  Settings-Schema v2 (musicEnabled/sfxEnabled + Migration + Golden).
+  PCM-Entscheidung: mono ≈ 5,77 MiB (Quellen einkanalig, verlustfrei).
+- Review-Zyklus: CHANGES-REQUIRED → Korrekturrunde → MERGEABLE.
+  MAJOR-1 Mixer-Thread-Resurrection (geteiltes running-Flag) → Session-
+  Token je enterGame, deterministischer Race-Test über die Thread-
+  Factory-Seam. MINOR: focusLost-Reset in exitGame (R47), soundpool-
+  Issue-Event. Security-APPROVE (M1 = derselbe Race). Größen-Ausnahme
+  868 Zeilen genehmigt (ADR-010-Plattform-Glue, kein Split).
+- ADR-010 trägt jetzt ein Addendum: setHostVisible + Lifecycle-Glue.
+- Learning: geteilte @Volatile-Flags sind KEIN Sessionsbegriff — bei
+  Thread-Lebenszyklen immer Session-Token je Start vergeben.
+- Schritte: ~150/150 + Korrektur ~40/60.
+
+## PW-4.5 — Laser-Rendering Canvas-only (PR #36, gemergt 2026-07-21)
+- Gebaut: BoardLaserRender (Kern 3 dp weiß + Halo-Ringe 12/8/5 dp,
+  Alpha-Treppe 0,55→0, BlendMode.Plus, Puls nur Halo), JuiceFrameDriver
+  (rememberJuiceFrameState + JuiceEventQueue, dt-Clamp 0..100 ms,
+  Publikations-Filter rendersDifferently), Verdrahtung GameBoard/R44.
+  270 produktive Zeilen, Gate Lauf 1 grün.
+- Review-Zyklus: CHANGES-REQUIRED → Korrekturrunde → MERGEABLE.
+  MAJOR-1 dt-Trunkierung (Sub-ms-Rest verworfen ⇒ Uhr ~4 % zu langsam,
+  Puls 1,92 statt 2,0 Hz) → consumeFrameDelta mit Rest-Übertrag,
+  mutationssensitive Drift-Tests (60/120 Hz, Clamp, Anomalie).
+- Auflagen dokumentiert: Halo-Treppe = abnahmepflichtiges Delta
+  (PW-4.10-Checkliste); Flash nur Brettfläche ⇒ PW-4.7 zieht auf
+  Vollbild hoch. Detekt: LongParameterList.ignoreDefaultParameters
+  statt Suppress (ParticleBuffer-Suppress bleibt begründet).
+- Learning: withInfiniteAnimationFrameNanos statt withFrameNanos —
+  rohes withFrameNanos hängt JEDEN Robolectric-Test (AppNotIdle);
+  Testuhren mit glatten 16 ms verstecken Trunkierungsdrift — immer
+  echte Frame-Dauern (16.666.667 ns) testen.
+- Schritte: ~35/140 + Korrektur ~18/40.
+
 ## PW-4.4 — JuiceState-Partikelkern (PR #34, gemergt 2026-07-21)
 - Gebaut: DefaultJuiceStepper (pure step() nach ADR-011), ParticleBuffer
   (SoA-Pool, MAX 512, Silent-Drop), JuiceRandom (mix64-Seed-Kette,
