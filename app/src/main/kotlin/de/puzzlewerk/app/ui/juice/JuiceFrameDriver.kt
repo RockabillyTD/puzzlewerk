@@ -25,6 +25,48 @@ private const val NANOS_PER_MILLI: Long = 1_000_000L
 internal fun clampFrameDelta(rawDtMillis: Long): Long = rawDtMillis.coerceIn(0L, MAX_FRAME_DELTA_MILLIS)
 
 /**
+ * Ergebnis der puren dt-Ableitung eines Frames.
+ *
+ * @property dtMillis An [JuiceStepper.step] zu reichendes, bereits geklammertes
+ *   Delta in ganzen Millisekunden.
+ * @property consumedNanos Neue Baseline der KONSUMIERTEN Frame-Zeit — der
+ *   Sub-Millisekunden-Rest des Frames bleibt darin stehen und zählt im
+ *   Folge-Frame mit.
+ */
+internal class FrameDelta(
+    val dtMillis: Long,
+    val consumedNanos: Long,
+)
+
+/**
+ * Pure dt-Ableitung mit Rest-Übertrag (Review PW-4.5, MAJOR-1): Es werden nur
+ * GANZE Millisekunden konsumiert, der Sub-ms-Rest bleibt in der Baseline —
+ * ohne diesen Übertrag verwirft die Ganzzahldivision bei echten 60 Hz
+ * (16.666.667 ns) jeden Frame 0,666 ms: `elapsedMillis` akkumulierte nur
+ * 960 ms je Wandsekunde, der Puls liefe mit ~1,92 statt exakt 2,0 Hz
+ * (§13.8a) und die Funken-Kadenz mit ~3,84/s statt 4/s.
+ *
+ * Greift die dt-Kappe ([clampFrameDelta], LOW-1), springt die Baseline auf
+ * [frameNanos]: die verworfene Pause darf NICHT als Nachhol-Rest weiterticken.
+ * Uhr-Anomalien (Frame-Zeit vor der Baseline) liefern dt 0 und setzen die
+ * Baseline ebenfalls neu auf.
+ */
+internal fun consumeFrameDelta(
+    lastConsumedNanos: Long,
+    frameNanos: Long,
+): FrameDelta {
+    val elapsedNanos = frameNanos - lastConsumedNanos
+    if (elapsedNanos <= 0L) return FrameDelta(0L, frameNanos)
+    val rawMillis = elapsedNanos / NANOS_PER_MILLI
+    val dtMillis = clampFrameDelta(rawMillis)
+    return if (dtMillis < rawMillis) {
+        FrameDelta(dtMillis, frameNanos)
+    } else {
+        FrameDelta(dtMillis, lastConsumedNanos + dtMillis * NANOS_PER_MILLI)
+    }
+}
+
+/**
  * Haupt-Thread-Postfach für [JuiceEvent]s an den Frame-Treiber: der GameScreen
  * (ab PW-4.6 gespeist aus ViewModel-Effects) legt Ereignisse ab, der Treiber
  * entnimmt sie EINMAL pro Frame und reicht sie gesammelt an
@@ -50,8 +92,9 @@ internal class JuiceEventQueue {
 
 /**
  * withFrameNanos-Treiber des Juice-Kerns (ADR-011): führt [stepper] pro
- * Choreographer-Frame um das geklammerte dt fort ([clampFrameDelta], LOW-1)
- * und veröffentlicht den [JuiceState]-Snapshot als [State] für den Draw-Pfad.
+ * Choreographer-Frame um das geklammerte dt mit Sub-ms-Rest-Übertrag fort
+ * ([consumeFrameDelta] — Clamp LOW-1 plus drift-freie 2-Hz-Pulsbasis) und
+ * veröffentlicht den [JuiceState]-Snapshot als [State] für den Draw-Pfad.
  *
  * Frame-Quelle ist bewusst `withInfiniteAnimationFrameNanos` (identisch zu
  * `withFrameNanos`, solange keine `InfiniteAnimationPolicy` installiert ist):
@@ -75,14 +118,19 @@ internal fun rememberJuiceFrameState(
     val rendered = remember(events, stepper) { mutableStateOf(JuiceState.EMPTY) }
     LaunchedEffect(events, stepper) {
         var current = JuiceState.EMPTY
-        var lastFrameNanos = Long.MIN_VALUE
+        var consumedNanos = Long.MIN_VALUE
         while (true) {
             withInfiniteAnimationFrameNanos { frameNanos ->
-                val rawDt =
-                    if (lastFrameNanos == Long.MIN_VALUE) 0L else (frameNanos - lastFrameNanos) / NANOS_PER_MILLI
-                lastFrameNanos = frameNanos
-                // dt-Kappe VOR step() — Begründung und Grenzwert: clampFrameDelta (LOW-1).
-                current = stepper.step(current, events.drain(), clampFrameDelta(rawDt))
+                // Erster Frame setzt nur die Baseline (dt 0); danach pure dt-Ableitung
+                // mit Kappe VOR step() (LOW-1) und Sub-ms-Rest-Übertrag (MAJOR-1).
+                val delta =
+                    if (consumedNanos == Long.MIN_VALUE) {
+                        FrameDelta(0L, frameNanos)
+                    } else {
+                        consumeFrameDelta(consumedNanos, frameNanos)
+                    }
+                consumedNanos = delta.consumedNanos
+                current = stepper.step(current, events.drain(), delta.dtMillis)
                 if (rendersDifferently(rendered.value, current)) rendered.value = current
             }
         }

@@ -78,6 +78,54 @@ class JuiceFrameDriverTest {
         )
     }
 
+    // --- dt-Ableitung mit Rest-Übertrag (Review MAJOR-1) --------------------
+
+    @Test
+    fun `echte 60-Hz-Deltas akkumulieren exakt 1000 ms je Wandsekunde`() {
+        var consumed = 0L
+        var total = 0L
+        for (frame in 1..FRAMES_60_HZ) {
+            val delta = consumeFrameDelta(consumed, frame * NANOS_60_HZ)
+            consumed = delta.consumedNanos
+            total += delta.dtMillis
+        }
+        assertEquals(
+            "60 Frames à 16.666.667 ns = 1 Wandsekunde — ohne Rest-Übertrag nur 960 ms (Puls-Drift §13.8a)",
+            1000L,
+            total,
+        )
+    }
+
+    @Test
+    fun `echte 120-Hz-Deltas akkumulieren driftfrei`() {
+        var consumed = 0L
+        var total = 0L
+        for (frame in 1..FRAMES_120_HZ) {
+            val delta = consumeFrameDelta(consumed, frame * NANOS_120_HZ)
+            consumed = delta.consumedNanos
+            total += delta.dtMillis
+        }
+        // 120 · 8.333.333 ns = 999.999.960 ns ⇒ 999 ganze ms konsumiert, Rest < 1 ms in der Baseline.
+        assertEquals(999L, total)
+        assertTrue("Rest bleibt unter 1 ms", FRAMES_120_HZ * NANOS_120_HZ - consumed < 1_000_000L)
+    }
+
+    @Test
+    fun `Clamp setzt die Baseline neu auf statt einen Nachhol-Rest zu bilden`() {
+        val paused = consumeFrameDelta(0L, PAUSE_NANOS) // 5 s App-Background
+        assertEquals(MAX_FRAME_DELTA_MILLIS, paused.dtMillis)
+        assertEquals("Baseline springt auf den Frame — die Pause wird verworfen", PAUSE_NANOS, paused.consumedNanos)
+        val next = consumeFrameDelta(paused.consumedNanos, PAUSE_NANOS + NANOS_60_HZ)
+        assertEquals("Folge-Frame tickt wieder normal", 16L, next.dtMillis)
+    }
+
+    @Test
+    fun `Uhr-Anomalie liefert dt 0 und setzt die Baseline neu`() {
+        val delta = consumeFrameDelta(1_000_000L, 500_000L)
+        assertEquals(0L, delta.dtMillis)
+        assertEquals(500_000L, delta.consumedNanos)
+    }
+
     // --- Puls & Event-Durchleitung ------------------------------------------
 
     @Test
@@ -133,5 +181,14 @@ class JuiceFrameDriverTest {
 
         /** Deutlich länger als die 400-ms-Funken-Lebensdauer (§13.8a). */
         private const val SETTLE_MILLIS = 1_000L
+
+        /** Echte Frame-Dauern in Nanosekunden (Review MAJOR-1: KEINE glatten 16 ms). */
+        private const val NANOS_60_HZ = 16_666_667L
+        private const val NANOS_120_HZ = 8_333_333L
+        private const val FRAMES_60_HZ = 60
+        private const val FRAMES_120_HZ = 120
+
+        /** 5 s App-Background — weit über der 100-ms-Kappe. */
+        private const val PAUSE_NANOS = 5_000_000_000L
     }
 }
