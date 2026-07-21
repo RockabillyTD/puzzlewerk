@@ -337,18 +337,46 @@ docs/phase4-10-punkte-plan.md (PW-4.1–4.10, Schrittbudgets).
       Branch feature/pw-4.4-juice-core; implementiert gegen die
       ADR-011-Deklarationen (JuiceState/JuiceEvent/JuiceStepper).
 
+## Erledigt (Zyklus 21, 2026-07-21) — Punkt 4 gemergt, Punkte 5 ∥ 8 gestartet, Handover-Regime eingeführt
+- [x] **PR #34 (PW-4.4) gemergt:** JuiceState-Partikelkern —
+      DefaultJuiceStepper (pure step() nach ADR-011), ParticleBuffer
+      (SoA-Pool, MAX 512, Silent-Drop), JuiceRandom (mix64-Seed-Kette,
+      spawn-only, Stream-Alignment-Falle dokumentiert); 16 JVM-Tests
+      (Determinismus alle Spawn-Pfade, Kapazitäts-Property 400 Frames,
+      R44-Matrix, Kaskade 40 ms, F-Formel 72/96/120 gepinnt).
+      code-reviewer: MERGEABLE mit eigener Verifikation (Tests real
+      grün, §13-Zahlen zeichengenau nachgerechnet, Seed-Kette gegen
+      ADR-011 wörtlich geprüft); Größen-Ausnahme 513 Zeilen genehmigt
+      (kohärente Testeinheit). 1 MAJOR = Kontrakt-Lücke bereits in
+      ADR-011 (§13.9-Glow-Burst ohne Snapshot-Feld) → **Orchestrator-
+      Entscheidung: Glow lebt datenseitig im JuiceState, Erweiterung
+      in PW-4.6** (Backlog). security-auditor: SECURITY-APPROVE
+      (Kapazität hart, kein I/O; LOW: emitSparks ohne dt-Kappe →
+      dt-Clamp in PW-4.5). CI quality-gates grün. Worktree entfernt.
+- [x] **NEUES PROZESSELEMENT — Handover-Kette (docs/handover.md):**
+      Jeder Agent hängt am ENDE seines Tickets einen Abschnitt an:
+      (a) Kontext (was gebaut/entschieden, Stolpersteine, Learnings),
+      (b) Aufgaben für den nächsten Agenten. Erster Eintrag: PW-4.4
+      (Kern-API, Seed-Ketten-Falle, Aufgaben PW-4.5/PW-4.8). Das
+      Regime steht ab sofort in jedem Briefing.
+- [x] PW-4.8 (ui-entwickler) gestartet: Worktree C:\0\worktrees\pw-4.8,
+      Branch feature/pw-4.8-audio-engine — AudioEngine nach ADR-010
+      (Prompt ergänzt um PCM-Speicherbudget-Messung mono vs. stereo,
+      13-SFX-Tabelle, Demo-Asset-Entscheidung).
+- [x] PW-4.5 (ui-entwickler) gestartet: Worktree C:\0\worktrees\pw-4.5,
+      Branch feature/pw-4.5-laser-render — Prompt gemäß ADR-011
+      angepasst (Canvas-only, „beide Pfade"-Tests gestrichen,
+      dt-Clamp-Auflage aus PW-4.4-Audit).
+
 ## In Arbeit (Phase 4)
-- PW-4.4 (ui-entwickler): JuiceState-Partikelkern + pure step() in
-  :app (ohne Rendering), deterministisch nach ADR-011 — läuft.
+- PW-4.5 (ui-entwickler): Laser-Rendering Canvas-only — läuft.
+- PW-4.8 (ui-entwickler): AudioEngine SFX + Stems + Settings — läuft.
 
 ## Nächste Schritte
-1. PW-4.4 abschließen: Review, CI, Merge.
-2. Danach gemäß Plan: (5 Laser [Prompt gemäß ADR-011: Canvas-only
-   statt AGSL, „beide Pfade"-Tests streichen], 8 Audio-Engine
-   parallel, isolation:worktree) → 6 → 7 → 9 (QS) → 10 → Gate Branko.
-3. Merkzettel Orchestrator: PW-4.5-Prompt Canvas-only anpassen;
-   PW-4.8-Prompt PCM-Speicherbudget-Messung (mono vs. stereo);
-   PW-4.9 misst p95-Frame-Budget (ADR-011-Eskalationskriterium).
-4. Offene Backlog-Punkte unverändert (PW-3.7-QS-Funde, Wave-2-Reste,
-   Infra) + keep.xml-Rückbau, Encode-Reproduzierbarkeit,
-   SFX-Zählfehler/Demo-Asset-Entscheidung (PW-4.8).
+1. PW-4.5 + PW-4.8: Review, CI, Merge (Handover-Einträge prüfen).
+2. Danach gemäß Plan: 6 (inkl. Glow-Snapshot-Erweiterung,
+   ADR-011-Delta) → 7 → 9 (QS: p95-Frame-Budget, Bounds-Test
+   ungepinnter Konstanten, step-Garbage-Messung) → 10 → Gate Branko.
+3. Offene Backlog-Punkte: PW-3.7-QS-Funde, Wave-2-Reste, Infra,
+   keep.xml-Rückbau, Encode-Reproduzierbarkeit, Demo-Asset-
+   Entscheidung (PW-4.8), Solved-ohne-Bursts-Kontrakt (PW-4.6/4.7).
