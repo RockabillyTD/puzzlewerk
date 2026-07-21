@@ -185,3 +185,15 @@ Robolectric-Audio möglich.
   gegen den Fake und einen Robolectric-Smoke der Adapter.
   (Ticket-Nummern: 10-Punkte-Plan docs/phase4-10-punkte-plan.md — das
   ältere Schema aus docs/phase4-juice-update.md §3 gilt nicht mehr.)
+## Addendum (2026-07-21, PW-4.8-Review): Vertragsmethode `setHostVisible`
+
+Der `AudioEngine`-Vertrag wird um `setHostVisible(visible: Boolean)`
+ergänzt, verdrahtet als Lebenszyklus-Glue in `MainActivity.onStart` /
+`onStop`. Begründung: Ein Home-Press entzieht den Audio-Fokus nicht
+zwingend (kein anderer Player übernimmt) — ohne die Methode liefe die
+Stem-Musik im Hintergrund weiter, gegen den Geist von R48 („Respekt-
+Grenzen", §13.11). Semantik: `false` pausiert den Mixer-Track auf dem
+R47-Pfad (gemeinsame Pause an derselben Cursor-Position), `true` setzt
+versatzfrei fort, sofern der Fokus nicht verloren ist; ohne laufende
+Stems ein No-op. Abgesegnet durch Review + Orchestrator (Korrekturrunde
+PW-4.8); die Architektur-Entscheidung dieses ADRs bleibt unverändert.

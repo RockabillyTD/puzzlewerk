@@ -88,9 +88,18 @@ test-engineer (PW-4.9), Einstiegspunkte:
   DormantThread-Factory; Muster dort kopierbar) — Matrix Musik×SFX,
   Wechsel zwischen Partien (enterGame nach exitGame).
 - Fokus-Verlust mitten im Stem-Fade: `focus.onFocusChange(false)`
-  zwischen zwei `pumpOnce()`-Aufrufen; danach Regain und prüfen, dass
+  zwischen zwei `pump()`-Aufrufen; danach Regain und prüfen, dass
   der Fade an der eingefrorenen Cursor-Position fortsetzt (Fade-Position
   lebt im Kern, Cursor in `StemMixerCore.cursor`).
+- Exit/Re-Enter-Kante (Session-Token, MAJOR-1 der Korrekturrunde):
+  Jedes `enterGame` erzeugt eine `DefaultAudioEngine.MixerSession`
+  (eigener Sink, Mix-Puffer, Kern, `active`-Token); der Thread-Body
+  prüft NUR sein Token. Einstieg: `engine.activeSession` (Test-Seam) +
+  `mixerThreadFactory` fängt die Runnables — Muster im Test
+  `Exit und Re-Enter waehrend des Decodes …` (DefaultAudioEngineTest,
+  FakeDecoder-`onDecode`-Hook löst Exit+Re-Enter mitten im Decode aus).
+  Weitere Kanten: Re-Enter während `pump()`-Backoff, Doppel-`exitGame`,
+  Fokus-Callback einer bereits invalidierten Session.
 - Robolectric-Smoke der Android-Adapter (ADR-010-Folgearbeit):
   mindestens Konstruktion + `release()` von SoundPoolSfxPlayer /
   audioTrackSinkOrNull / AudioManagerFocusRequester; MediaCodec ist
@@ -100,3 +109,17 @@ test-engineer (PW-4.9), Einstiegspunkte:
   soundEnabled mit Nicht-Boolean-Wert ⇒ beide AN, unbekannte
   v1-Felder ⇒ Korruptions-Rückfall) — Basisfälle liegen in
   DataStoreSettingsRepositoryTest.
+
+### Nachtrag Korrekturrunde 2026-07-21 (Review PR #35)
+
+- MAJOR-1: Mixer-Thread-Resurrection behoben — Session-Token-Architektur
+  (`MixerSession` je `enterGame` mit eigenem Sink/Puffer/Kern/Token;
+  `exitGame` invalidiert das Token statt lange zu joinen, Join-Kappe
+  500 ms bleibt als Aufräum-Best-Effort). Deterministischer Race-Test s. o.
+- MINOR-1: `exitGame` setzt `focusLost` zurück — Menü-SFX nach einer
+  Partie mit Fokus-Verlust bleiben nicht mehr stumm.
+- MINOR-2: SoundPool-Init-Fehler degradiert nicht mehr still —
+  `SfxPlayer.available` + `EngineUnavailable("soundpool")` auf `issues`
+  (einmal je Prozess, beim ersten `enterGame` mit aktiven Effekten).
+- ADR-010 hat jetzt ein datiertes Addendum zu `setHostVisible`
+  (Orchestrator-Auflage); Größen-Ausnahme 868 Zeilen genehmigt.
