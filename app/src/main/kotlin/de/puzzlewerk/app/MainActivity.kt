@@ -11,15 +11,28 @@ import androidx.activity.enableEdgeToEdge
  * targetSdk 35+ Pflicht — die Insets behandelt [PuzzlewerkApp].
  */
 class MainActivity : ComponentActivity() {
+    private val container get() = (application as PuzzlewerkApplication).container
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val container = (application as PuzzlewerkApplication).container
         setContent {
             PuzzlewerkApp(
                 viewModelFactory = container.viewModelFactory,
                 gameViewModelFactory = container::gameViewModelFactory,
             )
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Lebenszyklus-Glue der AudioEngine (PW-4.8): sichtbar ⇒ Wiedereinstieg.
+        container.audioEngine(this).setHostVisible(true)
+    }
+
+    override fun onStop() {
+        // Nicht mehr sichtbar ⇒ Mixer pausiert wie bei Fokus-Verlust (R47-Pfad).
+        container.audioEngine(this).setHostVisible(false)
+        super.onStop()
     }
 }
